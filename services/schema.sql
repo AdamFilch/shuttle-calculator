@@ -1,16 +1,17 @@
 
 CREATE TABLE users (
-  user_id INTEGER PRIMARY KEY,
-  name TEXT NOT NULL
+  user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NULL
 );
 
 CREATE TABLE sessions (
-  session_id INTEGER PRIMARY KEY,
+  session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NULL
   date TEXT NOT NULL
 );
 
 CREATE TABLE matches (
-  match_id INTEGER PRIMARY KEY,
+  match_id INTEGER PRIMARY KEY AUTOINCREMENT,
   session_id INTEGER NOT NULL,
   FOREIGN KEY (session_id) REFERENCES sessions(session_id)
 );

@@ -1,12 +1,14 @@
 import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { AddSessionModal } from '@/components/session/modal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 
 export default function TabTwoScreen() {
   const router = useRouter()
-
+  const [addSessionIsOpen, setAddSessionIsOpen] = useState(false)
 
   return (
     <ParallaxScrollView
@@ -27,7 +29,9 @@ export default function TabTwoScreen() {
           alignSelf: 'center',
         }}
       >
-        <TouchableOpacity style={buttonStyle}>
+        <TouchableOpacity style={buttonStyle} onPress={() => {
+          setAddSessionIsOpen(true)
+        }}>
           <Text>Add Sessions</Text>
         </TouchableOpacity>
         <TouchableOpacity style={buttonStyle}>
@@ -61,6 +65,7 @@ export default function TabTwoScreen() {
           <Text>Add User</Text>
         </TouchableOpacity> */}
       </View>
+      <AddSessionModal open={addSessionIsOpen} />
     </ParallaxScrollView>
   );
 }
