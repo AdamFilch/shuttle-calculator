@@ -65,7 +65,7 @@ export default function TabTwoScreen() {
           <Text>Add User</Text>
         </TouchableOpacity> */}
       </View>
-      <AddSessionModal open={addSessionIsOpen} />
+      <AddSessionModal open={addSessionIsOpen} onClose={() => setAddSessionIsOpen(false)} />
     </ParallaxScrollView>
   );
 }

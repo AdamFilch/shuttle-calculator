@@ -1,43 +1,59 @@
-import { Modal, Text, TextInput, View } from "react-native"
+import { Text } from "react-native"
+import { Button, ButtonText } from "../ui/button"
+import { CloseIcon, Icon } from "../ui/icon"
+import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "../ui/modal"
 
 export function AddSessionModal({
-    open
+    open,
+    onClose
 }: {
-    open: boolean
+    open: boolean,
+    onClose: () => void
 }) {
     return (
         <Modal
-            transparent
-            visible={open}
-            animationType="slide"
-            
+            isOpen={open}
+            onClose={() => {
+                onClose()
+            }}
         >
-            <View style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                
-            }}>
-                <View style={{
-                    margin: 20,
-                    backgroundColor: 'white',
-                    borderRadius: 20,
-                    padding: 35,
-                    alignItems: 'center',
-                    shadowColor: '#000',
-                    shadowOffset: {
-                        width: 0,
-                        height: 2,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 5,
-                }}>
-                    <Text>Add a session name</Text>
-                    <Text>(Default to todays date)</Text>
-                    <TextInput />
-                </View>
-            </View>
+            <ModalBackdrop />
+            <ModalContent>
+                <ModalHeader>
+                    <Text>Add a Session Modal</Text>
+                    <ModalCloseButton>
+                        <Icon
+                            as={CloseIcon}
+                            size="md"
+                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
+                        />
+                    </ModalCloseButton>
+                </ModalHeader>
+                <ModalBody>
+                    <Text>Add a name to the session</Text>
+                    <Text>(Default to today's date)</Text>
+                </ModalBody>
+                <ModalFooter>
+                    <Button
+                        variant="outline"
+                        action="secondary"
+                        onPress={() => {
+                            onClose()
+                        }}
+                    >
+                        <ButtonText>Cancel</ButtonText>
+                    </Button>
+                    <Button
+                        onPress={() => {
+                            onClose()
+                        }}
+                    >
+                        <ButtonText>Explore</ButtonText>
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+
+
         </Modal>
     )
 }
