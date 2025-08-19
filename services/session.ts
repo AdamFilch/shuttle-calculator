@@ -1,18 +1,27 @@
-import { openDatabaseSync } from "expo-sqlite";
+import * as SQLite from 'expo-sqlite';
 
-const db = await openDatabaseSync('db.db')
 
-export async function createNewSession(name?: string) {
-    const res = await db.runAsync(`
-    INSERT into sessions (name) VALUES (${name})
-    `)
+
+export async function createNewSession({
+    name,
+    date
+}: {
+    name?: string,
+    date: string
+}) {
+    const db = await SQLite.openDatabaseSync('db.db')
+    const res = await db.runAsync(
+        `INSERT into sessions (name, date) VALUES (?, ?)`,
+        [name ?? null, date]
+    );
 
     return res.lastInsertRowId
 }
 
 
 export async function fetchAllSessions() {
-    const res = await db.getAllAsync(`SELECT * from sessions`)
+    const db = await SQLite.openDatabaseSync('db.db')
+    const res = await db.getAllAsync(`SELECT * FROM sessions`)
 
     return res
 }

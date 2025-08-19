@@ -1,7 +1,13 @@
-import { Text } from "react-native"
+import { createNewSession } from '@/services/session'
+import DateTimePicker from '@react-native-community/datetimepicker'
+import { useState } from 'react'
 import { Button, ButtonText } from "../ui/button"
+import { Heading } from "../ui/heading"
 import { CloseIcon, Icon } from "../ui/icon"
+import { Input, InputField } from '../ui/input'
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "../ui/modal"
+import { Text } from "../ui/text"
+import { VStack } from '../ui/vstack'
 
 export function AddSessionModal({
     open,
@@ -10,6 +16,19 @@ export function AddSessionModal({
     open: boolean,
     onClose: () => void
 }) {
+    const [title, setTitle] = useState('')
+    const [date, setDate] = useState(new Date)
+
+
+    async function onClickSave() {   
+        const res = await createNewSession({
+            name: title,
+            date: new Date().toDateString()
+        })
+        console.log({res, title, date})
+
+    }
+
     return (
         <Modal
             isOpen={open}
@@ -20,7 +39,9 @@ export function AddSessionModal({
             <ModalBackdrop />
             <ModalContent>
                 <ModalHeader>
-                    <Text>Add a Session Modal</Text>
+                    <Heading>
+                        Add a Session Modal
+                    </Heading>
                     <ModalCloseButton>
                         <Icon
                             as={CloseIcon}
@@ -30,8 +51,23 @@ export function AddSessionModal({
                     </ModalCloseButton>
                 </ModalHeader>
                 <ModalBody>
-                    <Text>Add a name to the session</Text>
-                    <Text>(Default to today's date)</Text>
+                    <VStack space='sm'>
+                        <Input
+                            variant="outline"
+                            size="md"
+                            isDisabled={false}
+                            isInvalid={false}
+                            isReadOnly={false}
+                        >
+                            <InputField defaultValue={title} value={title} onChangeText={(val) => {
+                                setTitle(val)
+                            }} placeholder="Enter a session title" />
+                        </Input>
+                        <Text>(Default to session's date)</Text>
+                        <DateTimePicker mode="date" value={date} onChange={(e, val) => {
+                            setDate(val)
+                        }} />
+                    </VStack>
                 </ModalBody>
                 <ModalFooter>
                     <Button
@@ -45,15 +81,14 @@ export function AddSessionModal({
                     </Button>
                     <Button
                         onPress={() => {
+                            onClickSave()
                             onClose()
                         }}
                     >
-                        <ButtonText>Explore</ButtonText>
+                        <ButtonText>Save</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>
-
-
         </Modal>
     )
 }

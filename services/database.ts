@@ -1,9 +1,27 @@
 import * as SQLite from 'expo-sqlite';
 
+export async function debugDatabase() {
+  const db = await SQLite.openDatabaseSync('db.db');
+  const res = await db.getAllAsync(`SELECT name, sql FROM sqlite_master WHERE type='table'`);
+  console.log(res)
+}
 
-const db = SQLite.openDatabaseSync('db.db');
+export async function dropDatabase() {
+  const db = await SQLite.openDatabaseSync('db.db');
 
-export function setupDatabase() {
+  await db.execAsync(`
+  DROP TABLE IF EXISTS sessions;
+  DROP TABLE IF EXISTS users;
+  DROP TABLE IF EXISTS matches;
+  DROP TABLE IF EXISTS match_users;
+  DROP TABLE IF EXISTS shuttles;
+  DROP TABLE IF EXISTS match_shuttles;
+  DROP TABLE IF EXISTS shuttle_payments;
+`);
+}
+
+export async function setupDatabase() {
+  const db = await SQLite.openDatabaseSync('db.db');
   db.withTransactionSync(() => {
     console.log('Setting up DB')
     db.execSync(`
@@ -16,6 +34,7 @@ export function setupDatabase() {
     db.execSync(`
       CREATE TABLE IF NOT EXISTS sessions (
         session_id INTEGER PRIMARY KEY NOT NULL,
+        name TEXT,
         date TEXT NOT NULL
       );
     `);

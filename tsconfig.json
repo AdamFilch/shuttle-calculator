@@ -6,6 +6,10 @@
       "@/*": [
         "./*"
       ],
+      "gluestack/*": [
+        "./components/ui/*"
+        
+      ],
       "tailwind.config": [
         "./tailwind.config.js"
       ]
