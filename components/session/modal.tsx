@@ -23,9 +23,13 @@ export function AddSessionModal({
     async function onClickSave() {   
         const res = await createNewSession({
             name: title,
-            date: new Date().toDateString()
+            date: date.toISOString()
         })
-        console.log({res, title, date})
+
+        if (res) {
+            setDate(new Date)
+            setTitle('')
+        }
 
     }
 
