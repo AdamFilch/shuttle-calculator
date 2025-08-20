@@ -28,7 +28,8 @@ CREATE TABLE match_users (
 CREATE TABLE shuttles (
   shuttle_id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
-  unit_price REAL NOT NULL
+  total_price REAL NOT NULL
+  num_of_shuttles INTEGER NOT NULL
 );
 
 -- Shuttle usage in a match

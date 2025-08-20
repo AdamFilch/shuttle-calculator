@@ -61,7 +61,9 @@ export async function setupDatabase() {
       CREATE TABLE IF NOT EXISTS shuttles (
         shuttle_id INTEGER PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
-        unit_price REAL NOT NULL
+        total_price REAL NOT NULL
+        num_of_shuttles INTEGER NOT NULL
+
       );
     `);
 
