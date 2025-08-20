@@ -78,7 +78,7 @@ export function AddUserModal({
                             onClickSave()
                         }}
                     >
-                        <ButtonText>Explore</ButtonText>
+                        <ButtonText>Add User</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>

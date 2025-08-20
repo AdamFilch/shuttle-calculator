@@ -1,10 +1,10 @@
 import { openDatabaseSync } from "expo-sqlite";
 
 
-const db = openDatabaseSync('badminton.db');
+const db = openDatabaseSync('db.db');
 
 
-export async function createUser(name) {
+export async function createUser(name: string) {
     const result = await db.runAsync(`
         INSERT into users (name) VALUES (?) 
         `,
