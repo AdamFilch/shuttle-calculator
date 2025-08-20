@@ -2,13 +2,19 @@ import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-nativ
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { AddSessionModal } from '@/components/session/modal';
+import { AddShuttleModal } from '@/components/shuttle/modal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { AddUserModal } from '@/components/user/modal';
+import { fetchAllShuttles } from '@/services/shuttle';
+import { fetchAllUsers } from '@/services/user';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 export default function TabTwoScreen() {
   const router = useRouter()
   const [addSessionIsOpen, setAddSessionIsOpen] = useState(false)
+  const [addUserIsOpen, setAddUserIsOpen] = useState(false)
+  const [addShuttleIsOpen, setIsShuttleOpen] = useState(false)
 
   return (
     <ParallaxScrollView
@@ -34,14 +40,37 @@ export default function TabTwoScreen() {
         }}>
           <Text>Add Sessions</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={buttonStyle}>
+        <TouchableOpacity style={buttonStyle} onPress={() => {
+          setAddUserIsOpen(true)
+        }}>
           <Text>Add User</Text>
         </TouchableOpacity>
         <TouchableOpacity style={buttonStyle}>
           <Text>Add Match</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={buttonStyle}>
+        <TouchableOpacity style={buttonStyle} onPress={() => {
+          setIsShuttleOpen(true)
+        }}>
           <Text>Add Shuttles</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        // alignSelf: 'center',
+      }}>
+        <TouchableOpacity style={buttonStyle} onPress={async () => {
+          const res = await fetchAllUsers()
+          console.log(`FetchAllUsers`, res)
+        }}>
+          <Text>Display Users</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={buttonStyle} onPress={async () => {
+          const res = await fetchAllShuttles()
+          console.log(`FetchAllShuttles`, res)
+        }}>
+          <Text>Display Shuttles</Text>
         </TouchableOpacity>
       </View>
       <View
@@ -66,6 +95,8 @@ export default function TabTwoScreen() {
         </TouchableOpacity> */}
       </View>
       <AddSessionModal open={addSessionIsOpen} onClose={() => setAddSessionIsOpen(false)} />
+      <AddUserModal open={addUserIsOpen} onClose={() => setAddUserIsOpen(false)} />
+      <AddShuttleModal open={addShuttleIsOpen} onClose={() => setIsShuttleOpen(false)} />
     </ParallaxScrollView>
   );
 }

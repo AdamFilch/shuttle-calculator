@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 export default function SessionPage() {
-    const router = useRouter() 
+    const router = useRouter()
     return (
         <ScrollView>
             <View style={{
@@ -21,7 +21,7 @@ export default function SessionPage() {
                     width: 'auto',
                 }}
             >
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => {
                         router.navigate('/session')
                     }}
@@ -29,26 +29,24 @@ export default function SessionPage() {
                 >
                     <Text>Go to Sessions</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={async () => {
                         const res = await fetchAllSessions()
-                        console.log(res)
+                        console.log(`FetchAllSession`, res)
                     }}
                     style={buttonStyle}
                 >
                     <Text>Display Sessions</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={async () => {
-                        // const res = await fetchAllSessions()
-                        // console.log(res)
                         await debugDatabase()
                     }}
                     style={buttonStyle}
                 >
                     <Text>Check Tables</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={async () => {
                         // const res = await fetchAllSessions()
                         // console.log(res)
@@ -58,15 +56,15 @@ export default function SessionPage() {
                 >
                     <Text>Drop Tables</Text>
                 </TouchableOpacity>
-                
+
             </View>
         </ScrollView>
     )
 }
 
 const buttonStyle: ViewStyle = {
-  backgroundColor: 'lightgray',
-  width: 100,
-  height: 100,
-  justifyContent: 'center'
+    backgroundColor: 'lightgray',
+    width: 100,
+    height: 100,
+    justifyContent: 'center'
 }

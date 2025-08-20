@@ -20,7 +20,7 @@ export function AddSessionModal({
     const [date, setDate] = useState(new Date)
 
 
-    async function onClickSave() {   
+    async function onClickSave() {
         const res = await createNewSession({
             name: title,
             date: date.toISOString()
@@ -29,6 +29,8 @@ export function AddSessionModal({
         if (res) {
             setDate(new Date)
             setTitle('')
+            onClose()
+
         }
 
     }
@@ -86,10 +88,9 @@ export function AddSessionModal({
                     <Button
                         onPress={() => {
                             onClickSave()
-                            onClose()
                         }}
                     >
-                        <ButtonText>Save</ButtonText>
+                        <ButtonText>Create New Session</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>
