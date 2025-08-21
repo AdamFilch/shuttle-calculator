@@ -1,5 +1,10 @@
 import * as SQLite from 'expo-sqlite';
 
+export type session = {
+    name: string,
+    session_id: number,
+    date: string
+}
 
 
 export async function createNewSession({
@@ -19,9 +24,9 @@ export async function createNewSession({
 }
 
 
-export async function fetchAllSessions() {
+export async function fetchAllSessions(): Promise<session[]> {
     const db = await SQLite.openDatabaseSync('db.db')
-    const res = await db.getAllAsync(`SELECT * FROM sessions`)
+    const res: session[] = await db.getAllAsync(`SELECT * FROM sessions`)
 
     return res
 }

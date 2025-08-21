@@ -1,10 +1,25 @@
+import { VStack } from "@/components/ui/vstack";
 import { debugDatabase, dropDatabase } from "@/services/database";
-import { fetchAllSessions } from "@/services/session";
+import { fetchAllSessions, session } from "@/services/session";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 export default function SessionPage() {
     const router = useRouter()
+    const [sessionsList, setSessionsList] = useState<session[]>([])
+
+    useEffect(() => {
+        const fetchSessions = async () => {
+            fetchAllSessions().then((res) => {
+                setSessionsList(res)
+            })
+        }
+
+        fetchSessions()
+    }, [])
+
+
     return (
         <ScrollView>
             <View style={{
@@ -56,8 +71,33 @@ export default function SessionPage() {
                 >
                     <Text>Drop Tables</Text>
                 </TouchableOpacity>
-
             </View>
+            {sessionsList.length == 0 ? (
+                <View>
+                    <Text>
+                        Sessions List is Empty
+                    </Text>
+                </View>
+            ) : (
+                <VStack>
+                    {sessionsList.map((session) => (
+                        <TouchableOpacity style={{
+                            backgroundColor: 'white',
+                            height: 50,
+                            borderColor: 'black',
+                            borderWidth: 1
+                        }} onPress={() => {
+                            router.navigate(`/session/${session.session_id}`)
+                        }}>
+                            <View>
+                                <Text>
+                                    {session.name == '' ? session.date : session.name}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </VStack>
+            )}
         </ScrollView>
     )
 }
