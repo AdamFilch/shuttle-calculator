@@ -45,9 +45,9 @@ export default function TabTwoScreen() {
         }}>
           <Text>Add User</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={buttonStyle}>
+        {/* <TouchableOpacity style={buttonStyle}>
           <Text>Add Match</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity style={buttonStyle} onPress={() => {
           setIsShuttleOpen(true)
         }}>
