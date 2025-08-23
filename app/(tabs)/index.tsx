@@ -32,7 +32,6 @@ export default function TabTwoScreen() {
           flexDirection: 'row',
           flexWrap: 'wrap',
           gap: 10,
-          alignSelf: 'center',
         }}
       >
         <TouchableOpacity style={buttonStyle} onPress={() => {
