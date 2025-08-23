@@ -90,14 +90,6 @@ export default function TabTwoScreen() {
         >
           <Text>Go to Sessions</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            router.navigate('/users')
-          }}
-          style={buttonStyle}
-        >
-          <Text>Go to Users</Text>
-        </TouchableOpacity>
       </View>
       <AddSessionModal open={addSessionIsOpen} onClose={() => setAddSessionIsOpen(false)} />
       <AddUserModal open={addUserIsOpen} onClose={() => setAddUserIsOpen(false)} />
