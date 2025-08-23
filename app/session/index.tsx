@@ -81,12 +81,15 @@ export default function SessionPage() {
             ) : (
                 <VStack>
                     {sessionsList.map((session) => (
-                        <TouchableOpacity style={{
+                        <TouchableOpacity 
+                        key={session.session_id} 
+                        style={{
                             backgroundColor: 'white',
                             height: 50,
                             borderColor: 'black',
                             borderWidth: 1
-                        }} onPress={() => {
+                        }} 
+                        onPress={() => {
                             router.navigate(`/session/${session.session_id}`)
                         }}>
                             <View>

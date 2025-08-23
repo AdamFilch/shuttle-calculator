@@ -30,3 +30,8 @@ export async function fetchAllSessions(): Promise<session[]> {
 
     return res
 }
+
+
+export async function fetchSessionById(id: string) {
+    
+}
