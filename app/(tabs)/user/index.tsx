@@ -1,7 +1,25 @@
-import { SafeAreaView, ScrollView, Text, View } from "react-native";
+import { fetchAllUsers, User } from "@/services/user";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 
 export default function UsersPage() {
+
+    const [usersList, setUsersList] = useState<User[]>([])
+    const router = useRouter()
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            fetchAllUsers().then((res) => {
+                setUsersList(res)
+            })
+        }
+
+        fetchUsers()
+    })
+
+
     return (
         <SafeAreaView>
             <ScrollView>
@@ -10,6 +28,35 @@ export default function UsersPage() {
                 }}>
                     <Text>Users Page</Text>
                 </View>
+                {usersList.length == 0 ? (
+                    <View>
+                        <Text>
+                            Sessions List is Empty
+                        </Text>
+                    </View>
+                ) : (
+                    <View>
+                        {usersList.map((user) => (
+                            <TouchableOpacity
+                                key={user.user_id}
+                                style={{
+                                    backgroundColor: 'white',
+                                    height: 50,
+                                    borderColor: 'black',
+                                    borderWidth: 1
+                                }}
+                                onPress={() => {
+                                    router.navigate(`/user/${user.user_id}`)
+                                }}>
+                                <View>
+                                    <Text>
+                                        {user.name}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     )
