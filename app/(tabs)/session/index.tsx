@@ -1,5 +1,4 @@
 import { VStack } from "@/components/ui/vstack";
-import { debugDatabase, dropDatabase } from "@/services/database";
 import { fetchAllSessions, Session } from "@/services/session";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -52,7 +51,7 @@ export default function SessionPage() {
                     >
                         <Text>Display Sessions</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
+                    {/*<TouchableOpacity
                         onPress={async () => {
                             await debugDatabase()
                         }}
@@ -69,7 +68,7 @@ export default function SessionPage() {
                         style={buttonStyle}
                     >
                         <Text>Drop Tables</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
 
                 </View>
                 {sessionsList.length == 0 ? (
