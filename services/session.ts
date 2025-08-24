@@ -1,11 +1,12 @@
-import * as SQLite from 'expo-sqlite';
+import { openDatabaseSync } from "expo-sqlite";
 
-export type session = {
+export type Session = {
     name: string,
     session_id: number,
     date: string
 }
 
+const db = openDatabaseSync('db.db')
 
 export async function createNewSession({
     name,
@@ -14,7 +15,6 @@ export async function createNewSession({
     name?: string,
     date: string
 }) {
-    const db = await SQLite.openDatabaseSync('db.db')
     const res = await db.runAsync(
         `INSERT into sessions (name, date) VALUES (?, ?)`,
         [name ?? null, date]
@@ -24,14 +24,15 @@ export async function createNewSession({
 }
 
 
-export async function fetchAllSessions(): Promise<session[]> {
-    const db = await SQLite.openDatabaseSync('db.db')
-    const res: session[] = await db.getAllAsync(`SELECT * FROM sessions`)
+export async function fetchAllSessions(): Promise<Session[]> {
+    const res: Session[] = await db.getAllAsync(`SELECT * FROM sessions`)
 
     return res
 }
 
 
-export async function fetchSessionById(id: string) {
-    
+export async function fetchSessionById(id: string): Promise<Session[]> {
+    const res: Session[] = await db.getAllAsync(`SELECT * FROM sessions WHERE session_id = (?)`, [id])
+
+    return res
 }

@@ -1,13 +1,13 @@
 import { VStack } from "@/components/ui/vstack";
 import { debugDatabase, dropDatabase } from "@/services/database";
-import { fetchAllSessions, session } from "@/services/session";
+import { fetchAllSessions, Session } from "@/services/session";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 export default function SessionPage() {
     const router = useRouter()
-    const [sessionsList, setSessionsList] = useState<session[]>([])
+    const [sessionsList, setSessionsList] = useState<Session[]>([])
 
     useEffect(() => {
         const fetchSessions = async () => {
