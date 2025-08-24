@@ -23,6 +23,11 @@ export async function fetchAllUsers(): Promise<User[]> {
   return res
 }
 
+export async function fetchUserById(id: string): Promise<User[]> {
+  const res: User[] = await db.getAllAsync(`SELECT * FROM users WHERE user_id = (?)`, [id])
+  return res
+}
+
 
 export async function recordShuttlePayment(matchId, shuttleId, userId, amount) {
   await db.runAsync(
