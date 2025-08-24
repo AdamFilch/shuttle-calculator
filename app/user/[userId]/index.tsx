@@ -11,7 +11,6 @@ export default function SelectUsersPage() {
     useEffect(() => {
         const fetchUser = async () => {
             fetchUserById(userId.toString()).then((res) => {
-                console.log(res)
                 setUser(res[0])
             })
         }
