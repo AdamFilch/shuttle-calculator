@@ -1,18 +1,35 @@
 import { Text } from "@/components/ui/text";
-import { ScrollView, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { ScrollView, View, ViewStyle } from "react-native";
 
 
 
 export default function SelectedSessionPage() {
+    const { sessionId } = useLocalSearchParams()
 
     return (
         <ScrollView>
             <View style={{
                 backgroundColor: 'white'
             }}>
-                <Text>Sessions Page</Text>
+                <Text>Sessions Page {sessionId}</Text>
             </View>
-
+            <View>
+            {/* <TouchableOpacity
+                onPress={() => {
+                }}
+                style={buttonStyle}
+            >
+                <Text>Go to Sessions</Text>
+            </TouchableOpacity> */}
+            </View>
         </ScrollView>
     )
+}
+
+const buttonStyle: ViewStyle = {
+    backgroundColor: 'lightgray',
+    width: 100,
+    height: 100,
+    justifyContent: 'center'
 }
