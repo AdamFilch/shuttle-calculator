@@ -6,7 +6,6 @@ import { AddShuttleModal } from '@/components/shuttle/modal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { AddUserModal } from '@/components/user/modal';
 import { fetchAllShuttles } from '@/services/shuttle';
-import { fetchAllUsers } from '@/services/user';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -60,12 +59,6 @@ export default function TabTwoScreen() {
         // alignSelf: 'center',
       }}>
         <TouchableOpacity style={buttonStyle} onPress={async () => {
-          const res = await fetchAllUsers()
-          console.log(`FetchAllUsers`, res)
-        }}>
-          <Text>Display Users</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={buttonStyle} onPress={async () => {
           const res = await fetchAllShuttles()
           console.log(`FetchAllShuttles`, res)
         }}>
@@ -87,7 +80,7 @@ export default function TabTwoScreen() {
           }}
           style={buttonStyle}
         >
-          <Text>Go to Sessions</Text>
+            <Text>Go to Sessions</Text>
         </TouchableOpacity>
       </View>
       <AddSessionModal open={addSessionIsOpen} onClose={() => setAddSessionIsOpen(false)} />

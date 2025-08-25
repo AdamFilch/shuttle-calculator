@@ -1,21 +1,30 @@
 import { openDatabaseSync } from "expo-sqlite";
 
 
-const db = openDatabaseSync('db.db');
-
-
-export async function createUser(name: string) {
-    const result = await db.runAsync(`
-        INSERT into users (name) VALUES (?) 
-        `,
-        [name]
-    )
-
-    return result.lastInsertRowId
+export type User = {
+  user_id: number,
+  name: string
 }
 
-export async function fetchAllUsers() {
-  const res = await db.getAllAsync('SELECT * FROM users')
+const db = openDatabaseSync('db.db');
+
+export async function createUser(name: string) {
+  const result = await db.runAsync(`
+        INSERT into users (name) VALUES (?) 
+        `,
+    [name]
+  )
+
+  return result.lastInsertRowId
+}
+
+export async function fetchAllUsers(): Promise<User[]> {
+  const res: User[] = await db.getAllAsync('SELECT * FROM users')
+  return res
+}
+
+export async function fetchUserById(id: string): Promise<User[]> {
+  const res: User[] = await db.getAllAsync(`SELECT * FROM users WHERE user_id = (?)`, [id])
   return res
 }
 
