@@ -1,7 +1,7 @@
 import { fetchAllUsers, User } from "@/services/user";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 
 export default function UsersPage() {
@@ -27,6 +27,15 @@ export default function UsersPage() {
                     backgroundColor: 'white'
                 }}>
                     <Text>Users Page</Text>
+                </View>
+                <View>
+
+                <TouchableOpacity style={buttonStyle} onPress={async () => {
+                    const res = await fetchAllUsers()
+                    console.log(`FetchAllUsers`, res)
+                }}>
+                    <Text>Display Users</Text>
+                </TouchableOpacity>
                 </View>
                 {usersList.length == 0 ? (
                     <View>
@@ -60,4 +69,12 @@ export default function UsersPage() {
             </ScrollView>
         </SafeAreaView>
     )
+}
+
+
+const buttonStyle: ViewStyle = {
+    backgroundColor: 'lightgray',
+    width: 100,
+    height: 100,
+    justifyContent: 'center'
 }
