@@ -1,14 +1,16 @@
+import { AddMatchModal } from "@/components/session/match/modal";
 import { Text } from "@/components/ui/text";
 import { fetchSessionById, Session } from "@/services/session";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, View, ViewStyle } from "react-native";
+import { SafeAreaView, ScrollView, TouchableOpacity, View, ViewStyle } from "react-native";
 
 
 
 export default function SelectedSessionPage() {
     const { sessionId } = useLocalSearchParams()
     const [session, setSession] = useState<Session | null>(null)
+    const [addMatchIsOpen, setAddMatchIsOpen] = useState(false)
 
     useEffect(() => {
         const fetchSession = async () => {
@@ -41,7 +43,16 @@ export default function SelectedSessionPage() {
                     <Text>Sessions Page {sessionId}</Text>
                     <Text>{session.date}</Text>
                 </View>
-            </ScrollView>
+                <TouchableOpacity
+                    onPress={async () => {
+                        setAddMatchIsOpen(true)
+                    }}
+                    style={buttonStyle}
+                >
+                    <Text>Add Match</Text>
+                </TouchableOpacity>
+                </ScrollView>
+            <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
         </SafeAreaView>
     )
 }
