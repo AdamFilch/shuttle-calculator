@@ -1,5 +1,6 @@
 import { VStack } from "@/components/ui/vstack";
 import { fetchAllSessions, Session } from "@/services/session";
+import { DisplayTimeDDDASHMMDASHYYYY } from '@/services/time-display';
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
@@ -93,7 +94,7 @@ export default function SessionPage() {
                         }}>
                             <View>
                                 <Text>
-                                    {session.name == '' ? session.date : session.name}
+                                    {session.name == '' ? DisplayTimeDDDASHMMDASHYYYY(session.date) : session.name}
                                 </Text>
                             </View>
                         </TouchableOpacity>

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@expo/html-elements": "^0.4.2",
+    "@expo/ngrok": "^4.1.0",
     "@expo/vector-icons": "^14.1.0",
     "@gluestack-ui/alert": "^0.1.16",
     "@gluestack-ui/button": "^1.0.14",
@@ -28,6 +29,7 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "babel-plugin-module-resolver": "^5.0.2",
+    "date-fns": "^4.1.0",
     "expo": "^53.0.20",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.7",
