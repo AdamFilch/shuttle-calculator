@@ -17,7 +17,7 @@ export default function UsersPage() {
         }
 
         fetchUsers()
-    })
+    }, [])
 
 
     return (
