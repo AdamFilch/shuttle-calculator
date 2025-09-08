@@ -1,7 +1,7 @@
 'use client';
 
 import { H4 } from '@expo/html-elements';
-import { createActionsheet } from '@gluestack-ui/core/actionsheet/creator';
+import { createActionsheet } from '@gluestack-ui/core/core/actionsheet/creator/creator';
 import {
   Pressable,
   View,
@@ -12,10 +12,10 @@ import {
   SectionList,
   ViewStyle,
 } from 'react-native';
-import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
-import { tva } from '@gluestack-ui/utils/nativewind-utils';
-import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
-import { withStyleContext } from '@gluestack-ui/utils/nativewind-utils';
+import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/core/icon/creator/creator';
+import { tva } from '@gluestack-ui/core/utils/nativewind-utils/creator';
+import type { VariantProps } from '@gluestack-ui/core/utils/nativewind-utils/creator';
+import { withStyleContext } from '@gluestack-ui/core/utils/nativewind-utils/creator';
 import { cssInterop } from 'nativewind';
 import {
   Motion,

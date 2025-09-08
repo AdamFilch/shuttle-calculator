@@ -1,30 +1,34 @@
 'use client';
 
+import { tva, VariantProps } from '@gluestack-ui/utils/nativewind-utils';
 import React from 'react';
-import { tva } from '@gluestack-ui/utils/nativewind-utils';
+
+// import { tva } from '@gluestack-ui/core/utils/nativewind-utils/creator';
+// import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/core/icon/creator/creator';
+// import {
+//   withStyleContext,
+//   useStyleContext,
+// } from '@gluestack-ui/core/utils/nativewind-utils/creator';
+// import type { VariantProps } from '@gluestack-ui/core/utils/nativewind-utils/creator';
 import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
-import {
-  withStyleContext,
-  useStyleContext,
-} from '@gluestack-ui/utils/nativewind-utils';
-import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
+import { useStyleContext, withStyleContext } from '@gluestack-ui/utils/nativewind-utils';
 import { createSelect } from '@gluestack-ui/core/select/creator';
 import { cssInterop } from 'nativewind';
+import { Pressable, TextInput, View } from 'react-native';
 import {
   Actionsheet,
+  ActionsheetBackdrop,
   ActionsheetContent,
-  ActionsheetItem,
-  ActionsheetItemText,
   ActionsheetDragIndicator,
   ActionsheetDragIndicatorWrapper,
-  ActionsheetBackdrop,
-  ActionsheetScrollView,
-  ActionsheetVirtualizedList,
   ActionsheetFlatList,
-  ActionsheetSectionList,
+  ActionsheetItem,
+  ActionsheetItemText,
+  ActionsheetScrollView,
   ActionsheetSectionHeaderText,
+  ActionsheetSectionList,
+  ActionsheetVirtualizedList,
 } from './select-actionsheet';
-import { Pressable, View, TextInput } from 'react-native';
 
 const SelectTriggerWrapper = React.forwardRef<
   React.ComponentRef<typeof Pressable>,
@@ -213,7 +217,7 @@ const SelectIcon = React.forwardRef<
       />
     );
   } else if (
-    //@ts-expect-error : web only
+    //@ts-expect-error : web onl
     (props?.height !== undefined || props?.width !== undefined) &&
     size === undefined
   ) {
@@ -259,19 +263,9 @@ const SelectSectionList = UISelect.SectionList;
 const SelectSectionHeaderText = UISelect.SectionHeaderText;
 
 export {
-  Select,
-  SelectTrigger,
-  SelectInput,
-  SelectIcon,
-  SelectPortal,
-  SelectBackdrop,
+  Select, SelectBackdrop,
   SelectContent,
   SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectItem,
-  SelectScrollView,
-  SelectVirtualizedList,
-  SelectFlatList,
-  SelectSectionList,
-  SelectSectionHeaderText,
+  SelectDragIndicatorWrapper, SelectFlatList, SelectIcon, SelectInput, SelectItem, SelectPortal, SelectScrollView, SelectSectionHeaderText, SelectSectionList, SelectTrigger, SelectVirtualizedList
 };
+

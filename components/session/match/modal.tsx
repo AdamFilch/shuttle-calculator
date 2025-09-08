@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal"
 import { Text } from "@/components/ui/text"
 import { VStack } from "@/components/ui/vstack"
+import { createNewMatch } from "@/services/match"
+import { useLocalSearchParams } from "expo-router/build/hooks"
 
 
 export function AddMatchModal({
@@ -14,13 +16,20 @@ export function AddMatchModal({
     open: boolean,
     onClose: () => void
 }) {
+    const { sessionId } = useLocalSearchParams()
 
-    function onClickSave() {
+    async function onClickSave() {
+        const res = await createNewMatch({
+            sessionId: sessionId.toString(),
+            playersId: [''],
+            shuttleId: '',
+            quantity_used: 0,
+        })
 
     }
-    
+
     return (
-     <Modal
+        <Modal
             isOpen={open}
             onClose={() => {
                 onClose()
@@ -57,6 +66,7 @@ export function AddMatchModal({
                         {/* <DateTimePicker mode="date" value={date} onChange={(e, val) => {
                             setDate(val)
                         }} /> */}
+                        
                     </VStack>
                 </ModalBody>
                 <ModalFooter>
@@ -74,10 +84,10 @@ export function AddMatchModal({
                             onClickSave()
                         }}
                     >
-                        <ButtonText>Create New Session</ButtonText>
+                        <ButtonText>Create New Match</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>
-        </Modal>   
+        </Modal>
     )
 }
