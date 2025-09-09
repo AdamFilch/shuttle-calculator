@@ -1,13 +1,14 @@
 import { AddMatchModal } from "@/components/session/match/modal";
-import { Text } from "@/components/ui/text";
+import { VStack } from "@/components/ui/vstack";
 import { fetchSessionById, Session } from "@/services/session";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, TouchableOpacity, View, ViewStyle } from "react-native";
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 
 
 export default function SelectedSessionPage() {
+    const router = useRouter()
     const { sessionId } = useLocalSearchParams()
     const [session, setSession] = useState<Session | null>(null)
     const [addMatchIsOpen, setAddMatchIsOpen] = useState(false)
@@ -45,13 +46,23 @@ export default function SelectedSessionPage() {
                 </View>
                 <TouchableOpacity
                     onPress={async () => {
-                        setAddMatchIsOpen(true)
+                        // setAddMatchIsOpen(true)
+                        router.navigate(`/session/${sessionId.toString()}/create-match`)
                     }}
                     style={buttonStyle}
                 >
                     <Text>Add Match</Text>
                 </TouchableOpacity>
-                </ScrollView>
+                <VStack>
+                    <View>
+                        <TouchableOpacity>
+                            <Text>Match Number</Text>
+                            <Text>Adam, Bagas Vs Alam, Farhan</Text>
+                        </TouchableOpacity>
+                    </View>
+                </VStack>
+
+            </ScrollView>
             <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
         </SafeAreaView>
     )
