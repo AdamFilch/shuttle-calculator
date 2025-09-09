@@ -19,6 +19,7 @@ CREATE TABLE matches (
 CREATE TABLE match_users (
   match_id INTEGER NOT NULL,
   user_id INTEGER NOT NULL,
+  position INTEGER NOT NULL,
   PRIMARY KEY (match_id, user_id),
   FOREIGN KEY (match_id) REFERENCES matches(match_id),
   FOREIGN KEY (user_id) REFERENCES users(user_id)

@@ -1,6 +1,15 @@
 import { openDatabaseSync } from "expo-sqlite"
+import { Float } from "react-native/Libraries/Types/CodegenTypes"
 
 const db = openDatabaseSync('db.db')
+
+export type Shuttle =  {
+    shuttle_id: string,
+    name: string,
+    total_price: Float,
+    num_of_shuttles: number    
+}
+
 export async function createShuttle({
     name,
     total_price,
@@ -21,5 +30,10 @@ export async function createShuttle({
 export async function fetchAllShuttles() {
     const res = await db.getAllAsync(`SELECT * FROM shuttles`)
 
+    return res
+}
+
+export async function fetchShuttleById(id: string): Promise<Shuttle[]> {
+    const res: Shuttle[] = await db.getAllAsync(`SELECT * FROM shuttles WHERE shuttle_id = (?)`, [id])
     return res
 }

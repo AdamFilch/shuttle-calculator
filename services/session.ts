@@ -1,8 +1,8 @@
 import { openDatabaseSync } from "expo-sqlite";
 
 export type Session = {
-    name: string,
     session_id: number,
+    name: string,
     date: string
 }
 

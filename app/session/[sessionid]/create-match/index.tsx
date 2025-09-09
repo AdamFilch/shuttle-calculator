@@ -32,6 +32,7 @@ export default function CreateNewMatchPage() {
                         <Text>
                             Fill Players
                         </Text>
+                        
                     </View>
                 </View>
                 <Button>
