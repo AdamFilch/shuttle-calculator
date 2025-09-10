@@ -27,8 +27,8 @@ export async function createShuttle({
     return res.lastInsertRowId
 }
 
-export async function fetchAllShuttles() {
-    const res = await db.getAllAsync(`SELECT * FROM shuttles`)
+export async function fetchAllShuttles(): Promise<Shuttle[]> {
+    const res: Shuttle[] = await db.getAllAsync(`SELECT * FROM shuttles`)
 
     return res
 }
