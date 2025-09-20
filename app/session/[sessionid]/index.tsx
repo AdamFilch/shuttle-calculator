@@ -3,9 +3,7 @@ import { VStack } from "@/components/ui/vstack";
 import { fetchSessionById, Session } from "@/services/session";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
-
-
+import { SafeAreaView, SafeAreaViewBase, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 export default function SelectedSessionPage() {
     const router = useRouter()
@@ -36,7 +34,7 @@ export default function SelectedSessionPage() {
     }
 
     return (
-        <SafeAreaView>
+        <SafeAreaViewBase>
             <ScrollView>
                 <View style={{
                     backgroundColor: 'white'
@@ -64,7 +62,7 @@ export default function SelectedSessionPage() {
 
             </ScrollView>
             <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
-        </SafeAreaView>
+        </SafeAreaViewBase>
     )
 }
 

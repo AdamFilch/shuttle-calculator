@@ -4,6 +4,7 @@ import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
 import { createNewMatch } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
+import { fetchAllUsers, User } from "@/services/user";
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -15,14 +16,18 @@ export default function CreateNewMatchPage() {
     const pickerRef = useRef(null)
 
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
+    const [playerList, setPlayerList] = useState<User[] | null>([])
 
     useEffect(() => {
-        const fetchShuttles = async () => {
+        const fetchData = async () => {
             await fetchAllShuttles().then((res) => {
                 setShuttleList(res)
             })
+            await fetchAllUsers().then((res) => {
+                setPlayerList(res)
+            })
         }
-        fetchShuttles()
+        fetchData()
     }, [])
 
     async function onClickSave() {
