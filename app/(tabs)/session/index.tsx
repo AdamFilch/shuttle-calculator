@@ -36,14 +36,6 @@ export default function SessionPage() {
                     }}
                 >
                     <TouchableOpacity
-                        onPress={() => {
-                            router.navigate('/session')
-                        }}
-                        style={buttonStyle}
-                    >
-                        <Text>Go to Sessions</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
                         onPress={async () => {
                             const res = await fetchAllSessions()
                             console.log(`FetchAllSession`, res)

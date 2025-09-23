@@ -3,7 +3,8 @@ import { VStack } from "@/components/ui/vstack";
 import { fetchSessionById, Session } from "@/services/session";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, SafeAreaViewBase, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SelectedSessionPage() {
     const router = useRouter()
@@ -34,35 +35,34 @@ export default function SelectedSessionPage() {
     }
 
     return (
-        <SafeAreaViewBase>
-            <ScrollView>
-                <View style={{
-                    backgroundColor: 'white'
-                }}>
-                    <Text>Sessions Page {sessionId}</Text>
-                    <Text>{session.date}</Text>
-                </View>
-                <TouchableOpacity
-                    onPress={async () => {
-                        // setAddMatchIsOpen(true)
-                        router.navigate(`/session/${sessionId.toString()}/create-match`)
-                    }}
-                    style={buttonStyle}
-                >
-                    <Text>Add Match</Text>
-                </TouchableOpacity>
-                <VStack>
-                    <View>
-                        <TouchableOpacity>
-                            <Text>Match Number</Text>
-                            <Text>Adam, Bagas Vs Alam, Farhan</Text>
-                        </TouchableOpacity>
-                    </View>
-                </VStack>
 
-            </ScrollView>
+        <ScrollView>
+            <View style={{
+                backgroundColor: 'white'
+            }}>
+                <Text>Sessions Page {sessionId}</Text>
+                <Text>{session.date}</Text>
+            </View>
+            <TouchableOpacity
+                onPress={async () => {
+                    // setAddMatchIsOpen(true)
+                    router.navigate(`/session/${sessionId.toString()}/create-match`)
+                }}
+                style={buttonStyle}
+            >
+                <Text>Add Match</Text>
+            </TouchableOpacity>
+            <VStack>
+                <View>
+                    <TouchableOpacity>
+                        <Text>Match Number</Text>
+                        <Text>Adam, Bagas Vs Alam, Farhan</Text>
+                    </TouchableOpacity>
+                </View>
+            </VStack>
+
             <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
-        </SafeAreaViewBase>
+        </ScrollView>
     )
 }
 
