@@ -1,11 +1,6 @@
 'use client';
 import { createModal } from '@gluestack-ui/core/modal/creator';
-import { tva } from '@gluestack-ui/nativewind-utils/tva';
-import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
-import {
-  useStyleContext,
-  withStyleContext,
-} from '@gluestack-ui/utils/nativewind-utils';
+import { tva, useStyleContext, VariantProps, withStyleContext } from '@gluestack-ui/utils/nativewind-utils';
 import {
   AnimatePresence,
   createMotionAnimatedComponent,

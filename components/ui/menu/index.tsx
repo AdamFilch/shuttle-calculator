@@ -1,7 +1,7 @@
 'use client';
 import { createMenu } from '@gluestack-ui/core/menu/creator';
-import { tva } from '@gluestack-ui/nativewind-utils/tva';
 import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
+import { tva } from '@gluestack-ui/utils/nativewind-utils';
 import {
   AnimatePresence,
   Motion,

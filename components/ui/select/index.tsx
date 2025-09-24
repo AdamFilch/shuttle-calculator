@@ -1,11 +1,10 @@
 'use client';
 
-import { tva } from '@gluestack-ui/nativewind-utils/tva';
-import { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
+import { tva, VariantProps } from '@gluestack-ui/utils/nativewind-utils';
 import React from 'react';
 
-// import { tva } from '@gluestack-ui/core/utils/nativewind-utils/creator';
-// import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/core/icon/creator/creator';
+// import { tva } from '@gluestack-ui/core/core/utils/nativewind-utils/creator/creator';
+// import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/core/core/icon/creator/creator/creator';
 // import {
 //   withStyleContext,
 //   useStyleContext,

@@ -1,8 +1,7 @@
 'use client';
+import { tva, VariantProps } from '@gluestack-ui/utils/nativewind-utils';
 import React from 'react';
-import { tva } from '@gluestack-ui/utils/nativewind-utils';
 import { Platform, View } from 'react-native';
-import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
 
 const dividerStyle = tva({
   base: 'bg-background-200',
