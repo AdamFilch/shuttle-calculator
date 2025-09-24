@@ -3,7 +3,8 @@ import { fetchAllSessions, Session } from "@/services/session";
 import { DisplayTimeDDDASHMMDASHYYYY } from '@/services/time-display';
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SessionPage() {
     const router = useRouter()

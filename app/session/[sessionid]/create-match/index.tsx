@@ -8,7 +8,7 @@ import { fetchAllUsers, User } from "@/services/user";
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { SafeAreaView, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 export default function CreateNewMatchPage() {
     const { sessionId } = useLocalSearchParams()
@@ -41,79 +41,91 @@ export default function CreateNewMatchPage() {
     }
 
     return (
-        <SafeAreaView>
-            <ScrollView>
-                <View style={{
-                    backgroundColor: 'white'
-                }}>
-                    <Text>Create Match Page</Text>
-                </View>
-                {shuttleList.length > 0 ? (
-                    <View>
-                        <View style={{
-                            backgroundColor: 'white'
-                        }}>
-                            <Text>Select Shuttle</Text>
-                            <Text>Number of shuttle used</Text>
-                        </View>
-                        <Picker
-                            ref={pickerRef}
-                            selectedValue={selectedShuttle}
-                            onValueChange={(itemValue, itemIndex) =>
-                                setSelectedShuttle(itemValue)
-                            }>
-                            {shuttleList.map((shuttle) => (
-                                <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
-                            ))}
-                        </Picker>
-                    </View>
-                ) : (
-                    <View>
-                        <Text>Add a shuttle first to proceed</Text>
-                    </View>
-                )}
+        <ScrollView>
+            <View style={{
+                backgroundColor: 'white'
+            }}>
+                <Text>Create Match Page</Text>
+            </View>
+            {shuttleList.length > 0 ? (
                 <View>
-                    <Text style={{
+                    <View style={{
                         backgroundColor: 'white'
                     }}>
-                        Fill Players
-                    </Text>
-                    <VStack>
-                        <HStack>
-                            <Button>
-                                <ButtonText>
-                                    Player 1
-                                </ButtonText>
-                            </Button>
-                            <Button>
-
-                                <ButtonText>
-                                    Player 3
-                                </ButtonText>
-                            </Button>
-                        </HStack>
-                        <Divider />
-                        <HStack>
-                            <Button>
-                                <ButtonText>
-                                    Player 2
-                                </ButtonText>
-                            </Button>
-                            <Button>
-
-                                <ButtonText>
-                                    Player 4
-                                </ButtonText>
-                            </Button>
-                        </HStack>
-                    </VStack>
+                        <Text>Select Shuttle</Text>
+                        <Text>Number of shuttle used</Text>
+                    </View>
+                    <Picker
+                        ref={pickerRef}
+                        selectedValue={selectedShuttle}
+                        onValueChange={(itemValue, itemIndex) =>
+                            setSelectedShuttle(itemValue)
+                        }>
+                        {shuttleList.map((shuttle) => (
+                            <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
+                        ))}
+                    </Picker>
                 </View>
-                <Button>
-                    <ButtonText>
-                        Create New Match
-                    </ButtonText>
-                </Button>
-            </ScrollView>
-        </SafeAreaView>
+            ) : (
+                <View>
+                    <Text>Add a shuttle first to proceed</Text>
+                </View>
+            )}
+            <View >
+                <Text style={{
+                    backgroundColor: 'white'
+                }}>
+                    Fill Players
+                </Text>
+                <VStack space={'md'}>
+                    <HStack space="lg">
+                        <Button style={{
+                            width: 150,
+                            height: 100,
+                            backgroundColor: 'white'
+                        }}>
+                            <ButtonText>
+                                Player 1
+                            </ButtonText>
+                        </Button>
+                        <Button style={{
+                            width: 150,
+                            height: 100,
+                            backgroundColor: 'white'
+                        }}>
+
+                            <ButtonText>
+                                Player 3
+                            </ButtonText>
+                        </Button>
+                    </HStack>
+                    <Divider />
+                    <HStack space={'md'} >
+                        <Button style={{
+                            width: 150,
+                            backgroundColor: 'white'
+                        }}>
+                            <ButtonText>
+                                Player 2
+                            </ButtonText>
+                        </Button>
+                        <Button style={{
+                            width: 150,
+                            backgroundColor: 'white'
+                        }}>
+
+                            <ButtonText>
+                                Player 4
+                            </ButtonText>
+                        </Button>
+                    </HStack>
+                </VStack>
+            </View>
+            <Button>
+                <ButtonText>
+                    Create New Match
+                </ButtonText>
+            </Button>
+        </ScrollView>
     )
 }

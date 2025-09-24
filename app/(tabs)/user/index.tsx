@@ -1,7 +1,8 @@
 import { fetchAllUsers, User } from "@/services/user";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function UsersPage() {

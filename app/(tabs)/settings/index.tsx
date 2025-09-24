@@ -1,5 +1,6 @@
 import { debugDatabase, dropDatabase } from "@/services/database";
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function SettingsPage() {
