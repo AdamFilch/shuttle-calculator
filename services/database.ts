@@ -3,7 +3,7 @@ import * as SQLite from 'expo-sqlite';
 export async function debugDatabase() {
   const db = await SQLite.openDatabaseSync('db.db');
   const res = await db.getAllAsync(`SELECT name, sql FROM sqlite_master WHERE type='table'`);
-  console.log(res)
+  // console.log(res)
 }
 
 export async function dropDatabase() {
