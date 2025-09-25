@@ -1,6 +1,7 @@
 import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
+import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { createNewMatch } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
@@ -8,7 +9,7 @@ import { fetchAllUsers, User } from "@/services/user";
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 export default function CreateNewMatchPage() {
     const { sessionId } = useLocalSearchParams()
@@ -45,7 +46,7 @@ export default function CreateNewMatchPage() {
             <View style={{
                 backgroundColor: 'white'
             }}>
-                <Text>Create Match Page</Text>
+                <Text size={'md'}>Create Match Page</Text>
             </View>
             {shuttleList.length > 0 ? (
                 <View>

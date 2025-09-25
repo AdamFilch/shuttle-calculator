@@ -27,18 +27,16 @@ export default function RootLayout() {
   }
 
   return (
-    // <GluestackUIProvider mode="dark">
     <Suspense fallback={<ActivityIndicator size="large" />}>
-        <SQLiteProvider databaseName='db.db' useSuspense>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </SQLiteProvider>
-      </Suspense>
-      // </GluestackUIProvider>
+      <SQLiteProvider databaseName='db.db' useSuspense>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </SQLiteProvider>
+    </Suspense>
   );
 }

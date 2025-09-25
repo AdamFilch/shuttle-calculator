@@ -1,3 +1,4 @@
+
 'use client';
 import { vars } from 'nativewind';
 
@@ -307,3 +308,4 @@ export const config = {
     '--color-indicator-error': '232 70 69',
   }),
 };
+
