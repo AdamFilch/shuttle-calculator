@@ -6,23 +6,18 @@
       "@/*": [
         "./*"
       ],
-      "gluestack/*": [
-        "./components/ui/*"
-        
-      ],
       "tailwind.config": [
         "./tailwind.config.js"
       ]
     }
   },
+  "exclude": [
+    "node_modules"
+  ],
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts",
-    "nativewind-env.d.ts",
-    "tailwind.config.js",
-    "metro.config/js",
-    "babel.config.js",
+    "expo-env.d.ts"
   ]
 }

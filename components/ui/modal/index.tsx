@@ -1,15 +1,20 @@
 'use client';
+import React from 'react';
 import { createModal } from '@gluestack-ui/core/modal/creator';
-import { tva, useStyleContext, VariantProps, withStyleContext } from '@gluestack-ui/utils/nativewind-utils';
+import { Pressable, View, ScrollView, ViewStyle } from 'react-native';
 import {
+  Motion,
   AnimatePresence,
   createMotionAnimatedComponent,
-  Motion,
   MotionComponentProps,
 } from '@legendapp/motion';
+import { tva } from '@gluestack-ui/utils/nativewind-utils';
+import {
+  withStyleContext,
+  useStyleContext,
+} from '@gluestack-ui/utils/nativewind-utils';
 import { cssInterop } from 'nativewind';
-import React from 'react';
-import { Pressable, ScrollView, View, ViewStyle } from 'react-native';
+import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
 
 type IAnimatedPressableProps = React.ComponentProps<typeof Pressable> &
   MotionComponentProps<typeof Pressable, ViewStyle, unknown, unknown, unknown>;
@@ -262,6 +267,10 @@ ModalCloseButton.displayName = 'ModalCloseButton';
 
 export {
   Modal,
-  ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader
+  ModalBackdrop,
+  ModalContent,
+  ModalCloseButton,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 };
-

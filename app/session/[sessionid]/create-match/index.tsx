@@ -1,3 +1,4 @@
+import { HStack } from "@/components/ui/hstack";
 import { createNewMatch } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { fetchAllUsers, User } from "@/services/user";
@@ -74,7 +75,7 @@ export default function CreateNewMatchPage() {
                     Fill Players
                 </Text>
                 <View >
-                    <View>
+                    <HStack>
                         <TouchableOpacity style={{
                             width: 150,
                             height: 100,
@@ -94,24 +95,26 @@ export default function CreateNewMatchPage() {
                                 Player 3
                             </Text>
                         </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity style={{
-                        width: 150,
-                        backgroundColor: 'white'
-                    }}>
-                        <Text>
-                            Player 2
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={{
-                        width: 150,
-                        backgroundColor: 'white'
-                    }}>
+                    </HStack>
+                    <HStack space={'lg'}>
+                        <TouchableOpacity style={{
+                            width: 150,
+                            backgroundColor: 'white'
+                        }}>
+                            <Text>
+                                Player 2
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={{
+                            width: 150,
+                            backgroundColor: 'white'
+                        }}>
 
-                        <Text>
-                            Player 4
-                        </Text>
-                    </TouchableOpacity>
+                            <Text>
+                                Player 4
+                            </Text>
+                        </TouchableOpacity>
+                    </HStack>
                 </View>
             </View>
             <TouchableOpacity>

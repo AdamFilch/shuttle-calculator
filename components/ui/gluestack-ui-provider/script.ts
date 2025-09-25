@@ -1,4 +1,3 @@
-
 export const script = (mode: string) => {
   const documentElement = document.documentElement;
 
@@ -18,4 +17,3 @@ export const script = (mode: string) => {
     console.error(e);
   }
 };
-
