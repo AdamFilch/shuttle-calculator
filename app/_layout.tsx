@@ -5,8 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import "../global.css";
 
+import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { setupDatabase } from '@/services/database';
+import { OverlayProvider } from '@gluestack-ui/core/overlay/creator';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense, useEffect } from 'react';
 import { ActivityIndicator } from 'react-native';
@@ -27,16 +29,20 @@ export default function RootLayout() {
   }
 
   return (
-    <Suspense fallback={<ActivityIndicator size="large" />}>
-      <SQLiteProvider databaseName='db.db' useSuspense>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </SQLiteProvider>
-    </Suspense>
+    <GluestackUIProvider mode='dark'>
+      <OverlayProvider>
+        <Suspense fallback={<ActivityIndicator size="large" />}>
+          <SQLiteProvider databaseName='db.db' useSuspense>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </SQLiteProvider>
+        </Suspense>
+      </OverlayProvider>
+    </GluestackUIProvider>
   );
 }
