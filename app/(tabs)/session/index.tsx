@@ -1,4 +1,3 @@
-import { VStack } from "@/components/ui/vstack";
 import { fetchAllSessions, Session } from "@/services/session";
 import { DisplayTimeDDDASHMMDASHYYYY } from '@/services/time-display';
 import { useRouter } from "expo-router";
@@ -72,7 +71,7 @@ export default function SessionPage() {
                     </Text>
                 </View>
             ) : (
-                <VStack>
+                <View>
                     {sessionsList.map((session) => (
                         <TouchableOpacity 
                         key={session.session_id} 
@@ -92,7 +91,7 @@ export default function SessionPage() {
                             </View>
                         </TouchableOpacity>
                     ))}
-                </VStack>
+                </View>
             )}
             </ScrollView>
         </SafeAreaView>

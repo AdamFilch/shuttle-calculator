@@ -1,5 +1,4 @@
 import { AddMatchModal } from "@/components/session/match/modal";
-import { VStack } from "@/components/ui/vstack";
 import { fetchSessionById, Session } from "@/services/session";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -52,14 +51,14 @@ export default function SelectedSessionPage() {
             >
                 <Text>Add Match</Text>
             </TouchableOpacity>
-            <VStack>
+            <View>
                 <View>
                     <TouchableOpacity>
                         <Text>Match Number</Text>
                         <Text>Adam, Bagas Vs Alam, Farhan</Text>
                     </TouchableOpacity>
                 </View>
-            </VStack>
+            </View>
 
             <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
         </ScrollView>
