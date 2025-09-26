@@ -1,4 +1,6 @@
+import { SelectPlayerButton } from "@/components/session/match/selectUserModal";
 import { HStack } from "@/components/ui/hstack";
+import { VStack } from "@/components/ui/vstack";
 import { createNewMatch } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { fetchAllUsers, User } from "@/services/user";
@@ -74,48 +76,29 @@ export default function CreateNewMatchPage() {
                 }}>
                     Fill Players
                 </Text>
-                <View >
-                    <HStack>
-                        <TouchableOpacity style={{
-                            width: 150,
-                            height: 100,
-                            backgroundColor: 'white'
-                        }}>
-                            <Text>
-                                Player 1
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={{
-                            width: 150,
-                            height: 100,
-                            backgroundColor: 'white'
-                        }}>
-
-                            <Text>
-                                Player 3
-                            </Text>
-                        </TouchableOpacity>
+                <VStack space={'lg'}>
+                    <HStack
+                        space={'lg'}
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <SelectPlayerButton players={playerList} placeholder="Player 1" />
+                        <SelectPlayerButton players={playerList} placeholder="Player 3" />
                     </HStack>
-                    <HStack space={'lg'}>
-                        <TouchableOpacity style={{
-                            width: 150,
-                            backgroundColor: 'white'
-                        }}>
-                            <Text>
-                                Player 2
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={{
-                            width: 150,
-                            backgroundColor: 'white'
-                        }}>
-
-                            <Text>
-                                Player 4
-                            </Text>
-                        </TouchableOpacity>
+                    <HStack
+                        space={'lg'}
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <SelectPlayerButton players={playerList} placeholder="Player 2" />
+                        <SelectPlayerButton players={playerList} placeholder="Player 4" />
+                        
                     </HStack>
-                </View>
+                </VStack>
             </View>
             <TouchableOpacity>
                 <Text>
@@ -125,3 +108,5 @@ export default function CreateNewMatchPage() {
         </ScrollView>
     )
 }
+
+
