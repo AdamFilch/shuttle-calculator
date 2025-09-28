@@ -11,12 +11,14 @@ import { FlatList, Text, View } from "react-native"
 
 export function SelectPlayerButton({
     placeholder,
-    selectedUser,
-    players
+    selectedPlayer,
+    players,
+    onSelect
 }: {
     placeholder: string,
-    selectedUser?: string,
-    players: User[]
+    selectedPlayer?: string,
+    players: User[],
+    onSelect: (player) => void
 }) {
     const [isOpen, setIsOpen] = useState(false)
     return (
@@ -32,7 +34,7 @@ export function SelectPlayerButton({
                 }}>
 
                 <ButtonText>
-                    {placeholder}
+                    {selectedPlayer ?? placeholder}
                 </ButtonText>
             </Button>
             <SelectPlayerModal
@@ -41,8 +43,9 @@ export function SelectPlayerButton({
                 onClose={() => {
                     setIsOpen(false)
                 }}
-                onSelect={() => {
-
+                onSelect={(player) => {
+                    setIsOpen(false)
+                    onSelect(player)
                 }}
             />
         </Fragment>
@@ -58,13 +61,13 @@ export function SelectPlayerModal({
 }: {
     open: boolean,
     onClose: () => void,
-    onSelect: () => void,
-    players: User[]
+    onSelect: (player) => void,
+    players: User[],
 }) {
 
     return (
         <Modal
-        size={'lg'}
+            size={'lg'}
             isOpen={open}
             onClose={() => {
                 onClose()
@@ -85,51 +88,38 @@ export function SelectPlayerModal({
                     </ModalCloseButton>
                 </ModalHeader>
                 {/* <ModalBody scrollEnabled={false}> */}
-                    {players ? (
-                        <FlatList
-                        
-                            data={players}
-                            keyExtractor={(player: User, idx) => idx.toString()}
-                            numColumns={3}
-                            columnWrapperStyle={{
-                                columnGap: 10
-                            }}
-                            renderItem={(player) => (
-                                <Button style={{
-                                    width: 100,
-                                    height: 100
-                                }}>
-                                    <ButtonText>
-                                        {player.item.name}
-                                    </ButtonText>
-                                </Button>
-                            )}
-                        />
-                        // <ScrollView style={{
-                        //     flexDirection: 'row',
-                        //     flexWrap: 'wrap',
-                        //     display: 'flex',
-                        //     gap: 10,
-                        // }}>
-                        //     {players.map((player, idx) => (
-                        //         <Button key={idx} style={{
-                        //             width: 100,
-                        //             height: 100
-                        //         }}>
-                        //             <ButtonText>
-                        //                 {player.name}
-                        //             </ButtonText>
-                        //         </Button>
-                        //     ))}
-                        // </ScrollView>
+                {players ? (
+                    <FlatList
 
-                    ) : (
-                        <View>
-                            <Text>
-                                You have no players recorded.
-                            </Text>
-                        </View>
-                    )}
+                        data={players}
+                        // keyExtractor={(player: User, idx) => idx.toString()}
+                        numColumns={3}
+                        columnWrapperStyle={{
+                            columnGap: 10
+                        }}
+                        renderItem={(player) => (
+                            <Button 
+                            style={{
+                                width: 100,
+                                height: 100
+                            }}
+                            onPress={() => {
+                                onSelect(player.item.user_id)
+                            }}
+                            >
+                                <ButtonText>
+                                    {player.item.name}
+                                </ButtonText>
+                            </Button>
+                        )}
+                    />
+                  ) : (
+                    <View>
+                        <Text>
+                            You have no players recorded.
+                        </Text>
+                    </View>
+                )}
                 {/* </ModalBody> */}
                 <ModalFooter>
                     <Button
@@ -140,13 +130,6 @@ export function SelectPlayerModal({
                         }}
                     >
                         <ButtonText>Cancel</ButtonText>
-                    </Button>
-                    <Button
-                        onPress={() => {
-                            onSelect()
-                        }}
-                    >
-                        <ButtonText>Select this User</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>

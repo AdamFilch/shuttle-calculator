@@ -12,17 +12,18 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 export default function CreateNewMatchPage() {
     const { sessionId } = useLocalSearchParams()
     const [selectedShuttle, setSelectedShuttle] = useState()
+    const [selectedPlayers, setSelectedPlayers] = useState(new Array(4).fill(null))
     const pickerRef = useRef(null)
 
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
     const [playerList, setPlayerList] = useState<User[] | null>([])
 
     useEffect(() => {
-        const fetchData = async () => {
-            await fetchAllShuttles().then((res) => {
+        const fetchData = () => {
+            fetchAllShuttles().then((res) => {
                 setShuttleList(res)
             })
-            await fetchAllUsers().then((res) => {
+            fetchAllUsers().then((res) => {
                 setPlayerList(res)
             })
         }
@@ -32,7 +33,7 @@ export default function CreateNewMatchPage() {
     async function onClickSave() {
         const res = await createNewMatch({
             sessionId: sessionId.toString(),
-            playersId: [''], // [P1, P2, P3, P4] // TL BL TR BR
+            playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
             shuttleId: '',
             quantity_used: 0,
         })
@@ -84,8 +85,20 @@ export default function CreateNewMatchPage() {
                             justifyContent: 'center'
                         }}
                     >
-                        <SelectPlayerButton players={playerList} placeholder="Player 1" />
-                        <SelectPlayerButton players={playerList} placeholder="Player 3" />
+                        <SelectPlayerButton selectedPlayer={selectedPlayers[0]} players={playerList} placeholder="Player 1" onSelect={(player) => {
+                            setSelectedPlayers(prev => {
+                                const updated = [...prev];
+                                updated[0] = player;
+                                return updated;
+                            });
+                        }} />
+                        <SelectPlayerButton selectedPlayer={selectedPlayers[2]} players={playerList} placeholder="Player 3" onSelect={(player) => {
+                            setSelectedPlayers(prev => {
+                                const updated = [...prev];
+                                updated[2] = player;
+                                return updated;
+                            });
+                        }} />
                     </HStack>
                     <HStack
                         space={'lg'}
@@ -94,9 +107,21 @@ export default function CreateNewMatchPage() {
                             justifyContent: 'center'
                         }}
                     >
-                        <SelectPlayerButton players={playerList} placeholder="Player 2" />
-                        <SelectPlayerButton players={playerList} placeholder="Player 4" />
-                        
+                        <SelectPlayerButton selectedPlayer={selectedPlayers[1]} players={playerList} placeholder="Player 2" onSelect={(player) => {
+                            setSelectedPlayers(prev => {
+                                const updated = [...prev];
+                                updated[1] = player;
+                                return updated;
+                            });
+                        }} />
+                        <SelectPlayerButton selectedPlayer={selectedPlayers[3]} players={playerList} placeholder="Player 4" onSelect={(player) => {
+                            setSelectedPlayers(prev => {
+                                const updated = [...prev];
+                                updated[3] = player;
+                                return updated;
+                            });
+                        }} />
+
                     </HStack>
                 </VStack>
             </View>
