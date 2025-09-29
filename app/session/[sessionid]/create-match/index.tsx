@@ -1,4 +1,5 @@
 import { SelectPlayerButton } from "@/components/session/match/selectUserModal";
+import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
 import { createNewMatch } from "@/services/match";
@@ -100,6 +101,10 @@ export default function CreateNewMatchPage() {
                             });
                         }} />
                     </HStack>
+                    <Divider orientation={'horizontal'} style={{
+                        width: 'auto',
+                        height: 10
+                    }} />
                     <HStack
                         space={'lg'}
                         style={{

@@ -34,7 +34,7 @@ export function SelectPlayerButton({
                 }}>
 
                 <ButtonText>
-                    {selectedPlayer ?? placeholder}
+                    {selectedPlayer ? players.find((player) => player.user_id == parseInt(selectedPlayer)).name :placeholder}
                 </ButtonText>
             </Button>
             <SelectPlayerModal
@@ -44,6 +44,7 @@ export function SelectPlayerButton({
                     setIsOpen(false)
                 }}
                 onSelect={(player) => {
+                    console.log("You selected this player", player)
                     setIsOpen(false)
                     onSelect(player)
                 }}
@@ -94,9 +95,13 @@ export function SelectPlayerModal({
                         data={players}
                         // keyExtractor={(player: User, idx) => idx.toString()}
                         numColumns={3}
+                        contentContainerStyle={{
+                            gap: 10
+                        }}
                         columnWrapperStyle={{
                             columnGap: 10
                         }}
+                        
                         renderItem={(player) => (
                             <Button 
                             style={{
