@@ -1,18 +1,18 @@
 import { SelectPlayerButton } from "@/components/session/match/selectUserModal";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
-import { createNewMatch } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { fetchAllUsers, User } from "@/services/user";
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 export default function CreateNewMatchPage() {
     const { sessionId } = useLocalSearchParams()
-    const [selectedShuttle, setSelectedShuttle] = useState()
+    const [selectedShuttle, setSelectedShuttle] = useState(0)
     const [selectedPlayers, setSelectedPlayers] = useState(new Array(4).fill(null))
     const pickerRef = useRef(null)
 
@@ -32,12 +32,19 @@ export default function CreateNewMatchPage() {
     }, [])
 
     async function onClickSave() {
-        const res = await createNewMatch({
+
+        console.log('CreateMatch', {
             sessionId: sessionId.toString(),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
-            shuttleId: '',
-            quantity_used: 0,
+            shuttleId: selectedShuttle,
+            quantity_used: 1,
         })
+        // const res = await createNewMatch({
+        //     sessionId: sessionId.toString(),
+        //     playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
+        //     shuttleId: selectedShuttle,
+        //     quantity_used: 1,
+        // })
 
     }
 
@@ -72,7 +79,9 @@ export default function CreateNewMatchPage() {
                     <Text>Add a shuttle first to proceed</Text>
                 </View>
             )}
-            <View >
+            <View style={{
+                gap: 30
+            }}>
                 <Text style={{
                     backgroundColor: 'white'
                 }}>
@@ -129,12 +138,14 @@ export default function CreateNewMatchPage() {
 
                     </HStack>
                 </VStack>
+                <Button onPress={() => {
+                    onClickSave()
+                }}>
+                    <ButtonText>
+                        Create New Match
+                    </ButtonText>
+                </Button>
             </View>
-            <TouchableOpacity>
-                <Text>
-                    Create New Match
-                </Text>
-            </TouchableOpacity>
         </ScrollView>
     )
 }
