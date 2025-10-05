@@ -3,6 +3,7 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
+import { createNewMatch } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { fetchAllUsers, User } from "@/services/user";
 import { Picker } from '@react-native-picker/picker';
@@ -12,7 +13,7 @@ import { ScrollView, Text, View } from "react-native";
 
 export default function CreateNewMatchPage() {
     const { sessionId } = useLocalSearchParams()
-    const [selectedShuttle, setSelectedShuttle] = useState(0)
+    const [selectedShuttle, setSelectedShuttle] = useState(1)
     const [selectedPlayers, setSelectedPlayers] = useState(new Array(4).fill(null))
     const pickerRef = useRef(null)
 
@@ -39,12 +40,12 @@ export default function CreateNewMatchPage() {
             shuttleId: selectedShuttle,
             quantity_used: 1,
         })
-        // const res = await createNewMatch({
-        //     sessionId: sessionId.toString(),
-        //     playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
-        //     shuttleId: selectedShuttle,
-        //     quantity_used: 1,
-        // })
+        const res = await createNewMatch({
+            sessionId: sessionId.toString(),
+            playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
+            shuttleId: selectedShuttle.toString(),
+            quantity_used: 1,
+        })
 
     }
 

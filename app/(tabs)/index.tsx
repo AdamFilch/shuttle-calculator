@@ -3,9 +3,14 @@ import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-nativ
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { AddSessionModal } from '@/components/session/modal';
 import { AddShuttleModal } from '@/components/shuttle/modal';
+import { Divider } from '@/components/ui/divider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { AddUserModal } from '@/components/user/modal';
+import { fetchAllMatches } from '@/services/match';
+import { fetchAllMatchShuttles } from '@/services/match-shuttles';
+import { fetchAllMatchUsers } from '@/services/match-users';
 import { fetchAllShuttles } from '@/services/shuttle';
+import { fetchAllShuttlePayments } from '@/services/shuttle-payments';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -52,19 +57,48 @@ export default function TabTwoScreen() {
           <Text>Add Shuttles</Text>
         </TouchableOpacity>
       </View>
+      <Divider orientation={'horizontal'}/>
       <View style={{
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 10,
-        // alignSelf: 'center',
       }}>
         <TouchableOpacity style={buttonStyle} onPress={async () => {
           const res = await fetchAllShuttles()
           console.log(`FetchAllShuttles`, res)
         }}>
-          <Text>Display Shuttles</Text>
+          <Text>Display all Shuttles</Text>
         </TouchableOpacity>
+      
+        <TouchableOpacity style={buttonStyle} onPress={async () => {
+          const res = await fetchAllMatches()
+          console.log(`FetchAllMatches`, res)
+        }}>
+          <Text>Display all matches</Text>
+        </TouchableOpacity>
+      
+        <TouchableOpacity style={buttonStyle} onPress={async () => {
+          const res = await fetchAllShuttlePayments()
+          console.log(`FetchAllShuttlePayments`, res)
+        }}>
+          <Text>Display all Shuttle Payments</Text>
+        </TouchableOpacity>
+      
+        <TouchableOpacity style={buttonStyle} onPress={async () => {
+          const res = await fetchAllMatchShuttles()
+          console.log(`FetchAllMatchShuttles`, res)
+        }}>
+          <Text>Display all Match Shuttles</Text>
+        </TouchableOpacity>
+         <TouchableOpacity style={buttonStyle} onPress={async () => {
+          const res = await fetchAllMatchUsers()
+          console.log(`FetchAllMatchUsers`, res)
+        }}>
+          <Text>Display all Match Users</Text>
+        </TouchableOpacity>
+        
       </View>
+     
       <View
         style={{
           flexDirection: 'row',
