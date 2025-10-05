@@ -4,7 +4,7 @@ import { Float } from "react-native/Libraries/Types/CodegenTypes"
 const db = openDatabaseSync('db.db')
 
 export type Shuttle =  {
-    shuttle_id: string,
+    shuttle_id: number,
     name: string,
     total_price: Float,
     num_of_shuttles: number    
@@ -33,7 +33,7 @@ export async function fetchAllShuttles(): Promise<Shuttle[]> {
     return res
 }
 
-export async function fetchShuttleById(id: string): Promise<Shuttle[]> {
+export async function fetchShuttleById(id: number): Promise<Shuttle[]> {
     const res: Shuttle[] = await db.getAllAsync(`SELECT * FROM shuttles WHERE shuttle_id = (?)`, [id])
     return res
 }

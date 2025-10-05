@@ -35,15 +35,15 @@ export default function CreateNewMatchPage() {
     async function onClickSave() {
 
         console.log('CreateMatch', {
-            sessionId: sessionId.toString(),
+            sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
             shuttleId: selectedShuttle,
             quantity_used: 1,
         })
         const res = await createNewMatch({
-            sessionId: sessionId.toString(),
+            sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
-            shuttleId: selectedShuttle.toString(),
+            shuttleId: selectedShuttle,
             quantity_used: 1,
         })
 
