@@ -18,6 +18,7 @@ export async function dropDatabase() {
   DROP TABLE IF EXISTS match_shuttles;
   DROP TABLE IF EXISTS shuttle_payments;
 `);
+
 }
 
 export async function setupDatabase() {
@@ -27,6 +28,7 @@ export async function setupDatabase() {
     db.execSync(`
       CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY NOT NULL,
+        date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
         name TEXT NOT NULL
       );
     `);
@@ -35,7 +37,7 @@ export async function setupDatabase() {
       CREATE TABLE IF NOT EXISTS sessions (
         session_id INTEGER PRIMARY KEY NOT NULL,
         name TEXT,
-        date TEXT NOT NULL
+        date TIMESTAMP NOT NULL DEFAULT (datetime('now')) 
       );
     `);
 
@@ -43,6 +45,7 @@ export async function setupDatabase() {
       CREATE TABLE IF NOT EXISTS matches (
         match_id INTEGER PRIMARY KEY NOT NULL,
         session_id INTEGER NOT NULL,
+        date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (session_id) REFERENCES sessions(session_id)
       );
     `);
@@ -64,7 +67,6 @@ export async function setupDatabase() {
         name TEXT NOT NULL,
         total_price REAL NOT NULL,
         num_of_shuttles INTEGER NOT NULL
-
       );
     `);
 
@@ -85,10 +87,22 @@ export async function setupDatabase() {
         shuttle_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         amount_paid REAL NOT NULL,
+        date_paid TIMESTAMP,
+        date_created TIMESTAMP NOT NULL DEFAULT (datetime('now')),
         PRIMARY KEY (match_id, shuttle_id, user_id),
         FOREIGN KEY (match_id, shuttle_id) REFERENCES match_shuttles(match_id, shuttle_id),
         FOREIGN KEY (user_id) REFERENCES users(user_id)
       );
+    `)
+
+    db.execSync(`
+      CREATE INDEX IF NOT EXISTS idx_match_users_user ON match_users(user_id);
+      CREATE INDEX IF NOT EXISTS idx_match_users_match ON match_users(match_id);
+      CREATE INDEX IF NOT EXISTS idx_match_shuttles_match ON match_shuttles(match_id);
+      CREATE INDEX IF NOT EXISTS idx_match_shuttles_shuttle ON match_shuttles(shuttle_id);
+      CREATE INDEX IF NOT EXISTS idx_shuttle_payments_user ON shuttle_payments(user_id);
+      CREATE INDEX IF NOT EXISTS idx_shuttle_payments_match ON shuttle_payments(match_id);
     `);
+
   });
 }

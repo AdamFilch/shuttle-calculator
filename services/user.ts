@@ -9,6 +9,7 @@ export type User = {
 const db = openDatabaseSync('db.db');
 
 export async function createUser(name: string) {
+
   const result = await db.runAsync(`
         INSERT into users (name) VALUES (?) 
         `,

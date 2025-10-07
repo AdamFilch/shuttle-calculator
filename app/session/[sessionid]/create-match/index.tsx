@@ -16,7 +16,7 @@ export default function CreateNewMatchPage() {
     const [selectedShuttle, setSelectedShuttle] = useState(1)
     const [selectedPlayers, setSelectedPlayers] = useState(new Array(4).fill(null))
     const pickerRef = useRef(null)
-
+    
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
     const [playerList, setPlayerList] = useState<User[] | null>([])
 
