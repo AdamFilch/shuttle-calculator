@@ -7,7 +7,7 @@ import { createNewMatch } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { fetchAllUsers, User } from "@/services/user";
 import { Picker } from '@react-native-picker/picker';
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
@@ -16,7 +16,8 @@ export default function CreateNewMatchPage() {
     const [selectedShuttle, setSelectedShuttle] = useState(1)
     const [selectedPlayers, setSelectedPlayers] = useState(new Array(4).fill(null))
     const pickerRef = useRef(null)
-    
+    const router = useRouter()
+
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
     const [playerList, setPlayerList] = useState<User[] | null>([])
 
@@ -32,21 +33,14 @@ export default function CreateNewMatchPage() {
         fetchData()
     }, [])
 
-    async function onClickSave() {
-
-        console.log('CreateMatch', {
-            sessionId: parseInt(sessionId.toString()),
-            playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
-            shuttleId: selectedShuttle,
-            quantity_used: 1,
-        })
+    async function onClickSave() {        
         const res = await createNewMatch({
             sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
             shuttleId: selectedShuttle,
             quantity_used: 1,
         })
-
+        router.back()
     }
 
     return (
