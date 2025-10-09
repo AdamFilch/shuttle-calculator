@@ -1,5 +1,5 @@
 import { AddMatchModal } from "@/components/session/match/modal";
-import { fetchSessionById, Session } from "@/services/session";
+import { fetchSessionById, SessionMatches } from "@/services/session";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
@@ -8,20 +8,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function SelectedSessionPage() {
     const router = useRouter()
     const { sessionId } = useLocalSearchParams()
-    const [session, setSession] = useState<Session | null>(null)
+    const [sessionMatches, setSessionMatches] = useState<SessionMatches | null>(null)
     const [addMatchIsOpen, setAddMatchIsOpen] = useState(false)
 
     useEffect(() => {
         const fetchSession = async () => {
             fetchSessionById(sessionId.toString()).then(res => {
-                setSession(res[0])
+                setSessionMatches(res)
             })
         }
 
         fetchSession()
-    })
-
-    if (!session) {
+    }, [])
+    if (!sessionMatches) {
         return (
             <SafeAreaView>
                 <View>
@@ -39,8 +38,8 @@ export default function SelectedSessionPage() {
             <View style={{
                 backgroundColor: 'white'
             }}>
-                <Text>Sessions Page {sessionId}</Text>
-                <Text>{session.date}</Text>
+                <Text>Sessions Page {sessionMatches.name}</Text>
+                <Text>{sessionMatches.date}</Text>
             </View>
             <View style={{
                 flexDirection: 'row',
@@ -59,18 +58,25 @@ export default function SelectedSessionPage() {
                 >
                     <Text>Add Match</Text>
                 </TouchableOpacity>
+                <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
 
             </View>
             <View>
-                <View>
-                    <TouchableOpacity>
-                        <Text>Match Number</Text>
+                {sessionMatches.matches.map((match, idx) => (
+                    <TouchableOpacity key={idx} style={{
+                        backgroundColor: 'white',
+                        height: 70,
+                        marginBottom: 2,
+                        borderColor: 'black',
+                        borderWidth: 1
+                    }}>
+                        <Text>Match Number {match.match_id}</Text>
+                        <Text>Match date {match.match_date}</Text>
                         <Text>Adam, Bagas Vs Alam, Farhan</Text>
                     </TouchableOpacity>
-                </View>
+                ))}
             </View>
 
-            <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
         </ScrollView>
     )
 }

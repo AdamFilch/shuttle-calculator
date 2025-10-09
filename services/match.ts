@@ -7,7 +7,7 @@ type newMatchPayload = {
     sessionId: number,
     playersId: number[] // TL BL TR BR
     shuttleId: number,
-    quantity_used: number
+    quantityUsed: number
 }
 
 type Match = {
@@ -34,13 +34,13 @@ export async function createNewMatch(payload: newMatchPayload) {
         const matchUserRes = await db.runAsync(`INSERT into match_users (match_id, user_id, position) VALUES (?, ?, ?)`, [matchId, payload.playersId[i], i])
         const shuttleRes = await db.runAsync(`
             INSERT into shuttle_payments (match_id, shuttle_id, user_id, amount_paid) VALUES (?, ?, ?, ?)
-            `, [matchId, payload.shuttleId, payload.playersId[i], perShuttlePrice * payload.quantity_used])
+            `, [matchId, payload.shuttleId, payload.playersId[i], perShuttlePrice * payload.quantityUsed])
 
     }
 
     const matchShuttleRes = await db.runAsync(`
         INSERT into match_shuttles (match_id, shuttle_id, quantity_used) VALUES (?, ?, ?)
-        `, [matchId, payload.shuttleId, payload.quantity_used]
+        `, [matchId, payload.shuttleId, payload.quantityUsed]
     )
 
 
@@ -50,5 +50,10 @@ export async function createNewMatch(payload: newMatchPayload) {
 
 export async function fetchAllMatches(): Promise<Match[]> {
     const res: Match[] = await db.getAllAsync(`SELECT * FROM matches`)
+    return res
+}
+
+export async function fetchMatchesBySessionId(sessionId: string): Promise<Match[]> {
+    const res: Match[] = await db.getAllAsync(`SELECT * FROM matches WHERE session_id = ${sessionId}`)
     return res
 }
