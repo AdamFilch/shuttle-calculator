@@ -42,15 +42,25 @@ export default function SelectedSessionPage() {
                 <Text>Sessions Page {sessionId}</Text>
                 <Text>{session.date}</Text>
             </View>
-            <TouchableOpacity
-                onPress={async () => {
-                    // setAddMatchIsOpen(true)
-                    router.navigate(`/session/${sessionId.toString()}/create-match`)
-                }}
-                style={buttonStyle}
-            >
-                <Text>Add Match</Text>
-            </TouchableOpacity>
+            <View style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: 10,
+                // alignSelf: 'center',
+                width: 'auto',
+            }} >
+
+                <TouchableOpacity
+                    onPress={async () => {
+                        // setAddMatchIsOpen(true)
+                        router.navigate(`/session/${sessionId.toString()}/create-match`)
+                    }}
+                    style={buttonStyle}
+                >
+                    <Text>Add Match</Text>
+                </TouchableOpacity>
+
+            </View>
             <View>
                 <View>
                     <TouchableOpacity>

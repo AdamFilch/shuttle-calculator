@@ -1,3 +1,4 @@
+import { AddUserModal } from "@/components/user/modal";
 import { fetchAllUsers, User } from "@/services/user";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ export default function UsersPage() {
 
     const [usersList, setUsersList] = useState<User[]>([])
     const router = useRouter()
+    const [addUserIsOpen, setAddUserIsOpen] = useState(false)
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -29,14 +31,27 @@ export default function UsersPage() {
                 }}>
                     <Text>Users Page</Text>
                 </View>
-                <View>
-
-                <TouchableOpacity style={buttonStyle} onPress={async () => {
-                    const res = await fetchAllUsers()
-                    console.log(`FetchAllUsers`, res)
+                <View style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                    // alignSelf: 'center',
+                    width: 'auto',
                 }}>
-                    <Text>Display Users</Text>
-                </TouchableOpacity>
+
+                    <TouchableOpacity style={buttonStyle} onPress={() => {
+                        setAddUserIsOpen(true)
+                    }}>
+                        <Text>Add User</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={buttonStyle} onPress={async () => {
+                        const res = await fetchAllUsers()
+                        console.log(`FetchAllUsers`, res)
+                    }}>
+                        <Text>Display User</Text>
+                    </TouchableOpacity>
+                    <AddUserModal open={addUserIsOpen} onClose={() => setAddUserIsOpen(false)} />
+
                 </View>
                 {usersList.length == 0 ? (
                     <View>
