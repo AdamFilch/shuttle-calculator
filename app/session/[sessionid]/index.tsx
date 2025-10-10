@@ -31,7 +31,7 @@ export default function SelectedSessionPage() {
             </SafeAreaView>
         )
     }
-
+    console.log(sessionMatches)
     return (
 
         <ScrollView>
@@ -72,7 +72,16 @@ export default function SelectedSessionPage() {
                     }}>
                         <Text>Match Number {match.match_id}</Text>
                         <Text>Match date {match.match_date}</Text>
-                        <Text>Adam, Bagas Vs Alam, Farhan</Text>
+                        <View style={{
+                            display: 'flex',
+                            flexDirection: 'row'
+                        }}>
+                            {match.players.map((player, idx) =>
+                                <Text>
+                                    {player.name + (idx != match.players.length - 1 ? ", " : "")}
+                                </Text>
+                            )}
+                        </View>
                     </TouchableOpacity>
                 ))}
             </View>

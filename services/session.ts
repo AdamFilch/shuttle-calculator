@@ -35,7 +35,12 @@ export type SessionMatches = Session & {
     matches: {
         match_id: string,
         match_date: string,
-        shuttles: Shuttle[]
+        shuttles: Shuttle[],
+        players: {
+            name: string,
+            user_id: number,
+            position: number,
+        }[]
     }[]
 }
 
@@ -94,7 +99,7 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         if (row.user_id && !match.playersMap[row.user_id]) {
             match.playersMap[row.user_id] = {
                 user_id: row.user_id,
-                name: row.user_name,
+                name: row.player_name,
                 position: row.position
             }
         }
