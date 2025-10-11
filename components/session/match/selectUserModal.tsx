@@ -44,7 +44,6 @@ export function SelectPlayerButton({
                     setIsOpen(false)
                 }}
                 onSelect={(player) => {
-                    console.log("You selected this player", player)
                     setIsOpen(false)
                     onSelect(player)
                 }}
