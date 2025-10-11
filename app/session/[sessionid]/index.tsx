@@ -29,7 +29,6 @@ export default function SelectedSessionPage() {
             </SafeAreaView>
         )
     }
-    console.log(sessionMatches)
     return (
 
         <ScrollView>

@@ -110,7 +110,7 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         match_id: m.match_id,
         match_date: m.match_date,
         shuttles: Object.values(m.shuttlesMap),
-        players: Object.values(m.playersMap)
+        players: Object.values(m.playersMap).sort((player1: { position }, player2: { position }) => player1.position - player2.position)
     }))
 
     return {
