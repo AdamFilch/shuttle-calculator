@@ -74,7 +74,7 @@ export default function SelectedSessionPage() {
                             flexDirection: 'row'
                         }}>
                             {match.players.map((player, idx) =>
-                                <Text>
+                                <Text key={idx}>
                                     {player.name + (idx != match.players.length - 1 ? ", " : "")}
                                 </Text>
                             )}
