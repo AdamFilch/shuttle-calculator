@@ -1,21 +1,21 @@
-import { AddUserModal } from "@/components/user/modal";
-import { fetchAllUsers, User } from "@/services/user";
+import { AddPlayerModal } from "@/components/user/modal";
+import { fetchAllPlayers, Player } from "@/services/player";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
-export default function UsersPage() {
+export default function PlayersPage() {
 
-    const [usersList, setUsersList] = useState<User[]>([])
+    const [playersList, setPlayersList] = useState<Player[]>([])
     const router = useRouter()
-    const [addUserIsOpen, setAddUserIsOpen] = useState(false)
+    const [addPlayerIsOpen, setAddPlayerIsOpen] = useState(false)
 
     useEffect(() => {
         const fetchUsers = async () => {
-            fetchAllUsers().then((res) => {
-                setUsersList(res)
+            fetchAllPlayers().then((res) => {
+                setPlayersList(res)
             })
         }
 
@@ -29,7 +29,7 @@ export default function UsersPage() {
                 <View style={{
                     backgroundColor: 'white'
                 }}>
-                    <Text>Users Page</Text>
+                    <Text>Players Page</Text>
                 </View>
                 <View style={{
                     flexDirection: 'row',
@@ -40,20 +40,20 @@ export default function UsersPage() {
                 }}>
 
                     <TouchableOpacity style={buttonStyle} onPress={() => {
-                        setAddUserIsOpen(true)
+                        setAddPlayerIsOpen(true)
                     }}>
                         <Text>Add User</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={buttonStyle} onPress={async () => {
-                        const res = await fetchAllUsers()
-                        console.log(`FetchAllUsers`, res)
+                        const res = await fetchAllPlayers()
+                        console.log(`FetchAllPlayers`, res)
                     }}>
                         <Text>Display User</Text>
                     </TouchableOpacity>
-                    <AddUserModal open={addUserIsOpen} onClose={() => setAddUserIsOpen(false)} />
+                    <AddPlayerModal open={addPlayerIsOpen} onClose={() => setAddPlayerIsOpen(false)} />
 
                 </View>
-                {usersList.length == 0 ? (
+                {playersList.length == 0 ? (
                     <View>
                         <Text>
                             Sessions List is Empty
@@ -61,9 +61,9 @@ export default function UsersPage() {
                     </View>
                 ) : (
                     <View>
-                        {usersList.map((user) => (
+                        {playersList.map((player) => (
                             <TouchableOpacity
-                                key={user.user_id}
+                                key={player.player_id}
                                 style={{
                                     backgroundColor: 'white',
                                     height: 50,
@@ -71,11 +71,11 @@ export default function UsersPage() {
                                     borderWidth: 1
                                 }}
                                 onPress={() => {
-                                    router.navigate(`/user/${user.user_id}`)
+                                    router.navigate(`/player/${player.player_id}`)
                                 }}>
                                 <View>
                                     <Text>
-                                        {user.name}
+                                        {player.name}
                                     </Text>
                                 </View>
                             </TouchableOpacity>

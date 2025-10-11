@@ -1,4 +1,3 @@
-import { AddMatchModal } from "@/components/session/match/modal";
 import { fetchSessionById, SessionMatches } from "@/services/session";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -9,7 +8,6 @@ export default function SelectedSessionPage() {
     const router = useRouter()
     const { sessionId } = useLocalSearchParams()
     const [sessionMatches, setSessionMatches] = useState<SessionMatches | null>(null)
-    const [addMatchIsOpen, setAddMatchIsOpen] = useState(false)
 
     useEffect(() => {
         const fetchSession = async () => {
@@ -58,7 +56,6 @@ export default function SelectedSessionPage() {
                 >
                     <Text>Add Match</Text>
                 </TouchableOpacity>
-                <AddMatchModal open={addMatchIsOpen} onClose={() => setAddMatchIsOpen(false)} />
 
             </View>
             <View>

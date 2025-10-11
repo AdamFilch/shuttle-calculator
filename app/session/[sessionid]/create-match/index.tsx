@@ -4,8 +4,8 @@ import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
 import { createNewMatch } from "@/services/match";
+import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
-import { fetchAllUsers, User } from "@/services/user";
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -19,14 +19,14 @@ export default function CreateNewMatchPage() {
     const router = useRouter()
 
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
-    const [playerList, setPlayerList] = useState<User[] | null>([])
+    const [playerList, setPlayerList] = useState<Player[] | null>([])
 
     useEffect(() => {
         const fetchData = () => {
             fetchAllShuttles().then((res) => {
                 setShuttleList(res)
             })
-            fetchAllUsers().then((res) => {
+            fetchAllPlayers().then((res) => {
                 setPlayerList(res)
             })
         }
@@ -38,7 +38,7 @@ export default function CreateNewMatchPage() {
             sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
             shuttleId: selectedShuttle,
-            quantity_used: 1,
+            quantityUsed: 1,
         })
         router.back()
     }

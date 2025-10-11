@@ -11,9 +11,9 @@ export async function dropDatabase() {
 
   await db.execAsync(`
   DROP TABLE IF EXISTS sessions;
-  DROP TABLE IF EXISTS users;
+  DROP TABLE IF EXISTS players;
   DROP TABLE IF EXISTS matches;
-  DROP TABLE IF EXISTS match_users;
+  DROP TABLE IF EXISTS match_players;
   DROP TABLE IF EXISTS shuttles;
   DROP TABLE IF EXISTS match_shuttles;
   DROP TABLE IF EXISTS shuttle_payments;
@@ -26,8 +26,8 @@ export async function setupDatabase() {
   db.withTransactionSync(() => {
     console.log('Setting up DB')
     db.execSync(`
-      CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY NOT NULL,
+      CREATE TABLE IF NOT EXISTS players (
+        player_id INTEGER PRIMARY KEY NOT NULL,
         date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
         name TEXT NOT NULL
       );
@@ -51,13 +51,13 @@ export async function setupDatabase() {
     `);
 
     db.execSync(`
-      CREATE TABLE IF NOT EXISTS match_users (
+      CREATE TABLE IF NOT EXISTS match_players (
         match_id INTEGER NOT NULL,
-        user_id INTEGER NOT NULL,
+        player_id INTEGER NOT NULL,
         position INTEGER NOT NULL,
-        PRIMARY KEY (match_id, user_id),
+        PRIMARY KEY (match_id, player_id),
         FOREIGN KEY (match_id) REFERENCES matches(match_id),
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        FOREIGN KEY (player_id) REFERENCES players(player_id)
       );
     `);
 
@@ -85,22 +85,22 @@ export async function setupDatabase() {
       CREATE TABLE IF NOT EXISTS shuttle_payments (
         match_id INTEGER NOT NULL,
         shuttle_id INTEGER NOT NULL,
-        user_id INTEGER NOT NULL,
+        player_id INTEGER NOT NULL,
         amount_paid REAL NOT NULL,
         date_paid TIMESTAMP,
         date_created TIMESTAMP NOT NULL DEFAULT (datetime('now')),
-        PRIMARY KEY (match_id, shuttle_id, user_id),
+        PRIMARY KEY (match_id, shuttle_id, player_id),
         FOREIGN KEY (match_id, shuttle_id) REFERENCES match_shuttles(match_id, shuttle_id),
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        FOREIGN KEY (player_id) REFERENCES players(player_id)
       );
     `)
 
     db.execSync(`
-      CREATE INDEX IF NOT EXISTS idx_match_users_user ON match_users(user_id);
-      CREATE INDEX IF NOT EXISTS idx_match_users_match ON match_users(match_id);
+      CREATE INDEX IF NOT EXISTS idx_match_players_player ON match_players(player_id);
+      CREATE INDEX IF NOT EXISTS idx_match_players_match ON match_players(match_id);
       CREATE INDEX IF NOT EXISTS idx_match_shuttles_match ON match_shuttles(match_id);
       CREATE INDEX IF NOT EXISTS idx_match_shuttles_shuttle ON match_shuttles(shuttle_id);
-      CREATE INDEX IF NOT EXISTS idx_shuttle_payments_user ON shuttle_payments(user_id);
+      CREATE INDEX IF NOT EXISTS idx_shuttle_payments_players ON shuttle_payments(player_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_payments_match ON shuttle_payments(match_id);
     `);
 

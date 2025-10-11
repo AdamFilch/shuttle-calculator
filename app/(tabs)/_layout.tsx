@@ -40,9 +40,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="user/index"
+        name="player/index"
         options={{
-          title: 'Users',
+          title: 'Players',
           tabBarIcon: ({ color }) => <MaterialIcons name={'person'} size={28} color={color} />,
         }}
       />

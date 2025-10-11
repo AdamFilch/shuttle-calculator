@@ -1,7 +1,7 @@
 import { AddSessionModal } from "@/components/session/modal";
 import { fetchAllMatches } from "@/services/match";
+import { fetchAllMatchPlayers } from "@/services/match-players";
 import { fetchAllMatchShuttles } from "@/services/match-shuttles";
-import { fetchAllMatchUsers } from "@/services/match-users";
 import { fetchAllSessions, Session } from "@/services/session";
 import { DisplayTimeDDDASHMMDASHYYYY } from '@/services/time-display';
 import { useRouter } from "expo-router";
@@ -66,10 +66,10 @@ export default function SessionPage() {
                         <Text>Display all Match Shuttles</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={buttonStyle} onPress={async () => {
-                        const res = await fetchAllMatchUsers()
-                        console.log(`FetchAllMatchUsers`, res)
+                        const res = await fetchAllMatchPlayers()
+                        console.log(`FetchAllMatchPlayers`, res)
                     }}>
-                        <Text>Display all Match Users</Text>
+                        <Text>Display all Match Players</Text>
                     </TouchableOpacity>
 
                     <AddSessionModal open={addSessionIsOpen} onClose={() => setAddSessionIsOpen(false)} />

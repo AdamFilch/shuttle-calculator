@@ -1,4 +1,4 @@
-import { createUser } from "@/services/user"
+import { createPlayer } from "@/services/player"
 import { useState } from "react"
 import { Button, ButtonText } from "../ui/button"
 import { Heading } from "../ui/heading"
@@ -8,21 +8,21 @@ import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalF
 import { Text } from "../ui/text"
 
 
-export function AddUserModal({
+export function AddPlayerModal({
     open,
     onClose
 }: {
     open: boolean,
     onClose: () => void
 }) {
-    const [username, setUsername] = useState('')
+    const [playername, setPlayername] = useState('')
 
 
     async function onClickSave() {
-        const res = await createUser(username)
+        const res = await createPlayer(playername)
 
         if (res) {
-            setUsername('')
+            setPlayername('')
             onClose()
         }
     }
@@ -50,7 +50,7 @@ export function AddUserModal({
                     </ModalCloseButton>
                 </ModalHeader>
                 <ModalBody>
-                    <Text>Add a user here</Text>
+                    <Text>Add a player here</Text>
                     <Input
                         variant="outline"
                         size="md"
@@ -58,9 +58,9 @@ export function AddUserModal({
                         isInvalid={false}
                         isReadOnly={false}
                     >
-                        <InputField defaultValue={username} value={username} onChangeText={(val) => {
-                            setUsername(val)
-                        }} placeholder="Enter a User Name" />
+                        <InputField defaultValue={playername} value={playername} onChangeText={(val) => {
+                            setPlayername(val)
+                        }} placeholder="Enter a Player Name" />
                     </Input>
                 </ModalBody>
                 <ModalFooter>
@@ -78,7 +78,7 @@ export function AddUserModal({
                             onClickSave()
                         }}
                     >
-                        <ButtonText>Add User</ButtonText>
+                        <ButtonText>Add Player</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>

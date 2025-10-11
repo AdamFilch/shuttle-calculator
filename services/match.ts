@@ -31,9 +31,9 @@ export async function createNewMatch(payload: newMatchPayload) {
 
 
     for (let i = 0; i < payload.playersId.length; i++) {
-        const matchUserRes = await db.runAsync(`INSERT into match_users (match_id, user_id, position) VALUES (?, ?, ?)`, [matchId, payload.playersId[i], i])
+        const matchPlayerRes = await db.runAsync(`INSERT into match_players (match_id, player_id, position) VALUES (?, ?, ?)`, [matchId, payload.playersId[i], i])
         const shuttleRes = await db.runAsync(`
-            INSERT into shuttle_payments (match_id, shuttle_id, user_id, amount_paid) VALUES (?, ?, ?, ?)
+            INSERT into shuttle_payments (match_id, shuttle_id, player_id, amount_paid) VALUES (?, ?, ?, ?)
             `, [matchId, payload.shuttleId, payload.playersId[i], perShuttlePrice * payload.quantityUsed])
 
     }

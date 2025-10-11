@@ -4,7 +4,7 @@ import { Button, ButtonText } from "@/components/ui/button"
 import { Heading } from "@/components/ui/heading"
 import { CloseIcon, Icon } from "@/components/ui/icon"
 import { Modal, ModalBackdrop, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal"
-import { User } from "@/services/user"
+import { Player } from "@/services/player"
 import { Fragment, useState } from "react"
 import { FlatList, Text, View } from "react-native"
 
@@ -17,7 +17,7 @@ export function SelectPlayerButton({
 }: {
     placeholder: string,
     selectedPlayer?: string,
-    players: User[],
+    players: Player[],
     onSelect: (player) => void
 }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -34,7 +34,7 @@ export function SelectPlayerButton({
                 }}>
 
                 <ButtonText>
-                    {selectedPlayer ? players.find((player) => player.user_id == parseInt(selectedPlayer)).name :placeholder}
+                    {selectedPlayer ? players.find((player) => player.player_id == parseInt(selectedPlayer)).name :placeholder}
                 </ButtonText>
             </Button>
             <SelectPlayerModal
@@ -63,7 +63,7 @@ export function SelectPlayerModal({
     open: boolean,
     onClose: () => void,
     onSelect: (player) => void,
-    players: User[],
+    players: Player[],
 }) {
 
     return (
@@ -93,7 +93,6 @@ export function SelectPlayerModal({
                     <FlatList
 
                         data={players}
-                        // keyExtractor={(player: User, idx) => idx.toString()}
                         numColumns={3}
                         contentContainerStyle={{
                             gap: 10
@@ -109,7 +108,7 @@ export function SelectPlayerModal({
                                 height: 100
                             }}
                             onPress={() => {
-                                onSelect(player.item.user_id)
+                                onSelect(player.item.player_id)
                             }}
                             >
                                 <ButtonText>

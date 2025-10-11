@@ -38,7 +38,7 @@ export type SessionMatches = Session & {
         shuttles: Shuttle[],
         players: {
             name: string,
-            user_id: number,
+            player_id: number,
             position: number,
         }[]
     }[]
@@ -60,14 +60,14 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         s.name as shuttle_name,
         s.total_price,
         s.num_of_shuttles,
-        p.user_id,
-        p.position,
-        u.name as player_name
+        mp.player_id,
+        mp.position,
+        p.name as player_name
         FROM matches m
         LEFT JOIN match_shuttles z ON m.match_id = z.match_id
         LEFT JOIN shuttles s ON z.match_id = s.shuttle_id
-        LEFT JOIN match_users p ON m.match_id = p.match_id
-        LEFT JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN match_players mp ON m.match_id = mp.match_id
+        LEFT JOIN players p ON p.player_id = mp.player_id
         WHERE m.session_id = ?
         `, [id])
 
@@ -96,9 +96,9 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         }
 
         // Player deduplication using map
-        if (row.user_id && !match.playersMap[row.user_id]) {
-            match.playersMap[row.user_id] = {
-                user_id: row.user_id,
+        if (row.player_id && !match.playersMap[row.player_id]) {
+            match.playersMap[row.player_id] = {
+                player_id: row.player_id,
                 name: row.player_name,
                 position: row.position
             }
