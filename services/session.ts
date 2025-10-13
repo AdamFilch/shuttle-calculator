@@ -78,13 +78,12 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
             match = {
                 match_id: row.match_id,
                 match_date: row.match_date,
-                shuttlesMap: {}, // internal maps for quick deduplication
+                shuttlesMap: {}, 
                 playersMap: {},
             }
             matchesMap[row.match_id] = match
         }
 
-        // Shuttle deduplication using map
         if (row.shuttle_id && !match.shuttlesMap[row.shuttle_id]) {
             match.shuttlesMap[row.shuttle_id] = {
                 shuttle_id: row.shuttle_id,
@@ -95,7 +94,6 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
             }
         }
 
-        // Player deduplication using map
         if (row.player_id && !match.playersMap[row.player_id]) {
             match.playersMap[row.player_id] = {
                 player_id: row.player_id,
@@ -105,7 +103,6 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         }
     }
 
-    // Convert maps → clean arrays
     const matches = Object.values(matchesMap).map(m => ({
         match_id: m.match_id,
         match_date: m.match_date,

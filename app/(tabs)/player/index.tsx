@@ -1,7 +1,8 @@
 import { AddPlayerModal } from "@/components/user/modal";
 import { fetchAllPlayers, Player } from "@/services/player";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -12,15 +13,17 @@ export default function PlayersPage() {
     const router = useRouter()
     const [addPlayerIsOpen, setAddPlayerIsOpen] = useState(false)
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            fetchAllPlayers().then((res) => {
-                setPlayersList(res)
-            })
-        }
+    useFocusEffect(
+        useCallback(() => {
+            fetchPlayers()
+        }, [])
+    )
 
-        fetchUsers()
-    }, [])
+    const fetchPlayers = async () => {
+        fetchAllPlayers().then((res) => {
+            setPlayersList(res)
+        })
+    }
 
 
     return (
@@ -50,7 +53,10 @@ export default function PlayersPage() {
                     }}>
                         <Text>Display User</Text>
                     </TouchableOpacity>
-                    <AddPlayerModal open={addPlayerIsOpen} onClose={() => setAddPlayerIsOpen(false)} />
+                    <AddPlayerModal open={addPlayerIsOpen} onClose={() => {
+                        setAddPlayerIsOpen(false)
+                        fetchPlayers()
+                    }} />
 
                 </View>
                 {playersList.length == 0 ? (

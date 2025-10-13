@@ -1,6 +1,7 @@
 import { fetchSessionById, SessionMatches } from "@/services/session";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -9,15 +10,20 @@ export default function SelectedSessionPage() {
     const { sessionId } = useLocalSearchParams()
     const [sessionMatches, setSessionMatches] = useState<SessionMatches | null>(null)
 
-    useEffect(() => {
-        const fetchSession = async () => {
-            fetchSessionById(sessionId.toString()).then(res => {
-                setSessionMatches(res)
-            })
-        }
+    useFocusEffect(
+        useCallback(() => {
+            fetchSession()
+        }, [sessionId])
+    )
 
-        fetchSession()
-    }, [])
+    const fetchSession = async () => {
+        fetchSessionById(sessionId.toString()).then(res => {
+            setSessionMatches(res)
+        })
+    }
+
+
+
     if (!sessionMatches) {
         return (
             <SafeAreaView>
