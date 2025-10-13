@@ -1,7 +1,7 @@
-import { fetchPlayerById, Player } from "@/services/player";
+import { fetchPlayerById, fetchShuttlePaymentsByPlayerId, Player } from "@/services/player";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
@@ -30,14 +30,33 @@ export default function SelectPlayerPage() {
     }
 
     return (
-        <ScrollView>
-            <View style={{
-                backgroundColor: 'white'
-            }}>
-                <Text>Player Page {playerId}</Text>
+        <SafeAreaView>
+            <ScrollView>
+                <View style={{
+                    backgroundColor: 'white'
+                }}>
+                    <Text>Player Page {playerId}</Text>
 
-                <Text>{player.name}</Text>
-            </View>
-        </ScrollView>
+                    <Text>{player.name}</Text>
+                </View>
+ <TouchableOpacity
+                        onPress={async () => {
+                            const res = await fetchShuttlePaymentsByPlayerId(player.player_id)
+                            console.log(`FetchAllShuttlePayments`, res)
+                        }}
+                        style={buttonStyle}
+                    >
+                        <Text>Display Sessions</Text>
+                    </TouchableOpacity>
+            </ScrollView>
+        </SafeAreaView>
     )
+}
+
+
+const buttonStyle: ViewStyle = {
+    backgroundColor: 'lightgray',
+    width: 100,
+    height: 100,
+    justifyContent: 'center'
 }

@@ -36,3 +36,72 @@ export async function recordShuttlePayment(matchId, shuttleId, playerId, amount)
     [matchId, shuttleId, playerId, amount]
   );
 }
+
+
+export async function fetchShuttlePaymentsByPlayerId(id: number) {
+
+  const player = await db.getFirstAsync(`SELECT * FROM players WHERE player_id = ?`, [id])
+
+  const shuttlePaymentsByPlayerRows: any = await db.getAllAsync(`
+    SELECT
+    amount_paid,
+    date_paid,
+    date_created
+    FROM shuttle_payments
+    WHERE player_id = ?
+    `, [id])
+
+  return {
+    player_id: player,
+    payments: shuttlePaymentsByPlayerRows
+  }
+}
+
+const playerTotalOwe = {
+  player_id: '',
+  name: '',
+  payments: [
+    {
+      match_id: '',
+      shuttle_id: '',
+      owed_amount: '',
+      date_created: '',
+      date_paid: '',
+    }
+  ]
+}
+
+const playerData = {
+  player_id: '',
+  player_name: '',
+  sessions: [
+    {
+      session_id: '',
+      session_name: '',
+      matches_played: [
+        {
+          score: '',
+          players: [
+            {
+              position: '',
+              player_id: '',
+              name: '',
+            }
+          ],
+          match_id: '',
+          shuttles: [
+            {
+              shuttle_id: '',
+              name: '',
+              quantity_used: '',
+              owed_amount: '',
+              date_created: '',
+              date_paid: ''
+            }
+          ]
+        }
+      ]
+    }
+  ]
+
+}
