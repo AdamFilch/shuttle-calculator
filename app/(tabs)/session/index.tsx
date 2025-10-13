@@ -4,8 +4,9 @@ import { fetchAllMatchPlayers } from "@/services/match-players";
 import { fetchAllMatchShuttles } from "@/services/match-shuttles";
 import { fetchAllSessions, Session } from "@/services/session";
 import { DisplayTimeDDDASHMMDASHYYYY } from '@/services/time-display';
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -13,15 +14,19 @@ export default function SessionPage() {
     const router = useRouter()
     const [sessionsList, setSessionsList] = useState<Session[]>([])
     const [addSessionIsOpen, setAddSessionIsOpen] = useState(false)
-    useEffect(() => {
-        const fetchSessions = async () => {
-            fetchAllSessions().then((res) => {
-                setSessionsList(res)
-            })
-        }
+    useFocusEffect(
+        useCallback(() => {
+            fetchSessions()
+        }, [])
+    )
 
-        fetchSessions()
-    }, [])
+    const fetchSessions = async () => {
+        fetchAllSessions().then((res) => {
+            setSessionsList(res)
+        })
+    }
+
+
     return (
         <SafeAreaView>
             <ScrollView>
@@ -72,7 +77,10 @@ export default function SessionPage() {
                         <Text>Display all Match Players</Text>
                     </TouchableOpacity>
 
-                    <AddSessionModal open={addSessionIsOpen} onClose={() => setAddSessionIsOpen(false)} />
+                    <AddSessionModal open={addSessionIsOpen} onClose={() => {
+                        setAddSessionIsOpen(false)
+                        fetchSessions()
+                        }} />
 
                 </View>
                 {sessionsList.length == 0 ? (
