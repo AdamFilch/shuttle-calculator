@@ -10,7 +10,7 @@ type newMatchPayload = {
     quantityUsed: number
 }
 
-type Match = {
+export type Match = {
     session_id: number,
     match_id: number
 }

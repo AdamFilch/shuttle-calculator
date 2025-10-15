@@ -1,6 +1,7 @@
-import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player } from "@/services/player";
+import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player, ShuttlePaymentsByPlayerSessions } from "@/services/player";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -8,16 +9,23 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function SelectPlayerPage() {
     const { playerId } = useLocalSearchParams()
     const [player, setPlayer] = useState<Player | null>(null)
+    const [shuttlePayments, setShuttlePayments] = useState<ShuttlePaymentsByPlayerSessions | null>(null)
 
-    useEffect(() => {
-        const fetchPlayer = async () => {
-            fetchPlayerById(playerId.toString()).then((res) => {
-                setPlayer(res[0])
+    useFocusEffect(
+        useCallback(() => {
+            fetchPlayer()
+        }, [playerId])
+
+    )
+    const fetchPlayer = async () => {
+        fetchPlayerById(playerId.toString()).then((res) => {
+            setPlayer(res[0])
+            fetchShuttlePaymentsByPlayerSessions(res[0].player_id).then((res) => {
+                setShuttlePayments(res)
             })
-        }
+        })
 
-        fetchPlayer()
-    })
+    }
 
     if (!player) {
         return (
@@ -30,26 +38,24 @@ export default function SelectPlayerPage() {
     }
 
     return (
-        <SafeAreaView>
-            <ScrollView>
-                <View style={{
-                    backgroundColor: 'white'
-                }}>
-                    <Text>Player Page {playerId}</Text>
+        <ScrollView>
+            <View style={{
+                backgroundColor: 'white'
+            }}>
+                <Text>Player Page {playerId}</Text>
 
-                    <Text>{player.name}</Text>
-                </View>
- <TouchableOpacity
-                        onPress={async () => {
-                            const res = await fetchShuttlePaymentsByPlayerSessions(player.player_id)
-                            console.log(`FetchAllShuttlePayments`, res)
-                        }}
-                        style={buttonStyle}
-                    >
-                        <Text>Display Sessions</Text>
-                    </TouchableOpacity>
-            </ScrollView>
-        </SafeAreaView>
+                <Text>{player.name}</Text>
+            </View>
+            <TouchableOpacity
+                onPress={async () => {
+                    const res = await fetchShuttlePaymentsByPlayerSessions(player.player_id)
+                    console.log(`FetchAllShuttlePayments`, res)
+                }}
+                style={buttonStyle}
+            >
+                <Text>Display Sessions</Text>
+            </TouchableOpacity>
+        </ScrollView>
     )
 }
 

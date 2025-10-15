@@ -1,4 +1,5 @@
 import { openDatabaseSync } from "expo-sqlite";
+import { Session } from "./session";
 
 
 export type Player = {
@@ -60,9 +61,25 @@ export async function fetchShuttlePaymentsByPlayerId(id: number) {
 }
 
 
+export type ShuttlePaymentsByPlayerSessions = Player & {
+  sessions: (Session & {
+    matches_played: {
+      date: string,
+      match_id: number,
+      players: Player[],
+      shuttles: {
+        shuttle_id: number,
+        name: String,
+        quantity_used: number,
+        owed_amount: number,
+        date_created: String,
+        date_paid: String | null
+      }[]
+    }
+  })[]
+}
 
-
-export async function fetchShuttlePaymentsByPlayerSessions(id: number) {
+export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<ShuttlePaymentsByPlayerSessions> {
   const player: any = await db.getFirstAsync(`SELECT * FROM players WHERE player_id = ?`, [id])
 
   const shuttlePaymentsByPlayerRows: any = await db.getAllAsync(`
@@ -97,8 +114,8 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number) {
     if (!session) {
       session = {
         session_id: row.session_id,
-        session_date: row.session_date,
-        session_name: row.session_name,
+        date: row.session_date,
+        name: row.session_name,
         matches_played: {}
       }
       sessionsMap[row.session_id] = session
@@ -107,7 +124,7 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number) {
     if (!sessionsMap[row.session_id].matches_played[row.match_id]) {
       sessionsMap[row.session_id].matches_played[row.match_id] = {
         match_id: row.match_id,
-        match_date: row.match_date,
+        date: row.match_date,
         players: {},
         shuttles: {}
       }
@@ -116,8 +133,8 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number) {
     if (!sessionsMap[row.session_id].matches_played[row.match_id].players[row.player_id]) {
       sessionsMap[row.session_id].matches_played[row.match_id].players[row.player_id] = {
         position: row.position,
-        player_name: row.player_name,
-        player_id: row.player_name
+        name: row.player_name,
+        player_id: row.player_id
       }
     }
 
@@ -135,10 +152,10 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number) {
 
   const sessions = Object.values(sessionsMap).map((s) => ({
     session_id: s.session_id,
-    session_date: s.session_date,
-    session_name: s.session_name,
+    date: s.date,
+    name: s.name,
     matches_played: Object.values(s.matches_played).map((mp: any) => ({
-      match_date: mp.match_date,
+      date: mp.date,
       match_id: mp.match_id,
       players: Object.values(mp.players),
       shuttles: Object.values(mp.shuttles)
@@ -171,12 +188,12 @@ const playerData = {
   sessions: [
     {
       session_id: '',
-      session_date: '',
-      session_name: '',
+      date: '',
+      name: '',
       matches_played: [
         {
           score: '',
-          match_date: '',
+          date: '',
           players: [
             {
               position: '',
