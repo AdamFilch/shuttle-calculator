@@ -1,5 +1,5 @@
 import { AddPlayerModal } from "@/components/user/modal";
-import { fetchAllPlayers, Player } from "@/services/player";
+import { fetchAllPlayerPayments, fetchAllPlayers, Player } from "@/services/player";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -48,7 +48,7 @@ export default function PlayersPage() {
                         <Text>Add User</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={buttonStyle} onPress={async () => {
-                        const res = await fetchAllPlayers()
+                        const res = await fetchAllPlayerPayments()
                         console.log(`FetchAllPlayers`, res)
                     }}>
                         <Text>Display User</Text>

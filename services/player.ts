@@ -144,7 +144,7 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
         shuttle_name: row.shuttle_name,
         quantity_used: row.quantity_used,
         owed_amount: row.amount_paid,
-        date_creaetd: row.shuttle_payment_requested_date,
+        date_created: row.shuttle_payment_requested_date,
         date_paid: row.shuttle_payment_paid_date
       }
     }
@@ -168,53 +168,63 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
   }
 }
 
-const playerTotalOwe = {
-  player_id: '',
-  name: '',
-  payments: [
-    {
-      match_id: '',
-      shuttle_id: '',
-      owed_amount: '',
-      date_created: '',
-      date_paid: '',
-    }
-  ]
+export type PlayersShuttlePayments = {
+  player_id: string,
+  name: string,
+  total_owed_amount: number,
+  shuttle_payments: {
+    name: string,
+    shuttle_id: number,
+    quantity_used: number,
+    owed_amount: number,
+    date_created: string,
+    date_paid: string
+  }[]
 }
 
-const playerData = {
-  player_id: '',
-  player_name: '',
-  sessions: [
-    {
-      session_id: '',
-      date: '',
-      name: '',
-      matches_played: [
-        {
-          score: '',
-          date: '',
-          players: [
-            {
-              position: '',
-              player_id: '',
-              name: '',
-            }
-          ],
-          match_id: '',
-          shuttles: [
-            {
-              shuttle_id: '',
-              name: '',
-              quantity_used: '',
-              owed_amount: '',
-              date_created: '',
-              date_paid: ''
-            }
-          ]
-        }
-      ]
-    }
-  ]
+export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]> {
+  const shuttlePaymentsByPlayerRows: any = await db.getAllAsync(`
+      SELECT
+      p.name AS player_name,
+      p.player_id,
+      sp.shuttle_id,
+      sp.amount_paid,
+      sp.date_paid,
+      sp.date_created,
+      sh.name AS shuttle_name
+      FROM players p
+      LEFT JOIN shuttle_payments sp ON sp.player_id = p.player_id
+      LEFT JOIN shuttles sh ON sp.shuttle_id = sh.shuttle_id
+      `)
 
+
+  const playersMap: Record<number, any> = {}
+  for (let row of shuttlePaymentsByPlayerRows) {
+
+    let currPlayer = playersMap[row.player_id]
+    if (!currPlayer) {
+      let thisPlayer = {
+        player_id: row.player_id,
+        name: row.player_name,
+        total_owed_amount: 0,
+        shuttle_payments: []
+      }
+      playersMap[row.player_id] = thisPlayer
+    }
+
+    if (playersMap[row.player_id] && row.shuttle_id) {
+      playersMap[row.player_id].total_owed_amount += row.amount_paid
+      playersMap[row.player_id].shuttle_payments.push({
+        shuttle_id: row.shuttle_id,
+        name: row.shuttle_name,
+        owed_amount: row.amount_paid,
+        date_created: row.date_created,
+        date_paid: row.date_paid
+      })
+    }
+  }
+
+  return Object.values(playersMap)
 }
+
+
