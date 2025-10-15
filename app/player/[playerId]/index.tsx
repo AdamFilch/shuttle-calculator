@@ -1,4 +1,4 @@
-import { fetchPlayerById, fetchShuttlePaymentsByPlayerId, Player } from "@/services/player";
+import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player } from "@/services/player";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
@@ -41,7 +41,7 @@ export default function SelectPlayerPage() {
                 </View>
  <TouchableOpacity
                         onPress={async () => {
-                            const res = await fetchShuttlePaymentsByPlayerId(player.player_id)
+                            const res = await fetchShuttlePaymentsByPlayerSessions(player.player_id)
                             console.log(`FetchAllShuttlePayments`, res)
                         }}
                         style={buttonStyle}
