@@ -1,5 +1,5 @@
 import { AddPlayerModal } from "@/components/user/modal";
-import { fetchAllPlayerPayments, fetchAllPlayers, Player } from "@/services/player";
+import { fetchAllPlayerPayments, PlayersShuttlePayments } from "@/services/player";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -9,7 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PlayersPage() {
 
-    const [playersList, setPlayersList] = useState<Player[]>([])
+    const [playersList, setPlayersList] = useState<PlayersShuttlePayments[]>([])
     const router = useRouter()
     const [addPlayerIsOpen, setAddPlayerIsOpen] = useState(false)
 
@@ -20,7 +20,7 @@ export default function PlayersPage() {
     )
 
     const fetchPlayers = async () => {
-        fetchAllPlayers().then((res) => {
+        fetchAllPlayerPayments().then((res) => {
             setPlayersList(res)
         })
     }
@@ -74,16 +74,15 @@ export default function PlayersPage() {
                                     backgroundColor: 'white',
                                     height: 50,
                                     borderColor: 'black',
-                                    borderWidth: 1
+                                    borderWidth: 1,
+                                    justifyContent: 'center'
                                 }}
                                 onPress={() => {
                                     router.navigate(`/player/${player.player_id}`)
                                 }}>
-                                <View>
-                                    <Text>
-                                        {player.name}
-                                    </Text>
-                                </View>
+                                <Text>
+                                    {player.name} {player.total_owed_amount}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
