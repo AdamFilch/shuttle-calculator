@@ -1,4 +1,5 @@
 import { fetchSessionById, SessionMatches } from "@/services/session";
+import { fetchAllShuttlesBySessionId, ShuttlesBySession } from "@/services/shuttle";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -9,6 +10,7 @@ export default function SelectedSessionPage() {
     const router = useRouter()
     const { sessionId } = useLocalSearchParams()
     const [sessionMatches, setSessionMatches] = useState<SessionMatches | null>(null)
+    const [shuttlesBySesison, setShuttlesBySession] = useState<ShuttlesBySession | null>(null)
 
     useFocusEffect(
         useCallback(() => {
@@ -20,9 +22,15 @@ export default function SelectedSessionPage() {
         fetchSessionById(sessionId.toString()).then(res => {
             setSessionMatches(res)
         })
+        fetchAllShuttlesBySessionId(sessionId.toString(), false).then(res => {
+            setShuttlesBySession(res)
+        })
+        fetchAllShuttlesBySessionId(sessionId.toString(), true).then(res => {
+            console.log('shuttlesBymatches', res)
+         })
     }
 
-
+    console.log('ShuttlesThisSesion', shuttlesBySesison)
 
     if (!sessionMatches) {
         return (
