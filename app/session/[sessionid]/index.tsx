@@ -79,6 +79,8 @@ export default function SelectedSessionPage() {
                         marginBottom: 2,
                         borderColor: 'black',
                         borderWidth: 1
+                    }} onPress={() => {
+                        router.navigate(`/session/${sessionId.toString()}/${match.match_id}`)
                     }}>
                         <Text>Match Number {match.match_id}</Text>
                         <Text>Match date {match.match_date}</Text>
