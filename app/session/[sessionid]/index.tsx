@@ -30,7 +30,6 @@ export default function SelectedSessionPage() {
          })
     }
 
-    console.log('ShuttlesThisSesion', shuttlesBySesison)
 
     if (!sessionMatches) {
         return (

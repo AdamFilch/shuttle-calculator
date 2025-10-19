@@ -1,3 +1,4 @@
+import { SelectShuttleButton } from "@/components/session/match/selectShuttleModal";
 import { SelectPlayerButton } from "@/components/session/match/selectUserModal";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
@@ -6,9 +7,9 @@ import { VStack } from "@/components/ui/vstack";
 import { createNewMatch } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
-import { Picker } from '@react-native-picker/picker';
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 export default function CreateNewMatchPage() {
@@ -21,19 +22,20 @@ export default function CreateNewMatchPage() {
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
     const [playerList, setPlayerList] = useState<Player[] | null>([])
 
-    useEffect(() => {
-        const fetchData = () => {
-            fetchAllShuttles().then((res) => {
-                setShuttleList(res)
-            })
-            fetchAllPlayers().then((res) => {
-                setPlayerList(res)
-            })
-        }
-        fetchData()
-    }, [])
+    useFocusEffect(
+        useCallback(() => {
+            fetchData()
+        }, []))
 
-    async function onClickSave() {        
+    const fetchData = () => {
+        fetchAllShuttles().then((res) => {
+            setShuttleList(res)
+        })
+        fetchAllPlayers().then((res) => {
+            setPlayerList(res)
+        })
+    }
+    async function onClickSave() {
         const res = await createNewMatch({
             sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
@@ -52,7 +54,7 @@ export default function CreateNewMatchPage() {
             </View>
             {shuttleList.length > 0 ? (
                 <View>
-                    <View style={{
+                    {/* <View style={{
                         backgroundColor: 'white'
                     }}>
                         <Text>Select Shuttle</Text>
@@ -67,7 +69,14 @@ export default function CreateNewMatchPage() {
                         {shuttleList.map((shuttle) => (
                             <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
                         ))}
-                    </Picker>
+                    </Picker> */}
+                    <SelectShuttleButton
+                        selectedShuttles={
+                            ''
+                        }
+                        onSelect={() => {
+
+                        }} />
                 </View>
             ) : (
                 <View>
