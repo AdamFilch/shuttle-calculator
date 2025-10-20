@@ -5,7 +5,7 @@ import { Modal, ModalBackdrop, ModalCloseButton, ModalContent, ModalFooter, Moda
 import { Text } from "@/components/ui/text";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { Picker } from "@react-native-picker/picker";
-import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 
 
@@ -17,6 +17,14 @@ export function SelectShuttleButton({
     onSelect: (player) => void
 }) {
     const [isOpen, setIsOpen] = useState(false)
+
+    const handleClose = useCallback(() => setIsOpen(false), []);
+    const handleSelect = useCallback((player) => {
+        setIsOpen(false);
+        onSelect(player);
+    }, [onSelect]);
+
+
     return (
         <Fragment>
             <Button
@@ -34,13 +42,8 @@ export function SelectShuttleButton({
             <SelectShuttleModal
                 selectedShuttle={1}
                 open={isOpen}
-                onClose={() => {
-                    setIsOpen(false)
-                }}
-                onSelect={(player) => {
-                    setIsOpen(false)
-                    onSelect(player)
-                }}
+                onClose={handleClose}
+                onSelect={handleSelect}
             />
         </Fragment>
     )
@@ -48,7 +51,7 @@ export function SelectShuttleButton({
 
 
 
-export function SelectShuttleModal({
+export const SelectShuttleModal = React.memo(function SelectShuttleModal({
     onClose,
     onSelect,
     open,
@@ -61,85 +64,83 @@ export function SelectShuttleModal({
 }) {
 
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
-    const [currentSelectedShuttle, setCurrentSelectedShuttle] = useState<number>(1)
+    const [currentSelectedShuttle, setCurrentSelectedShuttle] = useState(1)
     const pickerRef = useRef(null)
 
     useEffect(() => {
-        if (open) {
-            fetchAllShuttles().then(setShuttleList);
-            if (selectedShuttle) {
-                setCurrentSelectedShuttle(selectedShuttle);
-            }
+        if (!open || shuttleList?.length) return;
+        fetchAllShuttles().then(setShuttleList);
+        if (selectedShuttle) {
+            setCurrentSelectedShuttle(selectedShuttle);
         }
     }, [open]);
 
+    console.log('ShuttlesList', shuttleList)
 
 
-    return useMemo(() => {
-        return <Modal
-            size={'lg'}
-            isOpen={open}
-            onClose={() => {
-                onClose()
-            }}
-        >
-            <ModalBackdrop />
-            <ModalContent>
-                <ModalHeader>
-                    <Heading>
-                        Select a Shuttle
-                    </Heading>
-                    <ModalCloseButton>
-                        <Icon
-                            as={CloseIcon}
-                            size="md"
-                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-                        />
-                    </ModalCloseButton>
-                </ModalHeader>
-                {/* <ModalBody scrollEnabled={false}> */}
-                {shuttleList ? (
-                    // <View>
+    return <Modal
+        size={'lg'}
+        isOpen={open}
 
-                    <Picker
-                        ref={pickerRef}
-                        selectedValue={currentSelectedShuttle}
-                        onValueChange={(itemValue, itemIndex) =>
-                            setCurrentSelectedShuttle(itemValue)
-                        }
-                    >
-                        {shuttleList.map((shuttle) => (
-                            <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
-                        ))}
-                    </Picker>
-                    // </View>
-                ) : (
-                    <View>
-                        <Text>
-                            You have no Shuttles recorded.
-                        </Text>
-                    </View>
-                )}
-                {/* </ModalBody> */}
-                <ModalFooter>
-                    <Button
-                        variant="outline"
-                        action="secondary"
-                    >
-                        <ButtonText>Cancel</ButtonText>
-                    </Button>
-                    <Button
+    >
+        <ModalBackdrop />
+        <ModalContent>
+            <ModalHeader>
+                <Heading>
+                    Select a Shuttle
+                </Heading>
+                <ModalCloseButton>
+                    <Icon
+                        as={CloseIcon}
+                        size="md"
+                        className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
+                    />
+                </ModalCloseButton>
+            </ModalHeader>
+            {/* <ModalBody scrollEnabled={false}> */}
+            {shuttleList ? (
+                // <View>
+                <Picker
+                    ref={pickerRef}
+                    selectedValue={currentSelectedShuttle}
+                    onValueChange={(itemValue, itemIndex) =>
+                        setCurrentSelectedShuttle(itemValue)
+                    }
+                >
+                    {shuttleList.map((shuttle) => (
+                        <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
+                    ))}
+                </Picker>
+                // </View>
+            ) : (
+                <View>
+                    <Text>
+                        You have no Shuttles recorded.
+                    </Text>
+                </View>
+            )
+            }
+            {/* </ModalBody> */}
+            <ModalFooter>
+                <Button
+                    variant="outline"
+                    action="secondary"
+                    onPress={onClose}
+                >
+                    <ButtonText>Cancel</ButtonText>
+                </Button>
+                <Button
 
-                        onPress={() => {
-                            console.log('PickerREf', currentSelectedShuttle)
-                            onSelect(currentSelectedShuttle)
-                            onClose()
-                        }}
-                    >
-                        <ButtonText>Confirm</ButtonText>
-                    </Button>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
-    }, [open, shuttleList, currentSelectedShuttle])
-}
+                    onPress={() => {
+                        console.log('PickerREf', currentSelectedShuttle)
+                        onSelect(currentSelectedShuttle)
+                        onClose()
+                    }}
+                >
+                    <ButtonText>Confirm</ButtonText>
+                </Button>
+            </ModalFooter>
+        </ModalContent >
+    </Modal >
+
+})
