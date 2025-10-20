@@ -1,12 +1,13 @@
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
-import { AddIcon, CloseIcon, Icon } from "@/components/ui/icon";
+import { AddIcon, CheckIcon, CloseIcon, Icon } from "@/components/ui/icon";
+import { Input, InputField } from "@/components/ui/input";
 import { Modal, ModalBackdrop, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { Text } from "@/components/ui/text";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { Picker } from "@react-native-picker/picker";
 import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { View } from "react-native";
+import { Keyboard, View } from "react-native";
 
 
 export function SelectShuttleButton({
@@ -65,6 +66,7 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
 
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
     const [currentSelectedShuttle, setCurrentSelectedShuttle] = useState(1)
+    const [numberShuttles, setNumberShuttles] = useState('')
     const pickerRef = useRef(null)
 
     useEffect(() => {
@@ -81,6 +83,7 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
     return <Modal
         size={'lg'}
         isOpen={open}
+        onClose={onClose}
 
     >
         <ModalBackdrop />
@@ -99,27 +102,62 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
             </ModalHeader>
             {/* <ModalBody scrollEnabled={false}> */}
             {shuttleList ? (
-                // <View>
-                <Picker
-                    ref={pickerRef}
-                    selectedValue={currentSelectedShuttle}
-                    onValueChange={(itemValue, itemIndex) =>
-                        setCurrentSelectedShuttle(itemValue)
-                    }
-                >
-                    {shuttleList.map((shuttle) => (
-                        <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
-                    ))}
-                </Picker>
-                // </View>
+                <View>
+                    <Picker
+                        ref={pickerRef}
+                        selectedValue={currentSelectedShuttle}
+                        onValueChange={(itemValue, itemIndex) =>
+                            setCurrentSelectedShuttle(itemValue)
+                        }
+                    >
+                        {shuttleList.map((shuttle) => (
+                            <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
+                        ))}
+                    </Picker>
+                    <Text>
+                        Number of this shuttle used
+                    </Text>
+                    <View style={{
+                        display: 'flex',
+                        marginBottom: 40,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        maxWidth: 250,
+                        gap: 10
+                    }}>
+                        <Input
+                            style={{
+                                width: '100%'
+                            }}
+                            variant="outline"
+                            size="lg"
+                            isDisabled={false}
+                            isInvalid={false}
+                            isReadOnly={false}
+                        >
+                            <InputField keyboardType="number-pad" defaultValue={numberShuttles} value={numberShuttles} onChangeText={(val) => {
+                                setNumberShuttles(val)
+                            }} placeholder="Enter number of shuttles used" />
+                        </Input>
+                        <Button style={{
+                            width: 30,
+                            height: 30,
+                            backgroundColor: 'white'
+                        }} onPress={() => {
+                            Keyboard.dismiss()
+                        }}>
+                            <Icon as={CheckIcon} className="text-typography-400 text-black m-2 w-5 h-5" />
+                        </Button>
+                    </View>
+
+                </View>
             ) : (
                 <View>
                     <Text>
                         You have no Shuttles recorded.
                     </Text>
                 </View>
-            )
-            }
+            )}
             {/* </ModalBody> */}
             <ModalFooter>
                 <Button
