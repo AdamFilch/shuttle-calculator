@@ -4,6 +4,7 @@ import { AddIcon, CheckIcon, CloseIcon, Icon } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
 import { Modal, ModalBackdrop, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { Text } from "@/components/ui/text";
+import { createNewMatchShuttle, ShuttleCondition } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { Picker } from "@react-native-picker/picker";
 import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
@@ -14,15 +15,16 @@ export function SelectShuttleButton({
     selectedShuttles,
     onSelect
 }: {
-    selectedShuttles: string,
-    onSelect: (player) => void
+    selectedShuttles: createNewMatchShuttle[] | [],
+    onSelect: (selected: createNewMatchShuttle) => void
 }) {
     const [isOpen, setIsOpen] = useState(false)
-
+    const [usedShuttles, setUsedShuttles] = useState<createNewMatchShuttle[] | []>(selectedShuttles)
     const handleClose = useCallback(() => setIsOpen(false), []);
-    const handleSelect = useCallback((player) => {
+    const handleSelect = useCallback((selected) => {
+        setUsedShuttles(selected)
         setIsOpen(false);
-        onSelect(player);
+        onSelect(selected);
     }, [onSelect]);
 
 
@@ -59,13 +61,14 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
     selectedShuttle
 }: {
     onClose: () => void,
-    onSelect: (shuttle_id: number) => void,
+    onSelect: (selected: createNewMatchShuttle) => void,
     open: boolean,
     selectedShuttle: number
 }) {
 
     const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([])
     const [currentSelectedShuttle, setCurrentSelectedShuttle] = useState(1)
+    const [shuttleCondition, setShuttleCondition] = useState<ShuttleCondition>("New")
     const [numberShuttles, setNumberShuttles] = useState('')
     const pickerRef = useRef(null)
 
@@ -77,7 +80,6 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
         }
     }, [open]);
 
-    console.log('ShuttlesList', shuttleList)
 
 
     return <Modal
@@ -170,8 +172,11 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
                 <Button
 
                     onPress={() => {
-                        console.log('PickerREf', currentSelectedShuttle)
-                        onSelect(currentSelectedShuttle)
+                        onSelect({
+                            shuttleId: currentSelectedShuttle,
+                            quantityUsed: parseInt(numberShuttles),
+                            condition: shuttleCondition
+                        })
                         onClose()
                     }}
                 >

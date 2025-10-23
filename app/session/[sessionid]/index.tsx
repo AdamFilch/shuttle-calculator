@@ -25,9 +25,6 @@ export default function SelectedSessionPage() {
         fetchAllShuttlesBySessionId(sessionId.toString(), false).then(res => {
             setShuttlesBySession(res)
         })
-        fetchAllShuttlesBySessionId(sessionId.toString(), true).then(res => {
-            console.log('shuttlesBymatches', res)
-         })
     }
 
 

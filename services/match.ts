@@ -6,9 +6,16 @@ const db = openDatabaseSync('db.db')
 type newMatchPayload = {
     sessionId: number,
     playersId: number[] // TL BL TR BR
-    shuttleId: number,
-    quantityUsed: number
+    shuttles: createNewMatchShuttle[]
 }
+
+export type createNewMatchShuttle = {
+    shuttleId: number,
+    quantityUsed: number,
+    condition: ShuttleCondition
+}
+
+export type ShuttleCondition = "New" | "Reused" | "Random" 
 
 export type Match = {
     session_id: number,
@@ -17,6 +24,7 @@ export type Match = {
 
 
 export async function createNewMatch(payload: newMatchPayload) {
+    if (payload.shuttles) return
 
     const matchRes = await db.runAsync(`
         INSERT into matches (session_id) VALUES (?)`, [payload.sessionId]

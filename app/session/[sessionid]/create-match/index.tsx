@@ -4,7 +4,7 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
-import { createNewMatch } from "@/services/match";
+import { createNewMatch, createNewMatchShuttle } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { useFocusEffect } from "@react-navigation/native";
@@ -16,6 +16,7 @@ export default function CreateNewMatchPage() {
     const { sessionId } = useLocalSearchParams()
     const [selectedShuttle, setSelectedShuttle] = useState(1)
     const [selectedPlayers, setSelectedPlayers] = useState(new Array(4).fill(null))
+    const [usedShuttles, setUsedShuttles] = useState<createNewMatchShuttle[] | []>([])
     const pickerRef = useRef(null)
     const router = useRouter()
 
@@ -39,11 +40,12 @@ export default function CreateNewMatchPage() {
         const res = await createNewMatch({
             sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
-            shuttleId: selectedShuttle,
-            quantityUsed: 1,
+            shuttles: usedShuttles
         })
         router.back()
     }
+
+    console.log("SelectedShuttles", usedShuttles)
 
     return (
         <ScrollView>
@@ -72,10 +74,16 @@ export default function CreateNewMatchPage() {
                     </Picker> */}
                     <SelectShuttleButton
                         selectedShuttles={
-                            ''
+                            usedShuttles
                         }
-                        onSelect={() => {
+                        onSelect={(selected) => {
+                            // const indexOfShuttleUsedBefore = usedShuttles.length > 0 ? usedShuttles.findIndex((el: any) => el.shuttleId == selected.shuttleId) : -1
+                            // if (indexOfShuttleUsedBefore != -1) {
+                            //     usedShuttles[indexOfShuttleUsedBefore].quantityUsed += selected.quantityUsed
 
+                            // } else {
+                            setUsedShuttles(prev => [...prev, selected])
+                            // }
                         }} />
                 </View>
             ) : (
