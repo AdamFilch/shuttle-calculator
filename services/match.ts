@@ -15,7 +15,7 @@ export type createNewMatchShuttle = {
     condition: ShuttleCondition
 }
 
-export type ShuttleCondition = "New" | "Reused" | "Random" 
+export type ShuttleCondition = "New" | "Reused" | "Random"
 
 export type Match = {
     session_id: number,
@@ -24,38 +24,50 @@ export type Match = {
 
 
 export async function createNewMatch(payload: newMatchPayload) {
-    if (payload.shuttles) return
+    const matchRes = await db.runAsync(
+        `INSERT INTO matches (session_id) VALUES (?)`,
+        [payload.sessionId]
+    );
+    const matchId = matchRes.lastInsertRowId;
 
-    const matchRes = await db.runAsync(`
-        INSERT into matches (session_id) VALUES (?)`, [payload.sessionId]
-    )
-    const matchId = matchRes.lastInsertRowId
+    const shuttleData = await Promise.all(payload.shuttles.map(async s => {
+        const [res] = await fetchShuttleById(s.shuttleId);
+        return { ...s, ...res, pricePerUnit: res.total_price / res.num_of_shuttles };
+    }));
 
-    const _shuttle = await fetchShuttleById(payload.shuttleId)
-    const perShuttlePrice = _shuttle[0].total_price / _shuttle[0].num_of_shuttles
-    // Do a query to fetch how much each shuttle is worth 
-    // const shuttleId
-    // const shuttleAmount
+    await db.execAsync("BEGIN TRANSACTION");
 
+    await Promise.all(payload.playersId.map((playerId, i) => {
+        if (!playerId) return Promise.resolve();
+        return db.runAsync(
+            `INSERT INTO match_players (match_id, player_id, position) VALUES (?, ?, ?)`,
+            [matchId, playerId, i]
+        );
+    }));
 
-    for (let i = 0; i < payload.playersId.length; i++) {
-        if (!payload.playersId[i]) continue
-        const matchPlayerRes = await db.runAsync(`INSERT into match_players (match_id, player_id, position) VALUES (?, ?, ?)`, [matchId, payload.playersId[i], i])
-        const shuttleRes = await db.runAsync(`
-            INSERT into shuttle_payments (match_id, shuttle_id, player_id, amount_paid) VALUES (?, ?, ?, ?)
-            `, [matchId, payload.shuttleId, payload.playersId[i], perShuttlePrice * payload.quantityUsed])
-
+    const payments = [];
+    for (const playerId of payload.playersId) {
+        if (!playerId) continue;
+        for (const shuttle of shuttleData) {
+            payments.push(db.runAsync(
+                `INSERT INTO shuttle_payments (match_id, shuttle_id, player_id, amount_paid) VALUES (?, ?, ?, ?)`,
+                [matchId, shuttle.shuttleId, playerId, shuttle.pricePerUnit * shuttle.quantityUsed]
+            ));
+        }
     }
+    await Promise.all(payments);
 
-    const matchShuttleRes = await db.runAsync(`
-        INSERT into match_shuttles (match_id, shuttle_id, quantity_used) VALUES (?, ?, ?)
-        `, [matchId, payload.shuttleId, payload.quantityUsed]
-    )
+    await Promise.all(shuttleData.map(s =>
+        db.runAsync(
+            `INSERT INTO match_shuttles (match_id, shuttle_id, quantity_used) VALUES (?, ?, ?)`,
+            [matchId, s.shuttleId, s.quantityUsed]
+        )
+    ));
 
+    await db.execAsync("COMMIT");
 
-    return {}
+    return { matchId };
 }
-
 
 export async function fetchAllMatches(): Promise<Match[]> {
     const res: Match[] = await db.getAllAsync(`SELECT * FROM matches`)

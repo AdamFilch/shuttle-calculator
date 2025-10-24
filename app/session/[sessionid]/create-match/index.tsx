@@ -37,6 +37,8 @@ export default function CreateNewMatchPage() {
         })
     }
     async function onClickSave() {
+        console.log('UsedShuttles', usedShuttles)
+
         const res = await createNewMatch({
             sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
@@ -45,7 +47,7 @@ export default function CreateNewMatchPage() {
         router.back()
     }
 
-    console.log("SelectedShuttles", usedShuttles)
+
 
     return (
         <ScrollView>
@@ -77,13 +79,14 @@ export default function CreateNewMatchPage() {
                             usedShuttles
                         }
                         onSelect={(selected) => {
-                            // const indexOfShuttleUsedBefore = usedShuttles.length > 0 ? usedShuttles.findIndex((el: any) => el.shuttleId == selected.shuttleId) : -1
-                            // if (indexOfShuttleUsedBefore != -1) {
-                            //     usedShuttles[indexOfShuttleUsedBefore].quantityUsed += selected.quantityUsed
+                            const indexOfShuttleUsedBefore = usedShuttles.length > 0 ? usedShuttles.findIndex((el: any) => el.shuttleId == selected.shuttleId) : -1
+                            console.log("SelectedShuttles", indexOfShuttleUsedBefore)
 
-                            // } else {
-                            setUsedShuttles(prev => [...prev, selected])
-                            // }
+                            if (indexOfShuttleUsedBefore != -1) {
+                                usedShuttles[indexOfShuttleUsedBefore].quantityUsed += selected.quantityUsed
+                            } else {
+                                setUsedShuttles(prev => [...prev, selected])
+                            }
                         }} />
                 </View>
             ) : (
