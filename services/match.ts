@@ -69,6 +69,77 @@ export async function createNewMatch(payload: newMatchPayload) {
     return { matchId };
 }
 
+export type MatchFull = {
+    session_id: number,
+    match_id: number,
+    date: string
+    players: {
+        players_id: number,
+        name: string,
+        position: number,
+    }[],
+    shuttles: {
+        shuttle_id: number,
+        name: string,
+        quantity_used: number,
+    }[]
+}
+
+export async function fetchMatchById(id: string): Promise<MatchFull> {
+
+    const matchRows: any = await db.getAllAsync(`
+        SELECT
+        m.session_id,
+        m.match_id,
+        m.date,
+        ms.shuttle_id,
+        mp.player_id,
+        mp.position,
+        p.name AS player_name,
+        ms.quantity_used,
+        s.name AS shuttle_name
+        FROM matches m
+        LEFT JOIN match_shuttles ms ON ms.match_id = m.match_id
+        LEFT JOIN match_players mp ON mp.match_id = m.match_id
+        LEFT JOIN shuttles s ON s.shuttle_id = ms.shuttle_id
+        LEFT JOIN players p ON p.player_id = mp.player_id
+        WHERE m.match_id = ?
+        `, [id])
+
+    const playersMap: Record<number, any> = {}
+    const shuttlesMap: Record<number, any> = {}
+
+    for (let row of matchRows) {
+        if (!playersMap[row.player_id]) {
+            playersMap[row.player_id] = {
+                player_id: row.player_id,
+                name: row.player_name,
+                position: row.position
+            }
+        }
+
+        if (!shuttlesMap[row.shuttle_id]) {
+            shuttlesMap[row.shuttle_id] = {
+                shuttle_id: row.shuttle_id,
+                name: row.shuttle_name,
+                quantity_used: row.quantity_used
+            }
+        }
+    }
+    console.log(matchRows)
+
+    return {
+        session_id: matchRows[0].session_id,
+        match_id: matchRows[0].match_id,
+        date: matchRows[0].date,
+        players: Object.values(playersMap),
+        shuttles: Object.values(shuttlesMap)
+    }
+}
+
+
+
+
 export async function fetchAllMatches(): Promise<Match[]> {
     const res: Match[] = await db.getAllAsync(`SELECT * FROM matches`)
     return res

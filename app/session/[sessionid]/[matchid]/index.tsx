@@ -1,4 +1,7 @@
+import { fetchMatchById, MatchFull } from "@/services/match";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 
@@ -7,6 +10,21 @@ export default function MatchPage() {
     const { sessionId, matchId } = useLocalSearchParams()
 
 
+    const [match, setMatch] = useState<MatchFull | null>(null)
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchSession()
+        }, [sessionId])
+    )
+
+    const fetchSession = async () => {
+        fetchMatchById(matchId.toString()).then(res => {
+            setMatch(res)
+        })
+    }
+
+    console.log("MatchesById", match)
 
     return (
         <ScrollView>
