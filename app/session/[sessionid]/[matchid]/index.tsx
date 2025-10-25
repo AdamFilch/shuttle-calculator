@@ -1,8 +1,9 @@
+import { Button, ButtonText } from "@/components/ui/button";
 import { fetchMatchById, MatchFull } from "@/services/match";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { FlatList, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 
 export default function MatchPage() {
@@ -24,10 +25,16 @@ export default function MatchPage() {
         })
     }
 
-    console.log("MatchesById", match)
+    console.log('MatchPlayers', match)
+
+    if (match == null) {
+        return <View>
+            <Text>Loading</Text>
+        </View>
+    }
 
     return (
-        <ScrollView>
+        <View>
             <View style={{
                 backgroundColor: 'white'
             }}>
@@ -51,7 +58,45 @@ export default function MatchPage() {
                     <Text>Add another shuttle</Text>
                 </TouchableOpacity>
             </View>
-        </ScrollView>
+            <View>
+                <View>
+
+                </View>
+                {match.shuttles.length > 0 && (
+                        <FlatList
+
+                            data={match.shuttles}
+                            numColumns={3}
+                            contentContainerStyle={{
+                                gap: 10
+                            }}
+                            columnWrapperStyle={{
+                                columnGap: 10
+                            }}
+
+                            renderItem={(shuttle) => (
+                                <Button
+                                    style={{
+                                        width: 150,
+                                        height: 100,
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                    }}
+                                    onPress={() => {
+                                    }}
+                                >
+                                    <ButtonText>
+                                        {shuttle.item.name}
+                                    </ButtonText>
+                                    <ButtonText>
+                                        ({shuttle.item.quantity_used})
+                                    </ButtonText>
+                                </Button>
+                            )}
+                        />
+                )}
+            </View>
+        </View>
     )
 }
 

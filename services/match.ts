@@ -126,13 +126,12 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
             }
         }
     }
-    console.log(matchRows)
 
     return {
         session_id: matchRows[0].session_id,
         match_id: matchRows[0].match_id,
         date: matchRows[0].date,
-        players: Object.values(playersMap),
+        players: Object.values(playersMap).sort((a,b) => a.position - b.position),
         shuttles: Object.values(shuttlesMap)
     }
 }
