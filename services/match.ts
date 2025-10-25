@@ -73,11 +73,12 @@ export type MatchFull = {
     session_id: number,
     match_id: number,
     date: string
-    players: {
+    players: 
+        Record<number, {
         players_id: number,
         name: string,
         position: number,
-    }[],
+    }>,
     shuttles: {
         shuttle_id: number,
         name: string,
@@ -110,8 +111,8 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
     const shuttlesMap: Record<number, any> = {}
 
     for (let row of matchRows) {
-        if (!playersMap[row.player_id]) {
-            playersMap[row.player_id] = {
+        if (!playersMap[row.position]) {
+            playersMap[row.position] = {
                 player_id: row.player_id,
                 name: row.player_name,
                 position: row.position
@@ -131,7 +132,7 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
         session_id: matchRows[0].session_id,
         match_id: matchRows[0].match_id,
         date: matchRows[0].date,
-        players: Object.values(playersMap).sort((a,b) => a.position - b.position),
+        players: playersMap,
         shuttles: Object.values(shuttlesMap)
     }
 }

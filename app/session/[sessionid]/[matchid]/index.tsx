@@ -67,19 +67,19 @@ export default function MatchPage() {
             <View>
                 <VStack>
                     <HStack>
-                        {match.players.length > 0 && (
+                        {match.players[0]  && (
                             <PlayerButton name={match.players[0].name} />
                         )}
-                        {match.players.length > 2 && (
+                        {match.players[2] && (
                             <PlayerButton name={match.players[2].name} />
                         )}
                     </HStack>
                     <Divider />
                     <HStack>
-                        {match.players.length > 1 && (
+                        {match.players[1] && (
                             <PlayerButton name={match.players[1].name} />
                         )}
-                        {match.players.length > 3 && (
+                        {match.players[3] && (
                             <PlayerButton name={match.players[3].name} />
                         )}
                     </HStack>
