@@ -1,4 +1,7 @@
 import { Button, ButtonText } from "@/components/ui/button";
+import { Divider } from "@/components/ui/divider";
+import { HStack } from "@/components/ui/hstack";
+import { VStack } from "@/components/ui/vstack";
 import { fetchMatchById, MatchFull } from "@/services/match";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
@@ -33,6 +36,9 @@ export default function MatchPage() {
         </View>
     }
 
+
+
+
     return (
         <View>
             <View style={{
@@ -59,41 +65,57 @@ export default function MatchPage() {
                 </TouchableOpacity>
             </View>
             <View>
-                <View>
-
-                </View>
+                <VStack>
+                    <HStack>
+                        {match.players.length > 0 && (
+                            <PlayerButton name={match.players[0].name} />
+                        )}
+                        {match.players.length > 2 && (
+                            <PlayerButton name={match.players[2].name} />
+                        )}
+                    </HStack>
+                    <Divider />
+                    <HStack>
+                        {match.players.length > 1 && (
+                            <PlayerButton name={match.players[1].name} />
+                        )}
+                        {match.players.length > 3 && (
+                            <PlayerButton name={match.players[3].name} />
+                        )}
+                    </HStack>
+                </VStack>
                 {match.shuttles.length > 0 && (
-                        <FlatList
+                    <FlatList
 
-                            data={match.shuttles}
-                            numColumns={3}
-                            contentContainerStyle={{
-                                gap: 10
-                            }}
-                            columnWrapperStyle={{
-                                columnGap: 10
-                            }}
+                        data={match.shuttles}
+                        numColumns={3}
+                        contentContainerStyle={{
+                            gap: 10
+                        }}
+                        columnWrapperStyle={{
+                            columnGap: 10
+                        }}
 
-                            renderItem={(shuttle) => (
-                                <Button
-                                    style={{
-                                        width: 150,
-                                        height: 100,
-                                        display: 'flex',
-                                        flexDirection: 'column'
-                                    }}
-                                    onPress={() => {
-                                    }}
-                                >
-                                    <ButtonText>
-                                        {shuttle.item.name}
-                                    </ButtonText>
-                                    <ButtonText>
-                                        ({shuttle.item.quantity_used})
-                                    </ButtonText>
-                                </Button>
-                            )}
-                        />
+                        renderItem={(shuttle) => (
+                            <Button
+                                style={{
+                                    width: 150,
+                                    height: 100,
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                }}
+                                onPress={() => {
+                                }}
+                            >
+                                <ButtonText>
+                                    {shuttle.item.name}
+                                </ButtonText>
+                                <ButtonText>
+                                    ({shuttle.item.quantity_used})
+                                </ButtonText>
+                            </Button>
+                        )}
+                    />
                 )}
             </View>
         </View>
@@ -105,4 +127,25 @@ const buttonStyle: ViewStyle = {
     width: 100,
     height: 100,
     justifyContent: 'center'
+}
+
+
+export function PlayerButton({
+    name
+}: {
+    name: string
+}) {
+    return <Button
+        onPress={() => {
+        }}
+        style={{
+            width: 150,
+            height: 100,
+            backgroundColor: 'white'
+        }}>
+
+        <ButtonText>
+            {name}
+        </ButtonText>
+    </Button>
 }
