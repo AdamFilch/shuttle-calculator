@@ -28,7 +28,6 @@ export default function MatchPage() {
         })
     }
 
-    console.log('MatchPlayers', match)
 
     if (match == null) {
         return <View>
