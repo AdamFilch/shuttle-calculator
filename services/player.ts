@@ -75,7 +75,7 @@ export type ShuttlePaymentsByPlayerSessions = Player & {
         date_created: String,
         date_paid: String | null
       }[]
-    }
+    }[]
   })[]
 }
 
@@ -100,13 +100,14 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
   p.name AS player_name
   FROM shuttle_payments sp
   LEFT JOIN matches m ON sp.match_id = m.match_id
-  LEFT JOIN sessions s ON m.match_id = s.session_id
+  LEFT JOIN sessions s ON s.session_id = m.session_id
   LEFT JOIN shuttles sh ON sp.shuttle_id = sh.shuttle_id
   LEFT JOIN match_shuttles ms ON sp.match_id = ms.match_id
   LEFT JOIN match_players mp ON sp.match_id = mp.match_id
   LEFT JOIN players p ON mp.player_id = p.player_id
   WHERE sp.player_id = ?
   `, [id])
+
 
   const sessionsMap: Record<number, any> = {}
   for (let row of shuttlePaymentsByPlayerRows) {
