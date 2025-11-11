@@ -1,4 +1,5 @@
 import { Button, ButtonText } from "@/components/ui/button";
+import { CheckIcon, Icon } from "@/components/ui/icon";
 import { VStack } from "@/components/ui/vstack";
 import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player, ShuttlePaymentsByPlayerSessions } from "@/services/player";
 import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
@@ -13,6 +14,8 @@ export default function SelectPlayerPage() {
     const { playerId } = useLocalSearchParams()
     const [player, setPlayer] = useState<Player | null>(null)
     const [shuttlePayments, setShuttlePayments] = useState<ShuttlePaymentsByPlayerSessions | null>(null)
+    const [SelectShuttleMode, toggleShuttleMode] = useState(false)
+    const [selectedShuttles, setSelectedShuttles ] = useState([])
 
     useFocusEffect(
         useCallback(() => {
@@ -27,8 +30,9 @@ export default function SelectPlayerPage() {
                 setShuttlePayments(res)
             })
         })
-
     }
+
+    console.log('SelectedShuttles', selectedShuttles)
 
     if (!player) {
         return (
@@ -85,11 +89,24 @@ export default function SelectPlayerPage() {
                                     return <Button
                                         style={{
                                             width: 150,
-                                            height: 100,
+                                            height: 120,
                                             display: 'flex',
                                             flexDirection: 'column'
                                         }}
+                                        onLongPress={() => {
+                                            if (!SelectShuttleMode) {
+                                                toggleShuttleMode(true)
+                                                setSelectedShuttles([{
+                                                    ...match,
+                                                    numOfShuttle,
+                                                    totalCosts
+                                                }])  
+                                            }
+                                        }} 
                                         onPress={() => {
+                                            if (SelectShuttleMode) {
+                                                setSelectedShuttles(prev => prev.filter((v) => v.match_id !== match.item.match_id))
+                                            }
                                         }}
                                     >
                                         <ButtonText>
@@ -101,6 +118,20 @@ export default function SelectPlayerPage() {
                                         <ButtonText>
                                             {totalCosts} Total
                                         </ButtonText>
+                                        {SelectShuttleMode && (
+                                        <View style={{
+                                            width: 15,
+                                            height: 15,
+                                            borderWidth: 1,
+                                            borderColor: 'black',
+                                            alignContent: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            {selectedShuttles.some((v) => v.match_id == match.item.match_id) && (
+                                                <Icon as={CheckIcon} size={'sm'} color="black" />
+                                            )}
+                                        </View>
+                                        )}
                                     </Button>
                                 }}
                             />
