@@ -32,7 +32,6 @@ export default function SelectPlayerPage() {
         })
     }
 
-    console.log('SelectedShuttles', selectedShuttles)
 
     if (!player) {
         return (
@@ -97,7 +96,7 @@ export default function SelectPlayerPage() {
                                             if (!SelectShuttleMode) {
                                                 toggleShuttleMode(true)
                                                 setSelectedShuttles([{
-                                                    ...match,
+                                                    ...match.item,
                                                     numOfShuttle,
                                                     totalCosts
                                                 }])  
@@ -105,7 +104,15 @@ export default function SelectPlayerPage() {
                                         }} 
                                         onPress={() => {
                                             if (SelectShuttleMode) {
-                                                setSelectedShuttles(prev => prev.filter((v) => v.match_id !== match.item.match_id))
+                                                if (!selectedShuttles.some((v) => v.match_id == match.item.match_id)) {
+                                                    setSelectedShuttles([...selectedShuttles, {
+                                                        ...match.item,
+                                                        numOfShuttle,
+                                                        totalCosts
+                                                    }])
+                                                } else {
+                                                    setSelectedShuttles(prev => prev.filter((v) => v.match_id !== match.item.match_id))
+                                                }
                                             }
                                         }}
                                     >
