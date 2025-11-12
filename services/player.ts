@@ -63,20 +63,21 @@ export async function fetchShuttlePaymentsByPlayerId(id: number) {
 
 export type ShuttlePaymentsByPlayerSessions = Player & {
   sessions: (Session & {
-    matches_played: {
-      date: string,
-      match_id: number,
-      players: Player[],
-      shuttles: {
-        shuttle_id: number,
-        name: String,
-        quantity_used: number,
-        owed_amount: number,
-        date_created: String,
-        date_paid: String | null
-      }[]
-    }[]
+    matches_played: MatchesPlayed[]
   })[]
+}
+export type MatchesPlayed = {
+  date: string,
+  match_id: number,
+  players: Player[],
+  shuttles: {
+    shuttle_id: number,
+    name: String,
+    quantity_used: number,
+    owed_amount: number,
+    date_created: String,
+    date_paid: String | null
+  }[]
 }
 
 export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<ShuttlePaymentsByPlayerSessions> {
