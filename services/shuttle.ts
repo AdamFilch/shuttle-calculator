@@ -144,3 +144,5 @@ export async function fetchAllShuttlesBySessionId<Invert extends boolean>(id: st
         shuttles: Object.values(shuttleMap)
     } as ShuttlesBySessionResult<Invert>
 }
+
+
