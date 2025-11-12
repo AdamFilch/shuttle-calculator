@@ -1,4 +1,5 @@
 import { Button, ButtonText } from "@/components/ui/button";
+import { HStack } from "@/components/ui/hstack";
 import { CheckIcon, Icon } from "@/components/ui/icon";
 import { VStack } from "@/components/ui/vstack";
 import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player, ShuttlePaymentsByPlayerSessions } from "@/services/player";
@@ -15,7 +16,7 @@ export default function SelectPlayerPage() {
     const [player, setPlayer] = useState<Player | null>(null)
     const [shuttlePayments, setShuttlePayments] = useState<ShuttlePaymentsByPlayerSessions | null>(null)
     const [SelectShuttleMode, toggleShuttleMode] = useState(false)
-    const [selectedShuttles, setSelectedShuttles ] = useState([])
+    const [selectedShuttles, setSelectedShuttles] = useState([])
 
     useFocusEffect(
         useCallback(() => {
@@ -65,6 +66,30 @@ export default function SelectPlayerPage() {
                     display: 'flex',
                     gap: 10
                 }}>
+                    <VStack>
+                        {SelectShuttleMode ? (
+
+                            <HStack>
+                                <Button>
+                                    <ButtonText>Pay ({selectedShuttles.length})</ButtonText>
+                                </Button>
+                                <Button onPress={() => {
+                                    setSelectedShuttles([])
+                                    toggleShuttleMode(false)
+                                }}>
+                                    <ButtonText>Cancel</ButtonText>
+                                </Button>
+                            </HStack>
+                        ) : (
+                            <HStack>
+                                <Button onPress={() => {
+                                    toggleShuttleMode(true)
+                                }}>
+                                    <ButtonText>Pay Shuttles</ButtonText>
+                                </Button>
+                            </HStack>
+                        )}
+                    </VStack>
                     {shuttlePayments.sessions.map((session, idx) => (
                         <VStack key={idx} style={{
                             backgroundColor: 'white',
@@ -99,9 +124,9 @@ export default function SelectPlayerPage() {
                                                     ...match.item,
                                                     numOfShuttle,
                                                     totalCosts
-                                                }])  
+                                                }])
                                             }
-                                        }} 
+                                        }}
                                         onPress={() => {
                                             if (SelectShuttleMode) {
                                                 if (!selectedShuttles.some((v) => v.match_id == match.item.match_id)) {
@@ -126,18 +151,18 @@ export default function SelectPlayerPage() {
                                             {totalCosts} Total
                                         </ButtonText>
                                         {SelectShuttleMode && (
-                                        <View style={{
-                                            width: 15,
-                                            height: 15,
-                                            borderWidth: 1,
-                                            borderColor: 'black',
-                                            alignContent: 'center',
-                                            justifyContent: 'center'
-                                        }}>
-                                            {selectedShuttles.some((v) => v.match_id == match.item.match_id) && (
-                                                <Icon as={CheckIcon} size={'sm'} color="black" />
-                                            )}
-                                        </View>
+                                            <View style={{
+                                                width: 15,
+                                                height: 15,
+                                                borderWidth: 1,
+                                                borderColor: 'black',
+                                                alignContent: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                {selectedShuttles.some((v) => v.match_id == match.item.match_id) && (
+                                                    <Icon as={CheckIcon} size={'sm'} color="black" />
+                                                )}
+                                            </View>
                                         )}
                                     </Button>
                                 }}
