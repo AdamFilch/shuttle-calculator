@@ -69,6 +69,7 @@ export type ShuttlePaymentsByPlayerSessions = Player & {
 export type MatchesPlayed = {
   date: string,
   match_id: number,
+  match_number: number,
   players: Player[],
   shuttles: {
     shuttle_id: number,
@@ -91,6 +92,7 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
   sp.date_created AS shuttle_payment_requested_date,
   sp.date_paid AS shuttle_payment_paid_date,
   m.session_id,
+  m.match_number,
   m.date AS match_date,
   s.name AS session_name,
   s.date AS session_date,
@@ -126,6 +128,7 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
     if (!sessionsMap[row.session_id].matches_played[row.match_id]) {
       sessionsMap[row.session_id].matches_played[row.match_id] = {
         match_id: row.match_id,
+        match_number: row.match_number,
         date: row.match_date,
         players: {},
         shuttles: {}
@@ -159,6 +162,7 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
     matches_played: Object.values(s.matches_played).map((mp: any) => ({
       date: mp.date,
       match_id: mp.match_id,
+      match_number: mp.match_number,
       players: Object.values(mp.players),
       shuttles: Object.values(mp.shuttles)
     }))

@@ -45,6 +45,7 @@ export async function setupDatabase() {
       CREATE TABLE IF NOT EXISTS matches (
         match_id INTEGER PRIMARY KEY NOT NULL,
         session_id INTEGER NOT NULL,
+        match_number INTEGER KEY NOT NULL,
         date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (session_id) REFERENCES sessions(session_id)
       );

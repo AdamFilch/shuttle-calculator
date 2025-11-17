@@ -24,9 +24,12 @@ export type Match = {
 
 
 export async function createNewMatch(payload: newMatchPayload) {
+
+    const numberOfMatches = await fetchNumberOfMatchesBySessionId(payload.sessionId.toString())
+
     const matchRes = await db.runAsync(
-        `INSERT INTO matches (session_id) VALUES (?)`,
-        [payload.sessionId]
+        `INSERT INTO matches (session_id, match_number) VALUES (?, ?)`,
+        [payload.sessionId, numberOfMatches.count]
     );
     const matchId = matchRes.lastInsertRowId;
 
@@ -138,7 +141,14 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
 }
 
 
+export async function fetchNumberOfMatchesBySessionId(id: string) {
+  const rows: any = await db.getFirstAsync(
+    `SELECT COUNT(*) as count FROM matches WHERE session_id = ?`,
+    [id]
+  );
 
+  return rows;
+}
 
 export async function fetchAllMatches(): Promise<Match[]> {
     const res: Match[] = await db.getAllAsync(`SELECT * FROM matches`)

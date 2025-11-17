@@ -39,6 +39,7 @@ export default function CreateNewMatchPage() {
     async function onClickSave() {
         console.log('UsedShuttles', usedShuttles)
 
+
         const res = await createNewMatch({
             sessionId: parseInt(sessionId.toString()),
             playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
@@ -56,6 +57,7 @@ export default function CreateNewMatchPage() {
             }}>
                 <Text>Create Match Page</Text>
             </View>
+            
             {shuttleList.length > 0 ? (
                 <View>
                     {/* <View style={{
