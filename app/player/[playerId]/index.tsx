@@ -108,7 +108,7 @@ export default function SelectPlayerPage() {
                     </VStack>
                     {shuttlePayments.sessions.map((session, idx) => {
                         const matchesUnpaid = session.matches_played.some((match) => match.shuttles.some((shu) => shu.owed_amount > 0))
-                        if (!matchesUnpaid) return <View></View>
+                        if (!matchesUnpaid) return <View key={idx}></View>
                         return <VStack key={idx} style={{
                             backgroundColor: 'white',
                         }}>
