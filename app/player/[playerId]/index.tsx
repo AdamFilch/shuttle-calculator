@@ -25,11 +25,11 @@ export default function SelectPlayerPage() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchPlayer()
+            fetchPlayerAndShuttles()
         }, [playerId])
 
     )
-    const fetchPlayer = async () => {
+    const fetchPlayerAndShuttles = async () => {
         fetchPlayerById(playerId.toString()).then((res) => {
             setPlayer(res[0])
             fetchShuttlePaymentsByPlayerSessions(res[0].player_id).then((res) => {
@@ -44,6 +44,7 @@ export default function SelectPlayerPage() {
             player_id: playerId.toString()
         }).then(() => {
             setOpenConfirmation(false)
+            fetchPlayerAndShuttles()
         })
     }
 
@@ -108,7 +109,7 @@ export default function SelectPlayerPage() {
                     </VStack>
                     {shuttlePayments.sessions.map((session, idx) => {
                         const matchesUnpaid = session.matches_played.some((match) => match.shuttles.some((shu) => shu.owed_amount > 0))
-                        if (!matchesUnpaid) return <View key={idx}></View>
+                        // if (!matchesUnpaid) return <View key={idx}></View>
                         return <VStack key={idx} style={{
                             backgroundColor: 'white',
                         }}>
@@ -116,7 +117,17 @@ export default function SelectPlayerPage() {
                                 {session.name == '' ? DisplayTimeDDDASHMMDASHYYYY(session.date) : session.name}
                             </Text>
                             <FlatList
-                                data={session.matches_played.filter((matches) => matches.shuttles.some((shu) => shu.owed_amount > 0))}
+                                // data={session.matches_played.filter((matches) => matches.shuttles.some((shu) => shu.owed_amount > 0))}
+                                data={session.matches_played.sort((match1, match2) => {
+                                    let totalCostsM2 = match2.shuttles.reduce((acc, shuttle) => {
+                                        return acc + shuttle.owed_amount
+                                    }, 0)
+                                    let totalCostsM1 = match1.shuttles.reduce((acc, shuttle) => {
+                                        return acc + shuttle.owed_amount
+                                    }, 0)
+
+                                    return totalCostsM2 - totalCostsM1
+                                })}
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={{
@@ -124,7 +135,7 @@ export default function SelectPlayerPage() {
                                     paddingHorizontal: 5
                                 }}
                                 renderItem={(match) => {
-                                    const numOfShuttle = match.item.shuttles.length
+                                    const numOfShuttle = match.item.shuttles.filter((shu) => shu.owed_amount > 0).length
                                     const totalCosts = match.item.shuttles.reduce((acc, shuttle) => {
                                         return acc + shuttle.owed_amount
                                     }, 0)
@@ -161,7 +172,7 @@ export default function SelectPlayerPage() {
                                         }}
                                     >
                                         <ButtonText>
-                                            {match.index}
+                                            {match.item.match_number}
                                         </ButtonText>
                                         <ButtonText>
                                             {numOfShuttle} Unpaid
