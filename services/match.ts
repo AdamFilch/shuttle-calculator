@@ -52,9 +52,10 @@ export async function createNewMatch(payload: newMatchPayload) {
     for (const playerId of payload.playersId) {
         if (!playerId) continue;
         for (const shuttle of shuttleData) {
+            let amount_to_pay = (shuttle.pricePerUnit * shuttle.quantityUsed) / payload.playersId.filter((playerId) => playerId != null).length
             payments.push(db.runAsync(
                 `INSERT INTO shuttle_payments (match_id, shuttle_id, player_id, amount_paid) VALUES (?, ?, ?, ?)`,
-                [matchId, shuttle.shuttleId, playerId, shuttle.pricePerUnit * shuttle.quantityUsed]
+                [matchId, shuttle.shuttleId, playerId, amount_to_pay.toFixed(2)]
             ));
         }
     }
