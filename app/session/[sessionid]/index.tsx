@@ -1,3 +1,5 @@
+import { PayByPlayerModal } from "@/components/session/modal";
+import { Button, ButtonText } from "@/components/ui/button";
 import { fetchSessionById, SessionMatches } from "@/services/session";
 import { fetchAllShuttlesBySessionId, ShuttlesBySession } from "@/services/shuttle";
 import { useFocusEffect } from "@react-navigation/native";
@@ -10,6 +12,7 @@ export default function SelectedSessionPage() {
     const router = useRouter()
     const { sessionId } = useLocalSearchParams()
     const [sessionMatches, setSessionMatches] = useState<SessionMatches | null>(null)
+    const [openPPPModal, setOpenPPPModal] = useState(false)
     const [shuttlesBySesison, setShuttlesBySession] = useState<ShuttlesBySession | null>(null)
 
     useFocusEffect(
@@ -56,15 +59,22 @@ export default function SelectedSessionPage() {
                 width: 'auto',
             }} >
 
-                <TouchableOpacity
+                <Button
                     onPress={async () => {
                         // setAddMatchIsOpen(true)
                         router.navigate(`/session/${sessionId.toString()}/create-match`)
                     }}
                     style={buttonStyle}
                 >
-                    <Text>Add Match</Text>
-                </TouchableOpacity>
+                    <ButtonText>Add Match</ButtonText>
+                </Button>
+                <Button
+                    onPress={async () => {
+                        setOpenPPPModal(true)
+                    }}
+                    style={buttonStyle}>
+                    <ButtonText>Pay by Player</ButtonText>
+                </Button>
 
             </View>
             <View>
@@ -93,7 +103,15 @@ export default function SelectedSessionPage() {
                     </TouchableOpacity>
                 ))}
             </View>
+            <PayByPlayerModal
+                open={openPPPModal}
+                onClose={() => {
+                    setOpenPPPModal(false)
+                }} onConfirm={() => {
 
+                }}
+                sessionId={sessionId.toString()}
+            />
         </ScrollView>
     )
 }

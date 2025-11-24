@@ -115,3 +115,13 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         matches
     }
 }
+
+
+export async function fetchShuttlePaymentsBySessionId(id: string) {
+    const sessionRows = await db.getAllAsync(`
+        SELECT
+
+        FROM 
+        `
+    [id])
+}

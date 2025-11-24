@@ -188,6 +188,51 @@ export type PlayersShuttlePayments = {
   }[]
 }
 
+export async function fetchAllPlayerPaymentsBySession(id: string): Promise<PlayersShuttlePayments[]> {
+  const shuttlePaymentsByPlayerRows: any = await db.getAllAsync(`
+      SELECT
+    p.player_id,
+    p.name AS player_name,
+    sp.shuttle_id,
+    sp.amount_paid,
+    sp.date_paid,
+    sp.date_created,
+    sh.name AS shuttle_name
+    FROM shuttle_payments sp
+    JOIN matches m ON m.match_id = sp.match_id
+    JOIN players p ON p.player_id = sp.player_id
+    LEFT JOIN shuttles sh ON sh.shuttle_id = sp.shuttle_id
+    WHERE m.session_id = ?
+      `, [id])
+
+
+
+  const playersMap = {}
+
+  for (const row of shuttlePaymentsByPlayerRows) {
+    if (!playersMap[row.player_id]) {
+      playersMap[row.player_id] = {
+        player_id: row.player_id,
+        name: row.player_name,
+        total_owed_amount: 0,
+        shuttle_payments: []
+      }
+    }
+
+    if (row.shuttle_id !== null) {
+      playersMap[row.player_id].total_owed_amount += row.amount_paid
+      playersMap[row.player_id].shuttle_payments.push({
+        shuttle_id: row.shuttle_id,
+        name: row.shuttle_name,
+        owed_amount: row.amount_paid,
+        date_created: row.date_created,
+        date_paid: row.date_paid
+      })
+    }
+  }
+  return Object.values(playersMap)
+}
+
 export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]> {
   const shuttlePaymentsByPlayerRows: any = await db.getAllAsync(`
       SELECT

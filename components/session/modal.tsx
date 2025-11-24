@@ -1,6 +1,8 @@
+import { fetchAllPlayerPaymentsBySession, PlayersShuttlePayments } from '@/services/player'
 import { createNewSession } from '@/services/session'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { useState } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
+import { useCallback, useState } from 'react'
 import { Button, ButtonText } from "../ui/button"
 import { Heading } from "../ui/heading"
 import { CloseIcon, Icon } from "../ui/icon"
@@ -91,6 +93,87 @@ export function AddSessionModal({
                         }}
                     >
                         <ButtonText>Create New Session</ButtonText>
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    )
+}
+
+
+export function PayByPlayerModal({
+    open,
+    onClose,
+    onConfirm,
+    sessionId
+}: {
+    open: boolean,
+    onClose: () => void,
+    onConfirm: () => void,
+    sessionId: string
+}) { 
+    
+    const [openConfirmation, setOpenConfirmation] = useState(false)
+    const [playerPayments, setPlayerPayments] = useState<PlayersShuttlePayments[] | null>(null)
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchPlayerPayments()
+        }, [open])
+    )
+
+    const fetchPlayerPayments = async () => {
+        fetchAllPlayerPaymentsBySession(sessionId).then((res) => {
+            setPlayerPayments(res)            
+        })
+    }
+
+    console.log("PlayerPayments", playerPayments)
+
+    return (
+        <Modal
+            isOpen={open}
+            size={'lg'}
+            onClose={() => {
+                onClose()
+            }}
+        >
+            <ModalBackdrop />
+            <ModalContent>
+                <ModalHeader>
+                    <Heading>
+                        Shuttle Payment by Player
+                    </Heading>
+                    <ModalCloseButton>
+                        <Icon
+                            as={CloseIcon}
+                            size="md"
+                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
+                        />
+                    </ModalCloseButton>
+                </ModalHeader>
+                <ModalBody>
+                    <VStack space='sm'>
+                        
+
+                    </VStack>
+                </ModalBody>
+                <ModalFooter>
+                    <Button
+                        variant="outline"
+                        action="secondary"
+                        onPress={() => {
+                            onClose()
+                        }}
+                    >
+                        <ButtonText>Cancel</ButtonText>
+                    </Button>
+                    <Button
+                        onPress={() => {
+                            setOpenConfirmation(true)
+                        }}
+                    >
+                        <ButtonText>Confirm Payment</ButtonText>
                     </Button>
                 </ModalFooter>
             </ModalContent>
