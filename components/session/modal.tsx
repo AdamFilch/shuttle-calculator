@@ -3,9 +3,10 @@ import { createNewSession } from '@/services/session'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback, useState } from 'react'
+import { FlatList, View } from 'react-native'
 import { Button, ButtonText } from "../ui/button"
 import { Heading } from "../ui/heading"
-import { CloseIcon, Icon } from "../ui/icon"
+import { CheckIcon, CloseIcon, Icon } from "../ui/icon"
 import { Input, InputField } from '../ui/input'
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "../ui/modal"
 import { Text } from "../ui/text"
@@ -111,10 +112,11 @@ export function PayByPlayerModal({
     onClose: () => void,
     onConfirm: () => void,
     sessionId: string
-}) { 
-    
+}) {
+
     const [openConfirmation, setOpenConfirmation] = useState(false)
     const [playerPayments, setPlayerPayments] = useState<PlayersShuttlePayments[] | null>(null)
+    const [selectedPlayers, setSelectedPlayers] = useState([])
 
     useFocusEffect(
         useCallback(() => {
@@ -124,7 +126,7 @@ export function PayByPlayerModal({
 
     const fetchPlayerPayments = async () => {
         fetchAllPlayerPaymentsBySession(sessionId).then((res) => {
-            setPlayerPayments(res)            
+            setPlayerPayments(res)
         })
     }
 
@@ -154,7 +156,50 @@ export function PayByPlayerModal({
                 </ModalHeader>
                 <ModalBody>
                     <VStack space='sm'>
-                        
+                        <FlatList
+                            data={playerPayments}
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{
+                                gap: 10
+                            }}
+                            columnWrapperStyle={{
+                                flex: 1,
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: 10
+                            }}
+                            numColumns={3}
+                            renderItem={(player) => (
+                                <Button
+                                    key={player.item.player_id}
+                                    style={{
+                                        width: 100,
+                                        height: 100,
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                    }}
+                                >
+                                    <ButtonText>
+                                        {player.item.name}
+                                    </ButtonText>
+                                    <ButtonText>
+                                        {player.item.total_owed_amount}
+                                    </ButtonText>
+                                    <View style={{
+                                        width: 15,
+                                        height: 15,
+                                        borderWidth: 1,
+                                        borderColor: 'black',
+                                        alignContent: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        {selectedPlayers.some((v) => v.player_id == player.item.player_id) && (
+                                            <Icon as={CheckIcon} size={'sm'} color="black" />
+                                        )}
+                                    </View>
+                                </Button>
+                            )}
+                        />
 
                     </VStack>
                 </ModalBody>
