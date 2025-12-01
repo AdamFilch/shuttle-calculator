@@ -146,31 +146,41 @@ export function PayByPlayerModal({
                     <Heading>
                         Shuttle Payment by Player
                     </Heading>
-                    <ModalCloseButton>
-                        <Icon
-                            as={CloseIcon}
-                            size="md"
-                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-                        />
-                    </ModalCloseButton>
+                    <View>
+                        <ModalCloseButton>
+                            <Icon
+                                as={CloseIcon}
+                                size="md"
+                                className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
+                            />
+                        </ModalCloseButton>
+                    </View>
                 </ModalHeader>
-                <ModalBody>
-                    <VStack space='sm'>
+                <ModalBody scrollEnabled={false}>
+                    <Button style={{
+                        alignSelf: 'flex-end',
+                        marginBottom: 10
+                    }}>
+                        <ButtonText>
+                            {selectedPlayers.length > 1 ? "Deselect All" : "Select All"}
+                        </ButtonText>
+                    </Button>
+                    <View>
                         <FlatList
-                            data={playerPayments}
+                            data={padToFullRows(playerPayments, 3)}
                             showsVerticalScrollIndicator={false}
                             contentContainerStyle={{
-                                gap: 10
+                                gap: 10,
                             }}
                             columnWrapperStyle={{
-                                flex: 1,
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                gap: 10
+                                justifyContent: "center",   
+                                gap: 10,
                             }}
                             numColumns={3}
-                            renderItem={(player) => (
-                                <Button
+                            renderItem={(player) => {
+                                if (!player.item.player_id) return <View style={{width: 100, height: 100}}></View>
+
+                                return <Button
                                     key={player.item.player_id}
                                     style={{
                                         width: 100,
@@ -198,10 +208,10 @@ export function PayByPlayerModal({
                                         )}
                                     </View>
                                 </Button>
-                            )}
+                            }}
                         />
 
-                    </VStack>
+                    </View>
                 </ModalBody>
                 <ModalFooter>
                     <Button
@@ -224,4 +234,16 @@ export function PayByPlayerModal({
             </ModalContent>
         </Modal>
     )
+}
+
+
+function padToFullRows(data, columns) {
+  const remainder = data.length % columns;
+  if (remainder === 0) return data;
+
+  const paddingCount = columns - remainder;
+  return [
+    ...data,
+    ...Array.from({ length: paddingCount }).map(() => ({ __empty: true })),
+  ];
 }
