@@ -130,7 +130,7 @@ export function PayByPlayerModal({
         })
     }
 
-    console.log("PlayerPayments", playerPayments)
+    console.log("PlayerPayments", selectedPlayers)
 
     return (
         <Modal
@@ -160,9 +160,15 @@ export function PayByPlayerModal({
                     <Button style={{
                         alignSelf: 'flex-end',
                         marginBottom: 10
+                    }} onPress={() => {
+                        if (selectedPlayers.length > 0) {
+                            setSelectedPlayers([])
+                        } else {
+                            setSelectedPlayers(playerPayments)
+                        }
                     }}>
                         <ButtonText>
-                            {selectedPlayers.length > 1 ? "Deselect All" : "Select All"}
+                            {selectedPlayers.length > 0 ? "Deselect All" : "Select All"}
                         </ButtonText>
                     </Button>
                     <View>
@@ -173,12 +179,12 @@ export function PayByPlayerModal({
                                 gap: 10,
                             }}
                             columnWrapperStyle={{
-                                justifyContent: "center",   
+                                justifyContent: "center",
                                 gap: 10,
                             }}
                             numColumns={3}
                             renderItem={(player) => {
-                                if (!player.item.player_id) return <View style={{width: 100, height: 100}}></View>
+                                if (!player.item.player_id) return <View style={{ width: 100, height: 100 }}></View>
 
                                 return <Button
                                     key={player.item.player_id}
@@ -187,6 +193,15 @@ export function PayByPlayerModal({
                                         height: 100,
                                         display: 'flex',
                                         flexDirection: 'column'
+                                    }} onPress={() => {
+                                        if (!selectedPlayers.some(v => v.player_id == player.item.player_id)) {
+                                            setSelectedPlayers([...selectedPlayers, {
+                                                ...player.item
+                                            }])
+                                        } else {
+                                            setSelectedPlayers(prev => prev.filter(v => v.player_id != player.item.player_id))
+                                        }
+
                                     }}
                                 >
                                     <ButtonText>
@@ -238,12 +253,12 @@ export function PayByPlayerModal({
 
 
 function padToFullRows(data, columns) {
-  const remainder = data.length % columns;
-  if (remainder === 0) return data;
+    const remainder = data.length % columns;
+    if (remainder === 0) return data;
 
-  const paddingCount = columns - remainder;
-  return [
-    ...data,
-    ...Array.from({ length: paddingCount }).map(() => ({ __empty: true })),
-  ];
+    const paddingCount = columns - remainder;
+    return [
+        ...data,
+        ...Array.from({ length: paddingCount }).map(() => ({ __empty: true })),
+    ];
 }
