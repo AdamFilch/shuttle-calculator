@@ -156,7 +156,7 @@ export function PayByPlayerModal({
                         </ModalCloseButton>
                     </View>
                 </ModalHeader>
-                <ModalBody scrollEnabled={false}>
+                <View style={{ marginBottom: 10}}>
                     <Button style={{
                         alignSelf: 'flex-end',
                         marginBottom: 10
@@ -227,7 +227,7 @@ export function PayByPlayerModal({
                         />
 
                     </View>
-                </ModalBody>
+                </View>
                 <ModalFooter>
                     <Button
                         variant="outline"
@@ -253,6 +253,7 @@ export function PayByPlayerModal({
 
 
 function padToFullRows(data, columns) {
+    if (data == null) return []
     const remainder = data.length % columns;
     if (remainder === 0) return data;
 
