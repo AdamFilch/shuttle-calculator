@@ -1,5 +1,5 @@
 import { openDatabaseSync } from "expo-sqlite";
-import { MatchesPlayed } from "./player";
+import { MatchesPlayed, PlayersShuttlePayments } from "./player";
 import { convertTimeToSQLTimeStamp } from "./time-display";
 
 type ShuttlePayment = {
@@ -32,6 +32,22 @@ export async function payShuttleByIds({
                 `, [convertTimeToSQLTimeStamp(today), match.match_id, shuttle.shuttle_id, player_id])
         }
     }
+}
 
-    
+export async function payShuttleByPlayers({
+    players
+}: {
+    players: PlayersShuttlePayments[]
+}) {
+    const today = new Date()
+
+    for (let player of players) {
+        for (let shuttle of player.shuttle_payments) {
+             const res = await db.runAsync(`
+                UPDATE shuttle_payments
+                SET amount_paid = 0, date_paid = ?
+                WHERE match_id = ? AND shuttle_id = ? AND player_id = ? 
+                `, [convertTimeToSQLTimeStamp(today), shuttle.match_id, shuttle.shuttle_id, player.player_id])           
+        }
+    }
 }

@@ -184,7 +184,8 @@ export type PlayersShuttlePayments = {
     quantity_used: number,
     owed_amount: number,
     date_created: string,
-    date_paid: string
+    date_paid: string,
+    match_id: number
   }[]
 }
 
@@ -194,6 +195,7 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
     p.player_id,
     p.name AS player_name,
     sp.shuttle_id,
+    sp.match_id,
     sp.amount_paid,
     sp.date_paid,
     sp.date_created,
@@ -226,7 +228,8 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
         name: row.shuttle_name,
         owed_amount: row.amount_paid,
         date_created: row.date_created,
-        date_paid: row.date_paid
+        date_paid: row.date_paid,
+        match_id: row.match_id
       })
     }
   }

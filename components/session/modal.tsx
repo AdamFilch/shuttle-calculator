@@ -1,5 +1,6 @@
 import { fetchAllPlayerPaymentsBySession, PlayersShuttlePayments } from '@/services/player'
 import { createNewSession } from '@/services/session'
+import { payShuttleByPlayers } from '@/services/shuttle-payments'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback, useState } from 'react'
@@ -130,6 +131,14 @@ export function PayByPlayerModal({
         })
     }
 
+    const handlePayment = async () => {
+        if (selectedPlayers.length > 0) {
+            payShuttleByPlayers({ players: selectedPlayers }).then(() => {
+                fetchPlayerPayments()
+            })
+        }
+    }
+
     console.log("PlayerPayments", selectedPlayers)
 
     return (
@@ -156,7 +165,7 @@ export function PayByPlayerModal({
                         </ModalCloseButton>
                     </View>
                 </ModalHeader>
-                <View style={{ marginBottom: 10}}>
+                <View style={{ marginBottom: 10 }}>
                     <Button style={{
                         alignSelf: 'flex-end',
                         marginBottom: 10
@@ -201,7 +210,6 @@ export function PayByPlayerModal({
                                         } else {
                                             setSelectedPlayers(prev => prev.filter(v => v.player_id != player.item.player_id))
                                         }
-
                                     }}
                                 >
                                     <ButtonText>
@@ -245,6 +253,13 @@ export function PayByPlayerModal({
                     >
                         <ButtonText>Confirm Payment</ButtonText>
                     </Button>
+                    <PaymentConfirmationDialog
+                        open={openConfirmation}
+                        onClose={() => { setOpenConfirmation(false) }}
+                        onConfirm={() => {
+                            setOpenConfirmation(false)
+                            handlePayment()
+                        }} />
                 </ModalFooter>
             </ModalContent>
         </Modal>
@@ -262,4 +277,64 @@ function padToFullRows(data, columns) {
         ...data,
         ...Array.from({ length: paddingCount }).map(() => ({ __empty: true })),
     ];
+}
+
+
+function PaymentConfirmationDialog({
+    open,
+    onClose,
+    onConfirm
+}: {
+    open: boolean,
+    onClose: () => void,
+    onConfirm: () => void
+}) {
+    return (
+        <Modal
+            isOpen={open}
+            onClose={onClose}
+        >
+            <ModalBackdrop />
+            <ModalContent>
+                <ModalHeader>
+                    <Heading>
+                        Add a Session Modal
+                    </Heading>
+                    <ModalCloseButton>
+                        <Icon
+                            as={CloseIcon}
+                            size="md"
+                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
+                        />
+                    </ModalCloseButton>
+                </ModalHeader>
+                <ModalBody>
+                    <Text style={{
+                        color: 'white'
+                    }}>This action is irreversible. Click Confirm to proceed.</Text>
+
+                </ModalBody>
+                <ModalFooter>
+                    <Button
+                        variant="outline"
+                        action="secondary"
+                        className="mr-3"
+                        onPress={() => {
+                            onClose();
+                        }}
+                    >
+                        <ButtonText>Cancel</ButtonText>
+                    </Button>
+                    <Button
+                        onPress={() => {
+                            onConfirm();
+                        }}
+                    >
+                        <ButtonText>Confirm</ButtonText>
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+
+        </Modal>
+    )
 }
