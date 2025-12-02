@@ -182,7 +182,7 @@ export function PayByPlayerModal({
                     </Button>
                     <View>
                         <FlatList
-                            data={padToFullRows(playerPayments, 3)}
+                            data={padToFullRows(playerPayments.filter((v) => v.total_owed_amount != 0), 3)}
                             showsVerticalScrollIndicator={false}
                             contentContainerStyle={{
                                 gap: 10,
