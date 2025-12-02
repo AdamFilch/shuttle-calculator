@@ -117,7 +117,7 @@ export function PayByPlayerModal({
 
     const [openConfirmation, setOpenConfirmation] = useState(false)
     const [playerPayments, setPlayerPayments] = useState<PlayersShuttlePayments[] | null>(null)
-    const [selectedPlayers, setSelectedPlayers] = useState([])
+    const [selectedPlayers, setSelectedPlayers] = useState<PlayersShuttlePayments[]>([])
 
     useFocusEffect(
         useCallback(() => {
@@ -139,13 +139,12 @@ export function PayByPlayerModal({
         }
     }
 
-    console.log("PlayerPayments", selectedPlayers)
-
     return (
         <Modal
             isOpen={open}
             size={'lg'}
             onClose={() => {
+                setSelectedPlayers([])
                 onClose()
             }}
         >
@@ -181,6 +180,8 @@ export function PayByPlayerModal({
                         </ButtonText>
                     </Button>
                     <View>
+                        {playerPayments && (
+
                         <FlatList
                             data={padToFullRows(playerPayments.filter((v) => v.total_owed_amount != 0), 3)}
                             showsVerticalScrollIndicator={false}
@@ -233,6 +234,7 @@ export function PayByPlayerModal({
                                 </Button>
                             }}
                         />
+                        )}
 
                     </View>
                 </View>
