@@ -16,6 +16,7 @@ export async function dropDatabase() {
   DROP TABLE IF EXISTS match_players;
   DROP TABLE IF EXISTS shuttles;
   DROP TABLE IF EXISTS match_shuttles;
+  DROP TABLE IF EXISTS shuttle_instances;
   DROP TABLE IF EXISTS shuttle_payments;
 `);
 
@@ -74,24 +75,34 @@ export async function setupDatabase() {
     db.execSync(`
       CREATE TABLE IF NOT EXISTS match_shuttles (
         match_id INTEGER NOT NULL,
-        shuttle_id INTEGER NOT NULL,
-        quantity_used INTEGER NOT NULL,
-        PRIMARY KEY (match_id, shuttle_id),
+        shuttle_instance_id INTEGER NOT NULL,
+        PRIMARY KEY (match_id, shuttle_instance_id),
         FOREIGN KEY (match_id) REFERENCES matches(match_id),
-        FOREIGN KEY (shuttle_id) REFERENCES shuttles(shuttle_id)
+        FOREIGN KEY (shuttle_instance_id) REFERENCES shuttle_instances(shuttle_instance_id)
       );
     `);
 
     db.execSync(`
+      CREATE TABLE IF NOT EXISTS shuttle_instances (
+        shuttle_instance_id INTEGER PRIMARY KEY,
+        shuttle_id INTEGER NOT NULL,
+        session_id INTEGER NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES sessions(session_id),
+        FOREIGN KEY (shuttle_id) REFERENCES shuttles(shuttle_id)
+      );
+    `)
+
+    db.execSync(`
       CREATE TABLE IF NOT EXISTS shuttle_payments (
         match_id INTEGER NOT NULL,
-        shuttle_id INTEGER NOT NULL,
         player_id INTEGER NOT NULL,
+        shuttle_instance_id INTEGER NOT NULL,
         amount_paid REAL NOT NULL,
+        price_to_pay REAL NOT NULL,
         date_paid TIMESTAMP,
         date_created TIMESTAMP NOT NULL DEFAULT (datetime('now')),
-        PRIMARY KEY (match_id, shuttle_id, player_id),
-        FOREIGN KEY (match_id, shuttle_id) REFERENCES match_shuttles(match_id, shuttle_id),
+        PRIMARY KEY (match_id, shuttle_instance_id, player_id),
+        FOREIGN KEY (match_id, shuttle_instance_id) REFERENCES shuttle_instances(match_id, shuttle_instance_id),
         FOREIGN KEY (player_id) REFERENCES players(player_id)
       );
     `)
