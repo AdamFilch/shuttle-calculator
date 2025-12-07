@@ -6,6 +6,7 @@ import { Divider } from '@/components/ui/divider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { fetchAllShuttles } from '@/services/shuttle';
 import { fetchAllShuttlePayments } from '@/services/shuttle-payments';
+import { fetchAllShuttleInstances } from '@/services/shuttle_instances';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -57,6 +58,12 @@ export default function TabTwoScreen() {
           console.log(`FetchAllShuttlePayments`, res)
         }}>
           <Text>Display all Shuttle Payments</Text>
+        </TouchableOpacity>  
+        <TouchableOpacity style={buttonStyle} onPress={async () => {
+          const res = await fetchAllShuttleInstances()
+          console.log(`FetchAllShuttleInstances`, res)
+        }}>
+          <Text>Display all Shuttle Instances</Text>
         </TouchableOpacity>  
       </View>
       <View

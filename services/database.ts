@@ -82,9 +82,10 @@ export async function setupDatabase() {
       );
     `);
 
+    // Shuttle Instance SessionIDShuttleIDInstanceCount
     db.execSync(`
       CREATE TABLE IF NOT EXISTS shuttle_instances (
-        shuttle_instance_id INTEGER PRIMARY KEY,
+        shuttle_instance_id INTEGER PRIMARY KEY, 
         shuttle_id INTEGER NOT NULL,
         session_id INTEGER NOT NULL,
         FOREIGN KEY (session_id) REFERENCES sessions(session_id),

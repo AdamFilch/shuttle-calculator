@@ -1,5 +1,6 @@
 import { openDatabaseSync } from "expo-sqlite";
 import { fetchShuttleById } from "./shuttle";
+import { fetchAllShuttleInstancesOfShuttle } from "./shuttle_instances";
 
 const db = openDatabaseSync('db.db')
 
@@ -22,8 +23,78 @@ export type Match = {
     match_id: number
 }
 
-
 export async function createNewMatch(payload: newMatchPayload) {
+    const numberOfMatches = await fetchNumberOfMatchesBySessionId(payload.sessionId.toString())
+
+    const matchRes = await db.runAsync(
+        `INSERT INTO matches (session_id, match_number) VALUES (?, ?)`,
+        [payload.sessionId, numberOfMatches.count]
+    );
+    const matchId = matchRes.lastInsertRowId;
+
+    const shuttleData = await Promise.all(payload.shuttles.map(async s => {
+        const [res] = await fetchShuttleById(s.shuttleId);
+        return { ...s, ...res, pricePerUnit: res.total_price / res.num_of_shuttles };
+    }));
+
+    await db.execAsync("BEGIN TRANSACTION");
+
+    await Promise.all(payload.playersId.map((playerId, i) => {
+        if (!playerId) return Promise.resolve();
+        return db.runAsync(
+            `INSERT INTO match_players (match_id, player_id, position) VALUES (?, ?, ?)`,
+            [matchId, playerId, i]
+        );
+    }));
+
+    // First get how many shuttles exists
+    const existingShuttleInstance = payload.shuttles.reduce(async (acc, shuttle) => {
+        const resOfThisShuttle = await fetchAllShuttleInstancesOfShuttle(payload.sessionId, shuttle.shuttleId)
+
+        acc[shuttle.shuttleId] = resOfThisShuttle
+
+        return acc
+    }, {})
+
+
+    await Promise.all(payload.shuttles.map(async (shuttle, i) => {
+        const shuttleInstanceId = payload.sessionId.toString() + shuttle.shuttleId.toString() + (existingShuttleInstance[shuttle.shuttleId].length + 1 + i).toString()
+
+        const payments = [];
+        for (const playerId of payload.playersId) {
+            if (!playerId) continue;
+            for (const shuttle of shuttleData) {
+                let amount_to_pay = (shuttle.pricePerUnit * shuttle.quantityUsed) / payload.playersId.filter((playerId) => playerId != null).length
+                payments.push(db.runAsync(
+                    `INSERT INTO shuttle_payments (match_id, shuttle_instance_id, player_id, amount_paid, price_to_pay) VALUES (?, ?, ?, ?, ?)`,
+                    [matchId, shuttleInstanceId, playerId, amount_to_pay.toFixed(2), amount_to_pay.toFixed(2)]
+                ));
+            }
+        }
+        await Promise.all(payments);
+
+        await Promise.all(shuttleData.map(s =>
+            db.runAsync(
+                `INSERT INTO match_shuttles (match_id, shuttle_instance_id) VALUES (?, ?)`,
+                [matchId, s.shuttleId, s.quantityUsed]
+            )
+        ));
+        return db.runAsync(
+            `INSERT INTO shuttle_instances (shuttle_instance_id, shuttle_id, session_id)`,
+            [shuttleInstanceId, shuttle.shuttleId, payload.sessionId]
+        )
+
+    }))
+
+
+    await db.execAsync("COMMIT");
+
+    return { matchId }
+
+}
+
+
+export async function createNewMatchOld(payload: newMatchPayload) {
 
     const numberOfMatches = await fetchNumberOfMatchesBySessionId(payload.sessionId.toString())
 
@@ -77,8 +148,8 @@ export type MatchFull = {
     session_id: number,
     match_id: number,
     date: string
-    players: 
-        Record<number, {
+    players:
+    Record<number, {
         players_id: number,
         name: string,
         position: number,
@@ -143,12 +214,12 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
 
 
 export async function fetchNumberOfMatchesBySessionId(id: string) {
-  const rows: any = await db.getFirstAsync(
-    `SELECT COUNT(*) as count FROM matches WHERE session_id = ?`,
-    [id]
-  );
+    const rows: any = await db.getFirstAsync(
+        `SELECT COUNT(*) as count FROM matches WHERE session_id = ?`,
+        [id]
+    );
 
-  return rows;
+    return rows;
 }
 
 export async function fetchAllMatches(): Promise<Match[]> {
