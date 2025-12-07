@@ -181,8 +181,9 @@ export type PlayersShuttlePayments = {
   shuttle_payments: {
     name: string,
     shuttle_id: number,
-    quantity_used: number,
-    owed_amount: number,
+    shuttle_instance_id: number,
+    price_to_pay: number
+    amount_paid: number
     date_created: string,
     date_paid: string,
     match_id: number
@@ -194,8 +195,9 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
       SELECT
     p.player_id,
     p.name AS player_name,
-    sp.shuttle_id,
     sp.match_id,
+    sp.shuttle_instance_id,
+    sp.price_to_pay,
     sp.amount_paid,
     sp.date_paid,
     sp.date_created,
@@ -203,11 +205,11 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
     FROM shuttle_payments sp
     JOIN matches m ON m.match_id = sp.match_id
     JOIN players p ON p.player_id = sp.player_id
-    LEFT JOIN shuttles sh ON sh.shuttle_id = sp.shuttle_id
+    LEFT JOIN match_shuttles ms ON ms.match_id = sp.match_id
+    LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = ms.shuttle_instance_id
+    LEFT JOIN shuttles sh ON sh.shuttle_id = si.shuttle_id
     WHERE m.session_id = ?
       `, [id])
-
-
 
   const playersMap = {}
 
@@ -225,8 +227,10 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
       playersMap[row.player_id].total_owed_amount += row.amount_paid
       playersMap[row.player_id].shuttle_payments.push({
         shuttle_id: row.shuttle_id,
+        shuttle_instance: row.shuttle_instance_id,
         name: row.shuttle_name,
-        owed_amount: row.amount_paid,
+        price_to_pay: row.price_to_pay,
+        amount_paid: row.amount_paid,
         date_created: row.date_created,
         date_paid: row.date_paid,
         match_id: row.match_id
