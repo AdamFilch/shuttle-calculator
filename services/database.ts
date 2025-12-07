@@ -112,7 +112,7 @@ export async function setupDatabase() {
       CREATE INDEX IF NOT EXISTS idx_match_players_player ON match_players(player_id);
       CREATE INDEX IF NOT EXISTS idx_match_players_match ON match_players(match_id);
       CREATE INDEX IF NOT EXISTS idx_match_shuttles_match ON match_shuttles(match_id);
-      CREATE INDEX IF NOT EXISTS idx_match_shuttles_shuttle ON match_shuttles(shuttle_id);
+      CREATE INDEX IF NOT EXISTS idx_match_shuttles_shuttle_instances ON match_shuttles(shuttle_instance_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_payments_players ON shuttle_payments(player_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_payments_match ON shuttle_payments(match_id);
     `);
