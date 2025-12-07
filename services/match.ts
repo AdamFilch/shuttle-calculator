@@ -1,6 +1,5 @@
 import { openDatabaseSync } from "expo-sqlite";
 import { fetchShuttleById } from "./shuttle";
-import { fetchAllShuttleInstancesOfShuttle } from "./shuttle_instances";
 
 const db = openDatabaseSync('db.db')
 
@@ -22,75 +21,89 @@ export type Match = {
     session_id: number,
     match_id: number
 }
-
 export async function createNewMatch(payload: newMatchPayload) {
-    const numberOfMatches = await fetchNumberOfMatchesBySessionId(payload.sessionId.toString())
+  const numberOfMatches = await fetchNumberOfMatchesBySessionId(
+    payload.sessionId.toString()
+  );
 
-    const matchRes = await db.runAsync(
-        `INSERT INTO matches (session_id, match_number) VALUES (?, ?)`,
-        [payload.sessionId, numberOfMatches.count]
-    );
-    const matchId = matchRes.lastInsertRowId;
+  const matchRes = await db.runAsync(
+    `INSERT INTO matches (session_id, match_number) VALUES (?, ?)`,
+    [payload.sessionId, numberOfMatches.count]
+  );
 
-    const shuttleData = await Promise.all(payload.shuttles.map(async s => {
-        const [res] = await fetchShuttleById(s.shuttleId);
-        return { ...s, ...res, pricePerUnit: res.total_price / res.num_of_shuttles };
-    }));
+  const matchId = matchRes.lastInsertRowId;
 
-    await db.execAsync("BEGIN TRANSACTION");
+  const shuttleData = await Promise.all(
+    payload.shuttles.map(async (s) => {
+      const [res] = await fetchShuttleById(s.shuttleId);
+      return {
+        ...s,
+        ...res,
+        pricePerUnit: res.total_price / res.num_of_shuttles,
+      };
+    })
+  );
 
-    await Promise.all(payload.playersId.map((playerId, i) => {
-        if (!playerId) return Promise.resolve();
-        return db.runAsync(
-            `INSERT INTO match_players (match_id, player_id, position) VALUES (?, ?, ?)`,
-            [matchId, playerId, i]
-        );
-    }));
+  await db.execAsync("BEGIN TRANSACTION");
 
-    // First get how many shuttles exists
-    const existingShuttleInstance = payload.shuttles.reduce(async (acc, shuttle) => {
-        const resOfThisShuttle = await fetchAllShuttleInstancesOfShuttle(payload.sessionId, shuttle.shuttleId)
+  // ✅ Insert players
+  await Promise.all(
+    payload.playersId.map((playerId, i) => {
+      if (!playerId) return Promise.resolve();
+      return db.runAsync(
+        `INSERT INTO match_players (match_id, player_id, position)
+         VALUES (?, ?, ?)`,
+        [matchId, playerId, i]
+      );
+    })
+  );
 
-        acc[shuttle.shuttleId] = resOfThisShuttle
+  // ✅ Create shuttle instances PER quantityUsed
+  for (const shuttle of shuttleData) {
+    for (let k = 0; k < shuttle.quantityUsed; k++) {
+      const res = await db.runAsync(
+        `INSERT INTO shuttle_instances (shuttle_id, session_id)
+         VALUES (?, ?)`,
+        [shuttle.shuttleId, payload.sessionId]
+      );
 
-        return acc
-    }, {})
+      const shuttleInstanceId = res.lastInsertRowId;
 
+      // ✅ Link instance to match
+      await db.runAsync(
+        `INSERT INTO match_shuttles (match_id, shuttle_instance_id)
+         VALUES (?, ?)`,
+        [matchId, shuttleInstanceId]
+      );
 
-    await Promise.all(payload.shuttles.map(async (shuttle, i) => {
-        const shuttleInstanceId = payload.sessionId.toString() + shuttle.shuttleId.toString() + (existingShuttleInstance[shuttle.shuttleId].length + 1 + i).toString()
+      // ✅ Split payment
+      const validPlayers = payload.playersId.filter(Boolean);
 
-        const payments = [];
-        for (const playerId of payload.playersId) {
-            if (!playerId) continue;
-            for (const shuttle of shuttleData) {
-                let amount_to_pay = (shuttle.pricePerUnit * shuttle.quantityUsed) / payload.playersId.filter((playerId) => playerId != null).length
-                payments.push(db.runAsync(
-                    `INSERT INTO shuttle_payments (match_id, shuttle_instance_id, player_id, amount_paid, price_to_pay) VALUES (?, ?, ?, ?, ?)`,
-                    [matchId, shuttleInstanceId, playerId, amount_to_pay.toFixed(2), amount_to_pay.toFixed(2)]
-                ));
-            }
-        }
-        await Promise.all(payments);
+      const amountToPay =
+        shuttle.pricePerUnit / validPlayers.length;
 
-        await Promise.all(shuttleData.map(s =>
-            db.runAsync(
-                `INSERT INTO match_shuttles (match_id, shuttle_instance_id) VALUES (?, ?)`,
-                [matchId, s.shuttleId, s.quantityUsed]
-            )
-        ));
-        return db.runAsync(
-            `INSERT INTO shuttle_instances (shuttle_instance_id, shuttle_id, session_id)`,
-            [shuttleInstanceId, shuttle.shuttleId, payload.sessionId]
+      await Promise.all(
+        validPlayers.map((playerId) =>
+          db.runAsync(
+            `INSERT INTO shuttle_payments 
+             (match_id, shuttle_instance_id, player_id, amount_paid, price_to_pay)
+             VALUES (?, ?, ?, ?, ?)`,
+            [
+              matchId,
+              shuttleInstanceId,
+              playerId,
+              amountToPay.toFixed(2),
+              amountToPay.toFixed(2),
+            ]
+          )
         )
+      );
+    }
+  }
 
-    }))
+  await db.execAsync("COMMIT");
 
-
-    await db.execAsync("COMMIT");
-
-    return { matchId }
-
+  return { matchId };
 }
 
 

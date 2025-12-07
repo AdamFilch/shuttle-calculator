@@ -55,8 +55,8 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         SELECT
         m.match_id,
         m.date as match_date,
-        z.shuttle_id,
-        z.quantity_used,
+        z.shuttle_instance_id,
+        si.shuttle_id,
         s.name as shuttle_name,
         s.total_price,
         s.num_of_shuttles,
@@ -65,7 +65,8 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         p.name as player_name
         FROM matches m
         LEFT JOIN match_shuttles z ON m.match_id = z.match_id
-        LEFT JOIN shuttles s ON z.match_id = s.shuttle_id
+        LEFT JOIN shuttle_instances si ON z.shuttle_instance_id = si.shuttle_instance_id
+        LEFT JOIN shuttles s ON si.shuttle_id = s.shuttle_id
         LEFT JOIN match_players mp ON m.match_id = mp.match_id
         LEFT JOIN players p ON p.player_id = mp.player_id
         WHERE m.session_id = ?
@@ -86,9 +87,9 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
 
         if (row.shuttle_id && !match.shuttlesMap[row.shuttle_id]) {
             match.shuttlesMap[row.shuttle_id] = {
+                shuttle_instances: row.shuttle_instance_id,
                 shuttle_id: row.shuttle_id,
                 name: row.shuttle_name,
-                quantity_used: row.quantity_used,
                 total_price: row.total_price,
                 num_of_shuttles: row.num_of_shuttles
             }

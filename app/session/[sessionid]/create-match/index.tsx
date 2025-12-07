@@ -37,7 +37,6 @@ export default function CreateNewMatchPage() {
         })
     }
     async function onClickSave() {
-        console.log('UsedShuttles', usedShuttles)
 
 
         const res = await createNewMatch({

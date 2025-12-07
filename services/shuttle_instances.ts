@@ -13,4 +13,5 @@ export async function fetchAllShuttleInstancesOfShuttle(sessionId: number, shutt
 
 export async function fetchAllShuttleInstances() {
     const res = await db.getAllAsync(`SELECT * FROM shuttle_instances`)
+    return res
 }

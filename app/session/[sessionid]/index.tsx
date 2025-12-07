@@ -1,7 +1,6 @@
 import { PayByPlayerModal } from "@/components/session/modal";
 import { Button, ButtonText } from "@/components/ui/button";
 import { fetchSessionById, SessionMatches } from "@/services/session";
-import { fetchAllShuttlesBySessionId, ShuttlesBySession } from "@/services/shuttle";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -13,7 +12,7 @@ export default function SelectedSessionPage() {
     const { sessionId } = useLocalSearchParams()
     const [sessionMatches, setSessionMatches] = useState<SessionMatches | null>(null)
     const [openPPPModal, setOpenPPPModal] = useState(false)
-    const [shuttlesBySesison, setShuttlesBySession] = useState<ShuttlesBySession | null>(null)
+    // const [shuttlesBySesison, setShuttlesBySession] = useState<ShuttlesBySession | null>(null)
 
     useFocusEffect(
         useCallback(() => {
@@ -25,9 +24,9 @@ export default function SelectedSessionPage() {
         fetchSessionById(sessionId.toString()).then(res => {
             setSessionMatches(res)
         })
-        fetchAllShuttlesBySessionId(sessionId.toString(), false).then(res => {
-            setShuttlesBySession(res)
-        })
+        // fetchAllShuttlesBySessionId(sessionId.toString(), false).then(res => {
+        //     setShuttlesBySession(res)
+        // })
     }
 
 
