@@ -137,7 +137,7 @@ export default function MatchPage() {
                                         {shuttle.item.name}
                                     </ButtonText>
                                     <ButtonText>
-                                        ({shuttle.item.quantity_used})
+                                        ({shuttle.item.shuttle_price})
                                     </ButtonText>
                                 </Button>
                             )}

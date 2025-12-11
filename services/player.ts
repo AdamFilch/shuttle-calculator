@@ -237,6 +237,7 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
       })
     }
   }
+
   return Object.values(playersMap)
 }
 
@@ -245,14 +246,17 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
       SELECT
       p.name AS player_name,
       p.player_id,
-      sp.shuttle_id,
+      sp.shuttle_instance_id,
+      sh.shuttle_id,
       sp.amount_paid,
+      sp.price_to_pay,
       sp.date_paid,
       sp.date_created,
       sh.name AS shuttle_name
       FROM players p
       LEFT JOIN shuttle_payments sp ON sp.player_id = p.player_id
-      LEFT JOIN shuttles sh ON sp.shuttle_id = sh.shuttle_id
+      LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = sp.shuttle_instance_id
+      LEFT JOIN shuttles sh ON si.shuttle_id = sh.shuttle_id
       `)
 
 
@@ -274,8 +278,10 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
       playersMap[row.player_id].total_owed_amount += row.amount_paid
       playersMap[row.player_id].shuttle_payments.push({
         shuttle_id: row.shuttle_id,
+        shuttle_instance_id: row.shuttle_instance_id,
         name: row.shuttle_name,
-        owed_amount: row.amount_paid,
+        price_to_pay: row.price_to_pay,
+        amount_paid: row.amount_paid,
         date_created: row.date_created,
         date_paid: row.date_paid
       })

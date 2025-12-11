@@ -1,4 +1,5 @@
 import { openDatabaseSync } from "expo-sqlite";
+import { Float } from "react-native/Libraries/Types/CodegenTypes";
 import { fetchShuttleById } from "./shuttle";
 
 const db = openDatabaseSync('db.db')
@@ -170,7 +171,8 @@ export type MatchFull = {
     shuttles: {
         shuttle_id: number,
         name: string,
-        quantity_used: number,
+        shuttle_instance_id: number,
+        shuttle_price: Float
     }[]
 }
 
@@ -181,16 +183,19 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
         m.session_id,
         m.match_id,
         m.date,
-        ms.shuttle_id,
+        ms.shuttle_instance_id,
+        si.shuttle_id,
         mp.player_id,
         mp.position,
         p.name AS player_name,
-        ms.quantity_used,
-        s.name AS shuttle_name
+        s.name AS shuttle_name,
+        s.total_price,
+        s.num_of_shuttles
         FROM matches m
         LEFT JOIN match_shuttles ms ON ms.match_id = m.match_id
         LEFT JOIN match_players mp ON mp.match_id = m.match_id
-        LEFT JOIN shuttles s ON s.shuttle_id = ms.shuttle_id
+        LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = ms.shuttle_instance_id
+        LEFT JOIN shuttles s ON s.shuttle_id = si.shuttle_id
         LEFT JOIN players p ON p.player_id = mp.player_id
         WHERE m.match_id = ?
         `, [id])
@@ -207,11 +212,12 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
             }
         }
 
-        if (!shuttlesMap[row.shuttle_id]) {
-            shuttlesMap[row.shuttle_id] = {
+        if (!shuttlesMap[row.shuttle_instance_id]) {
+            shuttlesMap[row.shuttle_instance_id] = {
                 shuttle_id: row.shuttle_id,
                 name: row.shuttle_name,
-                quantity_used: row.quantity_used
+                shuttle_instance_id: row.shuttle_instance_id,
+                shuttle_price: row.total_price / row.num_of_shuttles
             }
         }
     }
