@@ -155,7 +155,7 @@ export default function SelectPlayerPage() {
                                                     totalCosts
                                                 }])
                                             }
-                                            
+
                                         }}
                                         onPress={() => {
                                             if (SelectShuttleMode) {
@@ -171,12 +171,14 @@ export default function SelectPlayerPage() {
                                             }
                                         }}
                                     >
-                                        <ButtonText>
-                                            {match.item.match_number}
+                                        <ButtonText style={{
+                                            textAlign: 'center'
+                                        }}>
+                                            Match Number {match.item.match_number + 1}
                                         </ButtonText>
-                                        <ButtonText>
-                                            {numOfShuttle} Unpaid
-                                        </ButtonText>
+                                        {/* <ButtonText>
+                                            Number of players {match.item.players.length}
+                                        </ButtonText> */}
                                         <ButtonText>
                                             {totalCosts} Total
                                         </ButtonText>
