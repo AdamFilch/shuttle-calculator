@@ -73,8 +73,9 @@ export type MatchesPlayed = {
   players: Player[],
   shuttles: {
     shuttle_id: number,
+    shuttle_instance_id: number,
     name: String,
-    quantity_used: number,
+    price_to_pay: number,
     owed_amount: number,
     date_created: String,
     date_paid: String | null
@@ -87,8 +88,10 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
   const shuttlePaymentsByPlayerRows: any = await db.getAllAsync(`
   SELECT
   sp.match_id,
-  sp.shuttle_id,
+  sp.shuttle_instance_id,
+  si.shuttle_id,
   sp.amount_paid,
+  sp.price_to_pay,
   sp.date_created AS shuttle_payment_requested_date,
   sp.date_paid AS shuttle_payment_paid_date,
   m.session_id,
@@ -97,14 +100,14 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
   s.name AS session_name,
   s.date AS session_date,
   sh.name AS shuttle_name,
-  ms.quantity_used,
   mp.player_id,
   mp.position,
   p.name AS player_name
   FROM shuttle_payments sp
   LEFT JOIN matches m ON sp.match_id = m.match_id
+  LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = sp.shuttle_instance_id
   LEFT JOIN sessions s ON s.session_id = m.session_id
-  LEFT JOIN shuttles sh ON sp.shuttle_id = sh.shuttle_id
+  LEFT JOIN shuttles sh ON si.shuttle_id = sh.shuttle_id
   LEFT JOIN match_shuttles ms ON sp.match_id = ms.match_id
   LEFT JOIN match_players mp ON sp.match_id = mp.match_id
   LEFT JOIN players p ON mp.player_id = p.player_id
@@ -143,11 +146,12 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
       }
     }
 
-    if (!sessionsMap[row.session_id].matches_played[row.match_id].shuttles[row.shuttle_id]) {
-      sessionsMap[row.session_id].matches_played[row.match_id].shuttles[row.shuttle_id] = {
+    if (!sessionsMap[row.session_id].matches_played[row.match_id].shuttles[row.shuttle_instance_id]) {
+      sessionsMap[row.session_id].matches_played[row.match_id].shuttles[row.shuttle_instance_id] = {
         shuttle_id: row.shuttle_id,
+        shuttle_instance_id: row.shuttle_instance_id,
         shuttle_name: row.shuttle_name,
-        quantity_used: row.quantity_used,
+        price_to_pay: row.price_to_pay,
         owed_amount: row.amount_paid,
         date_created: row.shuttle_payment_requested_date,
         date_paid: row.shuttle_payment_paid_date
