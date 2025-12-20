@@ -184,7 +184,6 @@ export type PlayersShuttlePayments = {
   total_owed_amount: number,
   shuttle_payments: {
     name: string,
-    shuttle_id: number,
     shuttle_instance_id: number,
     price_to_pay: number
     amount_paid: number
@@ -230,8 +229,7 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
     if (row.shuttle_id !== null) {
       playersMap[row.player_id].total_owed_amount += row.amount_paid
       playersMap[row.player_id].shuttle_payments.push({
-        shuttle_id: row.shuttle_id,
-        shuttle_instance: row.shuttle_instance_id,
+        shuttle_instance_id: row.shuttle_instance_id,
         name: row.shuttle_name,
         price_to_pay: row.price_to_pay,
         amount_paid: row.amount_paid,

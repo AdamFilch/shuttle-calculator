@@ -139,6 +139,9 @@ export function PayByPlayerModal({
         }
     }
 
+    if (!playerPayments) {
+        return
+    }
     return (
         <Modal
             isOpen={open}
@@ -164,104 +167,128 @@ export function PayByPlayerModal({
                         </ModalCloseButton>
                     </View>
                 </ModalHeader>
-                <View style={{ marginBottom: 10 }}>
-                    <Button style={{
-                        alignSelf: 'flex-end',
-                        marginBottom: 10
-                    }} onPress={() => {
-                        if (selectedPlayers.length > 0) {
-                            setSelectedPlayers([])
-                        } else {
-                            setSelectedPlayers(playerPayments)
-                        }
-                    }}>
-                        <ButtonText>
-                            {selectedPlayers.length > 0 ? "Deselect All" : "Select All"}
-                        </ButtonText>
-                    </Button>
-                    <View>
-                        {playerPayments && (
+                {playerPayments.filter((v) => v.total_owed_amount != 0).length > 0 ? (
+                    <View style={{ marginVertical: 20 }}>
+                        <Button style={{
+                            alignSelf: 'flex-end',
+                            marginBottom: 10
+                        }} onPress={() => {
+                            if (selectedPlayers.length > 0) {
+                                setSelectedPlayers([])
+                            } else {
+                                setSelectedPlayers(playerPayments)
+                            }
+                        }}>
+                            <ButtonText>
+                                {selectedPlayers.length > 0 ? "Deselect All" : "Select All"}
+                            </ButtonText>
+                        </Button>
+                        <View style={{ marginBottom: 10}}>
+                            {playerPayments && (
 
-                        <FlatList
-                            data={padToFullRows(playerPayments.filter((v) => v.total_owed_amount != 0), 3)}
-                            showsVerticalScrollIndicator={false}
-                            contentContainerStyle={{
-                                gap: 10,
-                            }}
-                            columnWrapperStyle={{
-                                justifyContent: "center",
-                                gap: 10,
-                            }}
-                            numColumns={3}
-                            renderItem={(player) => {
-                                if (!player.item.player_id) return <View style={{ width: 100, height: 100 }}></View>
-
-                                return <Button
-                                    key={player.item.player_id}
-                                    style={{
-                                        width: 100,
-                                        height: 100,
-                                        display: 'flex',
-                                        flexDirection: 'column'
-                                    }} onPress={() => {
-                                        if (!selectedPlayers.some(v => v.player_id == player.item.player_id)) {
-                                            setSelectedPlayers([...selectedPlayers, {
-                                                ...player.item
-                                            }])
-                                        } else {
-                                            setSelectedPlayers(prev => prev.filter(v => v.player_id != player.item.player_id))
-                                        }
+                                <FlatList
+                                    data={padToFullRows(playerPayments.filter((v) => v.total_owed_amount != 0), 3)}
+                                    showsVerticalScrollIndicator={false}
+                                    contentContainerStyle={{
+                                        gap: 10,
                                     }}
-                                >
-                                    <ButtonText>
-                                        {player.item.name}
-                                    </ButtonText>
-                                    <ButtonText>
-                                        {player.item.total_owed_amount}
-                                    </ButtonText>
-                                    <View style={{
-                                        width: 15,
-                                        height: 15,
-                                        borderWidth: 1,
-                                        borderColor: 'black',
-                                        alignContent: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        {selectedPlayers.some((v) => v.player_id == player.item.player_id) && (
-                                            <Icon as={CheckIcon} size={'sm'} color="black" />
-                                        )}
-                                    </View>
-                                </Button>
-                            }}
-                        />
-                        )}
+                                    columnWrapperStyle={{
+                                        justifyContent: "center",
+                                        gap: 10,
+                                    }}
+                                    numColumns={3}
+                                    renderItem={(player) => {
+                                        if (!player.item.player_id) return <View style={{ width: 100, height: 100 }}></View>
 
+                                        return <Button
+                                            key={player.item.player_id}
+                                            style={{
+                                                width: 100,
+                                                height: 100,
+                                                display: 'flex',
+                                                flexDirection: 'column'
+                                            }} onPress={() => {
+                                                if (!selectedPlayers.some(v => v.player_id == player.item.player_id)) {
+                                                    setSelectedPlayers([...selectedPlayers, {
+                                                        ...player.item
+                                                    }])
+                                                } else {
+                                                    setSelectedPlayers(prev => prev.filter(v => v.player_id != player.item.player_id))
+                                                }
+                                            }}
+                                        >
+                                            <ButtonText>
+                                                {player.item.name}
+                                            </ButtonText>
+                                            <ButtonText>
+                                                {player.item.total_owed_amount}
+                                            </ButtonText>
+                                            <View style={{
+                                                width: 15,
+                                                height: 15,
+                                                borderWidth: 1,
+                                                borderColor: 'black',
+                                                alignContent: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                {selectedPlayers.some((v) => v.player_id == player.item.player_id) && (
+                                                    <Icon as={CheckIcon} size={'sm'} color="black" />
+                                                )}
+                                            </View>
+                                        </Button>
+                                    }}
+                                />
+                            )}
+
+                        </View>
                     </View>
-                </View>
+                ) : (
+                    <View style={{ marginVertical: 20 }}>
+                        <Text style={{ color: 'white' }}>
+                            Everyone has paid!
+                        </Text>
+                    </View>
+                )}
                 <ModalFooter>
-                    <Button
-                        variant="outline"
-                        action="secondary"
-                        onPress={() => {
-                            onClose()
-                        }}
-                    >
-                        <ButtonText>Cancel</ButtonText>
-                    </Button>
-                    <Button
-                        onPress={() => {
-                            setOpenConfirmation(true)
-                        }}
-                    >
-                        <ButtonText>Confirm Payment</ButtonText>
-                    </Button>
-                    <PaymentConfirmationDialog
-                        open={openConfirmation}
-                        onClose={() => { setOpenConfirmation(false) }}
-                        onConfirm={() => {
-                            setOpenConfirmation(false)
-                            handlePayment()
-                        }} />
+                    {playerPayments.filter((v) => v.total_owed_amount != 0).length > 0 ? (
+                        <View style={{ display: 'flex', flexDirection: 'row', gap: 15}}>
+
+                            <Button
+                                variant="outline"
+                                action="secondary"
+                                onPress={() => {
+                                    onClose()
+                                }}
+                            >
+                                <ButtonText>Cancel</ButtonText>
+                            </Button>
+                            <Button
+                                onPress={() => {
+                                    setOpenConfirmation(true)
+                                }}
+                            >
+                                <ButtonText>Confirm Payment</ButtonText>
+                            </Button>
+                            <PaymentConfirmationDialog
+                                open={openConfirmation}
+                                onClose={() => { setOpenConfirmation(false) }}
+                                onConfirm={() => {
+                                    setOpenConfirmation(false)
+                                    handlePayment()
+                                }} />
+                        </View>
+
+                    ) : (
+                        <View>
+                            <Button
+                                onPress={() => {
+                                    onClose()
+                                }}
+                            >
+                                <ButtonText>Back</ButtonText>
+                            </Button>
+                        </View>
+                    )}
                 </ModalFooter>
             </ModalContent>
         </Modal>

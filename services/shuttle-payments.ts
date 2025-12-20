@@ -41,6 +41,8 @@ export async function payShuttleByPlayers({
 }) {
     const today = new Date()
 
+    console.log("ShuttlePlayers", players)
+
     for (let player of players) {
         for (let shuttle of player.shuttle_payments) {
              const res = await db.runAsync(`
