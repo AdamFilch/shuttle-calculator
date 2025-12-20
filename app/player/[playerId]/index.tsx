@@ -119,14 +119,16 @@ export default function SelectPlayerPage() {
                             <FlatList
                                 // data={session.matches_played.filter((matches) => matches.shuttles.some((shu) => shu.owed_amount > 0))}
                                 data={session.matches_played.sort((match1, match2) => {
-                                    let totalCostsM2 = match2.shuttles.reduce((acc, shuttle) => {
-                                        return acc + shuttle.owed_amount
-                                    }, 0)
-                                    let totalCostsM1 = match1.shuttles.reduce((acc, shuttle) => {
-                                        return acc + shuttle.owed_amount
-                                    }, 0)
+                                    // let totalCostsM2 = match2.shuttles.reduce((acc, shuttle) => {
+                                    //     return acc + shuttle.owed_amount
+                                    // }, 0)
+                                    // let totalCostsM1 = match1.shuttles.reduce((acc, shuttle) => {
+                                    //     return acc + shuttle.owed_amount
+                                    // }, 0)
 
-                                    return totalCostsM2 - totalCostsM1
+                                    // return totalCostsM2 - totalCostsM1
+
+                                    return match1.match_number - match2.match_number
                                 })}
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
@@ -182,7 +184,7 @@ export default function SelectPlayerPage() {
                                         <ButtonText>
                                             {totalCosts} Total
                                         </ButtonText>
-                                        {SelectShuttleMode && (
+                                        {SelectShuttleMode && totalCosts > 0 && (
                                             <View style={{
                                                 width: 15,
                                                 height: 15,
