@@ -28,8 +28,8 @@ export async function payShuttleByIds({
             const res = await db.runAsync(`
                 UPDATE shuttle_payments
                 SET amount_paid = 0, date_paid = ?
-                WHERE match_id = ? AND shuttle_id = ? AND player_id = ? 
-                `, [convertTimeToSQLTimeStamp(today), match.match_id, shuttle.shuttle_id, player_id])
+                WHERE match_id = ? AND shuttle_instance_id = ? AND player_id = ? 
+                `, [convertTimeToSQLTimeStamp(today), match.match_id, shuttle.shuttle_instance_id, player_id])
         }
     }
 }
@@ -46,8 +46,8 @@ export async function payShuttleByPlayers({
              const res = await db.runAsync(`
                 UPDATE shuttle_payments
                 SET amount_paid = 0, date_paid = ?
-                WHERE match_id = ? AND shuttle_id = ? AND player_id = ? 
-                `, [convertTimeToSQLTimeStamp(today), shuttle.match_id, shuttle.shuttle_id, player.player_id])           
+                WHERE match_id = ? AND shuttle_instance_id = ? AND player_id = ? 
+                `, [convertTimeToSQLTimeStamp(today), shuttle.match_id, shuttle.shuttle_instance_id, player.player_id])           
         }
     }
 }
