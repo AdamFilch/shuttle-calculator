@@ -39,10 +39,7 @@ export default function MatchPage() {
         </View>
     }
 
-
-
-
-
+    const unpaidPlayers = Object.entries(match.players).filter((p) => p[1].amount_paid > 0)
 
     return (
         <View>
@@ -66,9 +63,12 @@ export default function MatchPage() {
                         >
                         <Text>Add another shuttle</Text>
                         </TouchableOpacity> */}
-                <Button onPress={() => {
-                    setOpenConfirmation(true)
-                }}>
+                <Button
+                    action={unpaidPlayers.length > 0 ? 'primary' : 'secondary'}
+                    disabled={unpaidPlayers.length > 0 ? false : true}
+                    onPress={() => {
+                        setOpenConfirmation(true)
+                    }}>
                     <ButtonText>
                         Pay for this Match
                     </ButtonText>
@@ -76,7 +76,7 @@ export default function MatchPage() {
                 <PaymentConfirmationDialog open={openConfirmation} onClose={() => {
                     setOpenConfirmation(false)
                 }} onConfirm={() => {
-                    
+
                 }} />
             </View>
             <View>
@@ -92,7 +92,7 @@ export default function MatchPage() {
                             <PlayerButton name={match.players[0].name} paid={match.players[0].amount_paid} />
                         )}
                         {match.players[2] && (
-                            <PlayerButton name={match.players[2].name} paid={match.players[2].amount_paid}/>
+                            <PlayerButton name={match.players[2].name} paid={match.players[2].amount_paid} />
                         )}
                     </HStack>
                     <Divider />
@@ -101,10 +101,10 @@ export default function MatchPage() {
                         justifyContent: 'center'
                     }}>
                         {match.players[1] && (
-                            <PlayerButton name={match.players[1].name} paid={match.players[1].amount_paid}/>
+                            <PlayerButton name={match.players[1].name} paid={match.players[1].amount_paid} />
                         )}
                         {match.players[3] && (
-                            <PlayerButton name={match.players[3].name} paid={match.players[3].amount_paid}/>
+                            <PlayerButton name={match.players[3].name} paid={match.players[3].amount_paid} />
                         )}
                     </HStack>
                 </VStack>
