@@ -167,6 +167,7 @@ export type MatchFull = {
         players_id: number,
         name: string,
         position: number,
+        amount_paid: Float
     }>,
     shuttles: {
         shuttle_id: number,
@@ -185,6 +186,7 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
         m.date,
         ms.shuttle_instance_id,
         si.shuttle_id,
+        sp.amount_paid,
         mp.player_id,
         mp.position,
         p.name AS player_name,
@@ -195,6 +197,7 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
         LEFT JOIN match_shuttles ms ON ms.match_id = m.match_id
         LEFT JOIN match_players mp ON mp.match_id = m.match_id
         LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = ms.shuttle_instance_id
+        LEFT JOIN shuttle_payments sp ON sp.shuttle_instance_id = ms.shuttle_instance_id AND sp.match_id = m.match_id AND sp.player_id = mp.player_id
         LEFT JOIN shuttles s ON s.shuttle_id = si.shuttle_id
         LEFT JOIN players p ON p.player_id = mp.player_id
         WHERE m.match_id = ?
@@ -208,7 +211,8 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
             playersMap[row.position] = {
                 player_id: row.player_id,
                 name: row.player_name,
-                position: row.position
+                position: row.position,
+                amount_paid: row.amount_paid,
             }
         }
 

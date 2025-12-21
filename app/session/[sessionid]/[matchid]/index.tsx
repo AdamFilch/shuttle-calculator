@@ -42,6 +42,8 @@ export default function MatchPage() {
 
 
 
+
+
     return (
         <View>
             <View style={{
@@ -87,10 +89,10 @@ export default function MatchPage() {
                         justifyContent: 'center'
                     }}>
                         {match.players[0] && (
-                            <PlayerButton name={match.players[0].name} />
+                            <PlayerButton name={match.players[0].name} paid={match.players[0].amount_paid} />
                         )}
                         {match.players[2] && (
-                            <PlayerButton name={match.players[2].name} />
+                            <PlayerButton name={match.players[2].name} paid={match.players[2].amount_paid}/>
                         )}
                     </HStack>
                     <Divider />
@@ -99,10 +101,10 @@ export default function MatchPage() {
                         justifyContent: 'center'
                     }}>
                         {match.players[1] && (
-                            <PlayerButton name={match.players[1].name} />
+                            <PlayerButton name={match.players[1].name} paid={match.players[1].amount_paid}/>
                         )}
                         {match.players[3] && (
-                            <PlayerButton name={match.players[3].name} />
+                            <PlayerButton name={match.players[3].name} paid={match.players[3].amount_paid}/>
                         )}
                     </HStack>
                 </VStack>
@@ -159,9 +161,11 @@ const buttonStyle: ViewStyle = {
 
 
 export function PlayerButton({
-    name
+    name,
+    paid
 }: {
-    name: string
+    name: string,
+    paid: number
 }) {
     return <Button
         onPress={() => {
@@ -169,11 +173,16 @@ export function PlayerButton({
         style={{
             width: 150,
             height: 100,
-            backgroundColor: 'white'
+            backgroundColor: 'white',
+            display: 'flex',
+            flexDirection: 'column'
         }}>
 
         <ButtonText>
             {name}
+        </ButtonText>
+        <ButtonText>
+            ({paid > 0 ? paid : 'Paid'})
         </ButtonText>
     </Button>
 }
