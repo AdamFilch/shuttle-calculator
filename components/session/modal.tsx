@@ -1,3 +1,4 @@
+import { padToFullRows } from '@/services/display-tools'
 import { fetchAllPlayerPaymentsBySession, PlayersShuttlePayments } from '@/services/player'
 import { createNewSession } from '@/services/session'
 import { payShuttleByPlayers } from '@/services/shuttle-payments'
@@ -296,17 +297,6 @@ export function PayByPlayerModal({
 }
 
 
-function padToFullRows(data, columns) {
-    if (data == null) return []
-    const remainder = data.length % columns;
-    if (remainder === 0) return data;
-
-    const paddingCount = columns - remainder;
-    return [
-        ...data,
-        ...Array.from({ length: paddingCount }).map(() => ({ __empty: true })),
-    ];
-}
 
 
 function PaymentConfirmationDialog({

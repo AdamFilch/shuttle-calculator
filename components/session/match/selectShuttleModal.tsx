@@ -35,12 +35,20 @@ export function SelectShuttleButton({
                     setIsOpen(true)
                 }}
                 style={{
-                    width: 150,
-                    height: 100,
+                    // height: 30,
+                    // width: 100,
                     backgroundColor: 'white'
                 }}>
+                <ButtonText style={{
+                    color: 'black',
+                    paddingHorizontal: 10
+                }}>Add thier Shuttle</ButtonText>
+                <View style={{
+                    width: 25,
 
-                <AddIcon />
+                }}>
+                    <AddIcon />
+                </View>
             </Button>
             <SelectShuttleModal
                 selectedShuttle={1}

@@ -4,13 +4,14 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
+import { padToFullRows } from "@/services/display-tools";
 import { createNewMatch, createNewMatchShuttle } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 
 export default function CreateNewMatchPage() {
     const { sessionId } = useLocalSearchParams()
@@ -47,19 +48,24 @@ export default function CreateNewMatchPage() {
         router.back()
     }
 
-
+    console.log("ShuttleLists", shuttleList)
 
     return (
-        <ScrollView>
+        <VStack>
             <View style={{
                 backgroundColor: 'white'
             }}>
                 <Text>Create Match Page</Text>
             </View>
-            
+
             {shuttleList.length > 0 ? (
-                <View>
-                    {/* <View style={{
+                <VStack>
+                    <View style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end'
+                    }}>
+                        {/* <View style={{
                         backgroundColor: 'white'
                     }}>
                         <Text>Select Shuttle</Text>
@@ -75,21 +81,57 @@ export default function CreateNewMatchPage() {
                             <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
                         ))}
                     </Picker> */}
-                    <SelectShuttleButton
-                        selectedShuttles={
-                            usedShuttles
-                        }
-                        onSelect={(selected) => {
-                            const indexOfShuttleUsedBefore = usedShuttles.length > 0 ? usedShuttles.findIndex((el: any) => el.shuttleId == selected.shuttleId) : -1
-                            console.log("SelectedShuttles", indexOfShuttleUsedBefore)
-
-                            if (indexOfShuttleUsedBefore != -1) {
-                                usedShuttles[indexOfShuttleUsedBefore].quantityUsed += selected.quantityUsed
-                            } else {
-                                setUsedShuttles(prev => [...prev, selected])
+                        <SelectShuttleButton
+                            selectedShuttles={
+                                usedShuttles
                             }
-                        }} />
-                </View>
+                            onSelect={(selected) => {
+                                const indexOfShuttleUsedBefore = usedShuttles.length > 0 ? usedShuttles.findIndex((el: any) => el.shuttleId == selected.shuttleId) : -1
+                                console.log("SelectedShuttles", indexOfShuttleUsedBefore)
+
+                                if (indexOfShuttleUsedBefore != -1) {
+                                    usedShuttles[indexOfShuttleUsedBefore].quantityUsed += selected.quantityUsed
+                                } else {
+                                    setUsedShuttles(prev => [...prev, selected])
+                                }
+                            }} />
+                    </View>
+                    <Text>Test</Text>
+                    <View>
+                        <FlatList
+                            data={padToFullRows(shuttleList, 3)}
+                            showsVerticalScrollIndicator={false}
+                            scrollEnabled={false}
+                            contentContainerStyle={{
+                                // gap: 10,
+                            }}
+                            columnWrapperStyle={{
+                                // justifyContent: "center",
+                                // gap: 10,
+                            }}
+                            numColumns={3}
+                            renderItem={(shuttle) => {
+                                if (!shuttle.item.shuttle_id) return <View style={{ width: 10, height: 10 }}></View>
+                                return <Button
+                                    style={{
+                                        height: 70,
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                    }}
+                                    key={shuttle.item}
+                                >
+                                    <ButtonText>
+                                        {shuttle.item.name} (RM {shuttle.item.total_price})
+                                    </ButtonText>
+                                    <ButtonText>
+                                        {shuttle.item.num_of_shuttles}
+                                    </ButtonText>
+                                </Button>
+                            }}
+                        />
+
+                    </View>
+                </VStack>
             ) : (
                 <View>
                     <Text>Add a shuttle first to proceed</Text>
@@ -162,7 +204,7 @@ export default function CreateNewMatchPage() {
                     </ButtonText>
                 </Button>
             </View>
-        </ScrollView>
+        </VStack>
     )
 }
 
