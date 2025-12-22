@@ -13,7 +13,9 @@ type newMatchPayload = {
 export type createNewMatchShuttle = {
     shuttleId: number,
     quantityUsed: number,
-    condition: ShuttleCondition
+    condition: ShuttleCondition,
+    shuttle_name: string,
+    price_to_pay: Float
 }
 
 export type ShuttleCondition = "New" | "Reused" | "Random"

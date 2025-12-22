@@ -88,6 +88,8 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
         }
     }, [open]);
 
+    console.log("ShuttleList", shuttleList)
+
 
 
     return <Modal
@@ -183,7 +185,9 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
                         onSelect({
                             shuttleId: currentSelectedShuttle,
                             quantityUsed: parseInt(numberShuttles),
-                            condition: shuttleCondition
+                            condition: shuttleCondition,
+                            shuttle_name: shuttleList[currentSelectedShuttle - 1].name,
+                            price_to_pay: shuttleList[currentSelectedShuttle - 1].total_price / shuttleList[currentSelectedShuttle - 1].num_of_shuttles,
                         })
                         onClose()
                     }}

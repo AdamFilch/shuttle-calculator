@@ -48,7 +48,7 @@ export default function CreateNewMatchPage() {
         router.back()
     }
 
-    console.log("ShuttleLists", shuttleList)
+    console.log('CreateMatch', usedShuttles)
 
     return (
         <VStack>
@@ -99,7 +99,7 @@ export default function CreateNewMatchPage() {
                     <Text>Test</Text>
                     <View>
                         <FlatList
-                            data={padToFullRows(shuttleList, 3)}
+                            data={padToFullRows(usedShuttles, 3)}
                             showsVerticalScrollIndicator={false}
                             scrollEnabled={false}
                             contentContainerStyle={{
@@ -111,7 +111,7 @@ export default function CreateNewMatchPage() {
                             }}
                             numColumns={3}
                             renderItem={(shuttle) => {
-                                if (!shuttle.item.shuttle_id) return <View style={{ width: 10, height: 10 }}></View>
+                                if (!shuttle.item.shuttleId) return <View style={{ width: 10, height: 10 }}></View>
                                 return <Button
                                     style={{
                                         height: 70,
@@ -121,10 +121,10 @@ export default function CreateNewMatchPage() {
                                     key={shuttle.item}
                                 >
                                     <ButtonText>
-                                        {shuttle.item.name} (RM {shuttle.item.total_price})
+                                        {shuttle.item.shuttle_name} (RM {shuttle.item.price_to_pay})
                                     </ButtonText>
                                     <ButtonText>
-                                        {shuttle.item.num_of_shuttles}
+                                        {shuttle.item.quantityUsed}
                                     </ButtonText>
                                 </Button>
                             }}
