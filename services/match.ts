@@ -5,24 +5,24 @@ import { fetchShuttleById } from "./shuttle";
 const db = openDatabaseSync('db.db')
 
 type newMatchPayload = {
-    sessionId: number,
-    playersId: number[] // TL BL TR BR
-    shuttles: createNewMatchShuttle[]
+  sessionId: number,
+  playersId: number[] // TL BL TR BR
+  shuttles: createNewMatchShuttle[]
 }
 
 export type createNewMatchShuttle = {
-    shuttleId: number,
-    quantityUsed: number,
-    condition: ShuttleCondition,
-    shuttle_name: string,
-    price_to_pay: Float
+  shuttleId: number,
+  quantityUsed: number,
+  condition: ShuttleCondition,
+  shuttle_name: string,
+  price_to_pay: Float
 }
 
 export type ShuttleCondition = "New" | "Reused" | "Random"
 
 export type Match = {
-    session_id: number,
-    match_id: number
+  session_id: number,
+  match_id: number
 }
 export async function createNewMatch(payload: newMatchPayload) {
   const numberOfMatches = await fetchNumberOfMatchesBySessionId(
@@ -112,76 +112,76 @@ export async function createNewMatch(payload: newMatchPayload) {
 
 export async function createNewMatchOld(payload: newMatchPayload) {
 
-    const numberOfMatches = await fetchNumberOfMatchesBySessionId(payload.sessionId.toString())
+  const numberOfMatches = await fetchNumberOfMatchesBySessionId(payload.sessionId.toString())
 
-    const matchRes = await db.runAsync(
-        `INSERT INTO matches (session_id, match_number) VALUES (?, ?)`,
-        [payload.sessionId, numberOfMatches.count]
+  const matchRes = await db.runAsync(
+    `INSERT INTO matches (session_id, match_number) VALUES (?, ?)`,
+    [payload.sessionId, numberOfMatches.count]
+  );
+  const matchId = matchRes.lastInsertRowId;
+
+  const shuttleData = await Promise.all(payload.shuttles.map(async s => {
+    const [res] = await fetchShuttleById(s.shuttleId);
+    return { ...s, ...res, pricePerUnit: res.total_price / res.num_of_shuttles };
+  }));
+
+  await db.execAsync("BEGIN TRANSACTION");
+
+  await Promise.all(payload.playersId.map((playerId, i) => {
+    if (!playerId) return Promise.resolve();
+    return db.runAsync(
+      `INSERT INTO match_players (match_id, player_id, position) VALUES (?, ?, ?)`,
+      [matchId, playerId, i]
     );
-    const matchId = matchRes.lastInsertRowId;
+  }));
 
-    const shuttleData = await Promise.all(payload.shuttles.map(async s => {
-        const [res] = await fetchShuttleById(s.shuttleId);
-        return { ...s, ...res, pricePerUnit: res.total_price / res.num_of_shuttles };
-    }));
-
-    await db.execAsync("BEGIN TRANSACTION");
-
-    await Promise.all(payload.playersId.map((playerId, i) => {
-        if (!playerId) return Promise.resolve();
-        return db.runAsync(
-            `INSERT INTO match_players (match_id, player_id, position) VALUES (?, ?, ?)`,
-            [matchId, playerId, i]
-        );
-    }));
-
-    const payments = [];
-    for (const playerId of payload.playersId) {
-        if (!playerId) continue;
-        for (const shuttle of shuttleData) {
-            let amount_to_pay = (shuttle.pricePerUnit * shuttle.quantityUsed) / payload.playersId.filter((playerId) => playerId != null).length
-            payments.push(db.runAsync(
-                `INSERT INTO shuttle_payments (match_id, shuttle_id, player_id, amount_paid) VALUES (?, ?, ?, ?)`,
-                [matchId, shuttle.shuttleId, playerId, amount_to_pay.toFixed(2)]
-            ));
-        }
+  const payments = [];
+  for (const playerId of payload.playersId) {
+    if (!playerId) continue;
+    for (const shuttle of shuttleData) {
+      let amount_to_pay = (shuttle.pricePerUnit * shuttle.quantityUsed) / payload.playersId.filter((playerId) => playerId != null).length
+      payments.push(db.runAsync(
+        `INSERT INTO shuttle_payments (match_id, shuttle_id, player_id, amount_paid) VALUES (?, ?, ?, ?)`,
+        [matchId, shuttle.shuttleId, playerId, amount_to_pay.toFixed(2)]
+      ));
     }
-    await Promise.all(payments);
+  }
+  await Promise.all(payments);
 
-    await Promise.all(shuttleData.map(s =>
-        db.runAsync(
-            `INSERT INTO match_shuttles (match_id, shuttle_id, quantity_used) VALUES (?, ?, ?)`,
-            [matchId, s.shuttleId, s.quantityUsed]
-        )
-    ));
+  await Promise.all(shuttleData.map(s =>
+    db.runAsync(
+      `INSERT INTO match_shuttles (match_id, shuttle_id, quantity_used) VALUES (?, ?, ?)`,
+      [matchId, s.shuttleId, s.quantityUsed]
+    )
+  ));
 
-    await db.execAsync("COMMIT");
+  await db.execAsync("COMMIT");
 
-    return { matchId };
+  return { matchId };
 }
 
 export type MatchFull = {
-    session_id: number,
-    match_id: number,
-    date: string
-    players:
-    Record<number, {
-        players_id: number,
-        name: string,
-        position: number,
-        amount_paid: Float
-    }>,
-    shuttles: {
-        shuttle_id: number,
-        name: string,
-        shuttle_instance_id: number,
-        shuttle_price: Float
-    }[]
+  session_id: number,
+  match_id: number,
+  date: string
+  players:
+  Record<number, {
+    players_id: number,
+    name: string,
+    position: number,
+    amount_paid: Float
+  }>,
+  shuttles: {
+    shuttle_id: number,
+    name: string,
+    shuttle_instance_id: number,
+    shuttle_price: Float
+  }[]
 }
 
 export async function fetchMatchById(id: string): Promise<MatchFull> {
 
-    const matchRows: any = await db.getAllAsync(`
+  const matchRows: any = await db.getAllAsync(`
         SELECT
         m.session_id,
         m.match_id,
@@ -205,54 +205,60 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
         WHERE m.match_id = ?
         `, [id])
 
-    const playersMap: Record<number, any> = {}
-    const shuttlesMap: Record<number, any> = {}
+  const playersMap: Record<number, any> = {}
+  const shuttlesMap: Record<number, any> = {}
 
-    for (let row of matchRows) {
-        if (!playersMap[row.position]) {
-            playersMap[row.position] = {
-                player_id: row.player_id,
-                name: row.player_name,
-                position: row.position,
-                amount_paid: row.amount_paid,
-            }
-        }
+  console.log("allMatchRows", matchRows)
 
-        if (!shuttlesMap[row.shuttle_instance_id]) {
-            shuttlesMap[row.shuttle_instance_id] = {
-                shuttle_id: row.shuttle_id,
-                name: row.shuttle_name,
-                shuttle_instance_id: row.shuttle_instance_id,
-                shuttle_price: row.total_price / row.num_of_shuttles
-            }
-        }
+  for (let row of matchRows) {
+    if (!playersMap[row.position]) {
+      playersMap[row.position] = {
+        player_id: row.player_id,
+        name: row.player_name,
+        position: row.position,
+        amount_paid: 0,
+        shuttle_instance_ids: []
+      }
     }
+    
+    playersMap[row.position].amount_paid += row.amount_paid
 
-    return {
-        session_id: matchRows[0].session_id,
-        match_id: matchRows[0].match_id,
-        date: matchRows[0].date,
-        players: playersMap,
-        shuttles: Object.values(shuttlesMap)
+    if (!shuttlesMap[row.shuttle_instance_id]) {
+      shuttlesMap[row.shuttle_instance_id] = {
+        shuttle_id: row.shuttle_id,
+        name: row.shuttle_name,
+        shuttle_instance_id: row.shuttle_instance_id,
+        shuttle_price: row.total_price / row.num_of_shuttles
+      }
+
     }
+  }
+
+  return {
+    session_id: matchRows[0].session_id,
+    match_id: matchRows[0].match_id,
+    date: matchRows[0].date,
+    players: playersMap,
+    shuttles: Object.values(shuttlesMap)
+  }
 }
 
 
 export async function fetchNumberOfMatchesBySessionId(id: string) {
-    const rows: any = await db.getFirstAsync(
-        `SELECT COUNT(*) as count FROM matches WHERE session_id = ?`,
-        [id]
-    );
+  const rows: any = await db.getFirstAsync(
+    `SELECT COUNT(*) as count FROM matches WHERE session_id = ?`,
+    [id]
+  );
 
-    return rows;
+  return rows;
 }
 
 export async function fetchAllMatches(): Promise<Match[]> {
-    const res: Match[] = await db.getAllAsync(`SELECT * FROM matches`)
-    return res
+  const res: Match[] = await db.getAllAsync(`SELECT * FROM matches`)
+  return res
 }
 
 export async function fetchMatchesBySessionId(sessionId: string): Promise<Match[]> {
-    const res: Match[] = await db.getAllAsync(`SELECT * FROM matches WHERE session_id = ${sessionId}`)
-    return res
+  const res: Match[] = await db.getAllAsync(`SELECT * FROM matches WHERE session_id = ${sessionId}`)
+  return res
 }

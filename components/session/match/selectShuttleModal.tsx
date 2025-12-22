@@ -88,8 +88,6 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
         }
     }, [open]);
 
-    console.log("ShuttleList", shuttleList)
-
 
 
     return <Modal

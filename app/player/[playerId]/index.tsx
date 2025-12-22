@@ -151,16 +151,18 @@ export default function SelectPlayerPage() {
                                         onLongPress={(e) => {
                                             if (!SelectShuttleMode) {
                                                 toggleShuttleMode(true)
-                                                setSelectedShuttles([{
-                                                    ...match.item,
-                                                    numOfShuttle,
-                                                    totalCosts
-                                                }])
+                                                if (totalCosts > 0) {
+                                                    setSelectedShuttles([{
+                                                        ...match.item,
+                                                        numOfShuttle,
+                                                        totalCosts
+                                                    }])
+                                                }
                                             }
 
                                         }}
                                         onPress={() => {
-                                            if (SelectShuttleMode) {
+                                            if (SelectShuttleMode && totalCosts > 0) {
                                                 if (!selectedShuttles.some((v) => v.match_id == match.item.match_id)) {
                                                     setSelectedShuttles([...selectedShuttles, {
                                                         ...match.item,

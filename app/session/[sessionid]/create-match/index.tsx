@@ -48,7 +48,6 @@ export default function CreateNewMatchPage() {
         router.back()
     }
 
-    console.log('CreateMatch', usedShuttles)
 
     return (
         <VStack>
