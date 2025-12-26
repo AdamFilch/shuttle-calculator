@@ -1,12 +1,8 @@
-import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { AddShuttleModal } from '@/components/shuttle/modal';
-import { Divider } from '@/components/ui/divider';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { fetchAllShuttles } from '@/services/shuttle';
-import { fetchAllShuttlePayments } from '@/services/shuttle-payments';
-import { fetchAllShuttleInstances } from '@/services/shuttle_instances';
+import { Text } from '@/components/ui/text';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -25,58 +21,14 @@ export default function TabTwoScreen() {
           style={styles.headerImage}
         />
       }>
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: 10,
-        }}
-      >
-        {/* <TouchableOpacity style={buttonStyle}>
-          <Text>Add Match</Text>
-        </TouchableOpacity> */}
-        <TouchableOpacity style={buttonStyle} onPress={() => {
-          setIsShuttleOpen(true)
-        }}>
-          <Text>Add Shuttles</Text>
-        </TouchableOpacity>
+      <View>
+        <Text>
+          Welcome!
+        </Text>
+        <Text>
+          Shuttle Calculator
+        </Text>
       </View>
-      <Divider orientation={'horizontal'}/>
-      <View style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-      }}>
-        <TouchableOpacity style={buttonStyle} onPress={async () => {
-          const res = await fetchAllShuttles()
-          console.log(`FetchAllShuttles`, res)
-        }}>
-          <Text>Display all Shuttles</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={buttonStyle} onPress={async () => {
-          const res = await fetchAllShuttlePayments()
-          console.log(`FetchAllShuttlePayments`, res)
-        }}>
-          <Text>Display all Shuttle Payments</Text>
-        </TouchableOpacity>  
-        <TouchableOpacity style={buttonStyle} onPress={async () => {
-          const res = await fetchAllShuttleInstances()
-          console.log(`FetchAllShuttleInstances`, res)
-        }}>
-          <Text>Display all Shuttle Instances</Text>
-        </TouchableOpacity>  
-      </View>
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: 10,
-          // alignSelf: 'center',
-          width: 'auto',
-        }}
-      >
-      </View>
-      <AddShuttleModal open={addShuttleIsOpen} onClose={() => setIsShuttleOpen(false)} />
     </ParallaxScrollView>
   );
 }

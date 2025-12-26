@@ -5,7 +5,9 @@ import { Platform } from 'react-native';
 import { HapticTab } from '@/components/HapticTab';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -44,6 +46,13 @@ export default function TabLayout() {
         options={{
           title: 'Players',
           tabBarIcon: ({ color }) => <MaterialIcons name={'person'} size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="shuttles/index"
+        options={{
+          title: 'Shuttles',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name={'badminton'} size={28} color={color} />,
         }}
       />
       <Tabs.Screen
