@@ -1,15 +1,17 @@
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PaymentConfirmationDialog } from "@/components/shared/PaymentConfirmationDialog";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
-import { CloseIcon, Icon } from "@/components/ui/icon";
-import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { VStack } from "@/components/ui/vstack";
 import { fetchMatchById, MatchFull } from "@/services/match";
+import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, Text, View, ViewStyle } from "react-native";
+import { ActivityIndicator, FlatList, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function MatchPage() {
@@ -34,58 +36,47 @@ export default function MatchPage() {
 
 
     if (match == null) {
-        return <View>
-            <Text>Loading</Text>
-        </View>
+        return (
+            <SafeAreaView className="flex-1 bg-background-50 items-center justify-center">
+                <ActivityIndicator size="large" color="#0F9D82" />
+            </SafeAreaView>
+        )
     }
 
 
-
-
     return (
-        <View>
-            <View style={{
-                backgroundColor: 'white'
-            }}>
-                <Text>
-                    Match {matchId} of session {sessionId}
-                </Text>
-            </View>
+        <SafeAreaView className="flex-1 bg-background-50">
+            <PageHeader
+                title={`Match ${match.match_id}`}
+                subtitle={DisplayTimeDDDASHMMDASHYYYY(match.date)}
+            />
 
-            <View>
-            </View>
-
-            <View>
-                {/* <TouchableOpacity
-                    onPress={async () => {
-                        // setAddMatchIsOpen(true)
-                        }}
-                        style={buttonStyle}
-                        >
-                        <Text>Add another shuttle</Text>
-                        </TouchableOpacity> */}
-                <Button onPress={() => {
-                    setOpenConfirmation(true)
-                }}>
+            <View className="flex-1 px-4">
+                <Button
+                    className="mt-2"
+                    onPress={() => {
+                        setOpenConfirmation(true)
+                    }}
+                >
                     <ButtonText>
                         Pay for this Match
                     </ButtonText>
                 </Button>
-                <PaymentConfirmationDialog open={openConfirmation} onClose={() => {
-                    setOpenConfirmation(false)
-                }} onConfirm={() => {
-                    
-                }} />
-            </View>
-            <View>
-                <Text style={{
-                    backgroundColor: 'white'
-                }}>Players played within this match</Text>
-                <VStack space={'lg'}>
-                    <HStack space={'lg'} style={{
-                        display: 'flex',
-                        justifyContent: 'center'
-                    }}>
+                <PaymentConfirmationDialog
+                    isOpen={openConfirmation}
+                    onClose={() => {
+                        setOpenConfirmation(false)
+                    }}
+                    onConfirm={() => {
+
+                    }}
+                />
+
+                <Heading size="md" className="text-typography-900 mt-6 mb-2">
+                    Players in this match
+                </Heading>
+                <VStack space="sm">
+                    <HStack space="sm">
                         {match.players[0] && (
                             <PlayerButton name={match.players[0].name} />
                         )}
@@ -94,10 +85,7 @@ export default function MatchPage() {
                         )}
                     </HStack>
                     <Divider />
-                    <HStack space={'lg'} style={{
-                        display: 'flex',
-                        justifyContent: 'center'
-                    }}>
+                    <HStack space="sm">
                         {match.players[1] && (
                             <PlayerButton name={match.players[1].name} />
                         )}
@@ -106,55 +94,44 @@ export default function MatchPage() {
                         )}
                     </HStack>
                 </VStack>
+
                 {match.shuttles.length > 0 && (
                     <View>
-                        <Text style={{
-                            backgroundColor: 'white'
-                        }}>Shuttles Used this match</Text>
+                        <Heading size="md" className="text-typography-900 mt-6 mb-2">
+                            Shuttles used this match
+                        </Heading>
                         <FlatList
-
                             data={match.shuttles}
                             numColumns={3}
                             contentContainerStyle={{
-                                gap: 10
+                                gap: 10,
+                                paddingBottom: 32
                             }}
                             columnWrapperStyle={{
-                                columnGap: 10
+                                gap: 10
                             }}
-
                             renderItem={(shuttle) => (
                                 <Button
-                                    style={{
-                                        width: 150,
-                                        height: 100,
-                                        display: 'flex',
-                                        flexDirection: 'column'
-                                    }}
+                                    variant="outline"
+                                    action="secondary"
+                                    className="flex-1 h-20 flex-col items-center justify-center rounded-xl border-outline-100 bg-background-0 shadow-soft-1"
                                     onPress={() => {
                                     }}
                                 >
-                                    <ButtonText>
+                                    <ButtonText className="text-typography-900" size="sm">
                                         {shuttle.item.name}
                                     </ButtonText>
-                                    <ButtonText>
+                                    <ButtonText className="text-typography-500" size="xs">
                                         ({shuttle.item.quantity_used})
                                     </ButtonText>
                                 </Button>
                             )}
                         />
-
                     </View>
                 )}
             </View>
-        </View>
+        </SafeAreaView>
     )
-}
-
-const buttonStyle: ViewStyle = {
-    backgroundColor: 'lightgray',
-    width: 100,
-    height: 100,
-    justifyContent: 'center'
 }
 
 
@@ -163,76 +140,17 @@ export function PlayerButton({
 }: {
     name: string
 }) {
-    return <Button
-        onPress={() => {
-        }}
-        style={{
-            width: 150,
-            height: 100,
-            backgroundColor: 'white'
-        }}>
-
-        <ButtonText>
-            {name}
-        </ButtonText>
-    </Button>
-}
-
-function PaymentConfirmationDialog({
-    open,
-    onClose,
-    onConfirm
-}: {
-    open: boolean,
-    onClose: () => void,
-    onConfirm: () => void
-}) {
     return (
-        <Modal
-            isOpen={open}
-            onClose={onClose}
+        <Button
+            variant="outline"
+            action="secondary"
+            className="flex-1 h-20 items-center justify-center rounded-xl border-outline-100 bg-background-0 shadow-soft-1"
+            onPress={() => {
+            }}
         >
-            <ModalBackdrop />
-            <ModalContent>
-                <ModalHeader>
-                    <Heading>
-                        Add a Session Modal
-                    </Heading>
-                    <ModalCloseButton>
-                        <Icon
-                            as={CloseIcon}
-                            size="md"
-                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-                        />
-                    </ModalCloseButton>
-                </ModalHeader>
-                <ModalBody>
-                    <Text style={{
-                        color: 'white'
-                    }}>This action is irreversible. Click Confirm to proceed.</Text>
-
-                </ModalBody>
-                <ModalFooter>
-                    <Button
-                        variant="outline"
-                        action="secondary"
-                        className="mr-3"
-                        onPress={() => {
-                            onClose();
-                        }}
-                    >
-                        <ButtonText>Cancel</ButtonText>
-                    </Button>
-                    <Button
-                        onPress={() => {
-                            onConfirm();
-                        }}
-                    >
-                        <ButtonText>Confirm</ButtonText>
-                    </Button>
-                </ModalFooter>
-            </ModalContent>
-
-        </Modal>
+            <ButtonText className="text-typography-900">
+                {name}
+            </ButtonText>
+        </Button>
     )
 }

@@ -1,13 +1,14 @@
+import { ListRow } from "@/components/layout/ListRow";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { AddSessionModal } from "@/components/session/modal";
-import { fetchAllMatches } from "@/services/match";
-import { fetchAllMatchPlayers } from "@/services/match-players";
-import { fetchAllMatchShuttles } from "@/services/match-shuttles";
+import { Text } from "@/components/ui/text";
+import { VStack } from "@/components/ui/vstack";
 import { fetchAllSessions, Session } from "@/services/session";
 import { DisplayTimeDDDASHMMDASHYYYY } from '@/services/time-display';
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SessionPage() {
@@ -28,98 +29,38 @@ export default function SessionPage() {
 
 
     return (
-        <SafeAreaView>
-            <ScrollView>
-                <View style={{
-                    backgroundColor: 'white'
-                }}>
-                    <Text>Sessions Page</Text>
-                </View>
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
-                        gap: 10,
-                        // alignSelf: 'center',
-                        width: 'auto',
-                    }}
-                >
-                    <TouchableOpacity style={buttonStyle} onPress={() => {
-                        setAddSessionIsOpen(true)
-                    }}>
-                        <Text>Add Sessions</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={async () => {
-                            const res = await fetchAllSessions()
-                            console.log(`FetchAllSession`, res)
-                        }}
-                        style={buttonStyle}
-                    >
-                        <Text>Display Sessions</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={buttonStyle} onPress={async () => {
-                        const res = await fetchAllMatches()
-                        console.log(`FetchAllMatches`, res)
-                    }}>
-                        <Text>Display all matches</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={buttonStyle} onPress={async () => {
-                        const res = await fetchAllMatchShuttles()
-                        console.log(`FetchAllMatchShuttles`, res)
-                    }}>
-                        <Text>Display all Match Shuttles</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={buttonStyle} onPress={async () => {
-                        const res = await fetchAllMatchPlayers()
-                        console.log(`FetchAllMatchPlayers`, res)
-                    }}>
-                        <Text>Display all Match Players</Text>
-                    </TouchableOpacity>
-
-                    <AddSessionModal open={addSessionIsOpen} onClose={() => {
-                        setAddSessionIsOpen(false)
-                        fetchSessions()
-                        }} />
-
-                </View>
+        <SafeAreaView className="flex-1 bg-background-50">
+            <PageHeader
+                title="Sessions"
+                action={{
+                    label: "Add Session",
+                    onPress: () => setAddSessionIsOpen(true)
+                }}
+            />
+            <ScrollView className="flex-1 px-4">
                 {sessionsList.length == 0 ? (
-                    <View>
-                        <Text>
-                            Sessions List is Empty
-                        </Text>
-                    </View>
+                    <Text size="sm" className="text-typography-500 py-4">
+                        No sessions yet
+                    </Text>
                 ) : (
-                    <View>
+                    <VStack space="sm" className="pb-8 pt-2">
                         {sessionsList.map((session) => (
-                            <TouchableOpacity
+                            <ListRow
                                 key={session.session_id}
-                                style={{
-                                    backgroundColor: 'white',
-                                    height: 50,
-                                    borderColor: 'black',
-                                    borderWidth: 1
-                                }}
+                                title={session.name == '' || !session.name ? DisplayTimeDDDASHMMDASHYYYY(session.date) ?? '' : session.name}
                                 onPress={() => {
                                     router.navigate(`/session/${session.session_id}`)
-                                }}>
-                                <View>
-                                    <Text>
-                                        {session.name == '' ? DisplayTimeDDDASHMMDASHYYYY(session.date) : session.name}
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
+                                }}
+                            />
                         ))}
-                    </View>
+                    </VStack>
                 )}
             </ScrollView>
+
+            <AddSessionModal open={addSessionIsOpen} onClose={() => {
+                setAddSessionIsOpen(false)
+                fetchSessions()
+            }} />
         </SafeAreaView>
     )
-}
-
-const buttonStyle: ViewStyle = {
-    backgroundColor: 'lightgray',
-    width: 100,
-    height: 100,
-    justifyContent: 'center'
 }

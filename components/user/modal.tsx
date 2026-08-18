@@ -6,6 +6,7 @@ import { CloseIcon, Icon } from "../ui/icon"
 import { Input, InputField } from "../ui/input"
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "../ui/modal"
 import { Text } from "../ui/text"
+import { VStack } from "../ui/vstack"
 
 
 export function AddPlayerModal({
@@ -39,7 +40,7 @@ export function AddPlayerModal({
             <ModalContent>
                 <ModalHeader>
                     <Heading>
-                        Add a Session Modal
+                        Add a Player
                     </Heading>
                     <ModalCloseButton>
                         <Icon
@@ -50,18 +51,20 @@ export function AddPlayerModal({
                     </ModalCloseButton>
                 </ModalHeader>
                 <ModalBody>
-                    <Text>Add a player here</Text>
-                    <Input
-                        variant="outline"
-                        size="md"
-                        isDisabled={false}
-                        isInvalid={false}
-                        isReadOnly={false}
-                    >
-                        <InputField defaultValue={playername} value={playername} onChangeText={(val) => {
-                            setPlayername(val)
-                        }} placeholder="Enter a Player Name" />
-                    </Input>
+                    <VStack space="sm">
+                        <Text size="sm" className="text-typography-500">Add a player here</Text>
+                        <Input
+                            variant="outline"
+                            size="md"
+                            isDisabled={false}
+                            isInvalid={false}
+                            isReadOnly={false}
+                        >
+                            <InputField defaultValue={playername} value={playername} onChangeText={(val) => {
+                                setPlayername(val)
+                            }} placeholder="Enter a Player Name" />
+                        </Input>
+                    </VStack>
                 </ModalBody>
                 <ModalFooter>
                     <Button

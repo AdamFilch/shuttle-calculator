@@ -1,43 +1,37 @@
-import { debugDatabase, dropDatabase } from "@/services/database";
-import { ScrollView, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button, ButtonText } from "@/components/ui/button";
+import { VStack } from "@/components/ui/vstack";
+import { debugDatabase, dropDatabase, setupDatabase } from "@/services/database";
+import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function SettingsPage() {
     return (
-        <SafeAreaView>
-            <ScrollView>
-                <View style={{
-                    backgroundColor: 'white'
-                }}>
-                    <Text>Sessions Page</Text>
-                </View>
-                <TouchableOpacity
+        <SafeAreaView className="flex-1 bg-background-50">
+            <PageHeader title="Settings" />
+            <ScrollView className="flex-1 px-4">
+                <VStack space="sm" className="pb-8 pt-2">
+                    <Button
+                        variant="outline"
+                        action="secondary"
                         onPress={async () => {
                             await debugDatabase()
                         }}
-                        style={buttonStyle}
                     >
-                        <Text>Check Tables</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                        <ButtonText>Check Tables</ButtonText>
+                    </Button>
+                    <Button
+                        action="negative"
                         onPress={async () => {
-                            // const res = await fetchAllSessions()
-                            // console.log(res)
                             await dropDatabase()
+                            await setupDatabase()
                         }}
-                        style={buttonStyle}
                     >
-                        <Text>Drop Tables</Text>
-                    </TouchableOpacity>
+                        <ButtonText>Reset Database</ButtonText>
+                    </Button>
+                </VStack>
             </ScrollView>
         </SafeAreaView>
     )
-}
-
-const buttonStyle: ViewStyle = {
-    backgroundColor: 'lightgray',
-    width: 100,
-    height: 100,
-    justifyContent: 'center'
 }

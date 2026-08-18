@@ -6,6 +6,7 @@ import { CloseIcon, Icon } from "../ui/icon"
 import { Input, InputField } from "../ui/input"
 import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "../ui/modal"
 import { Text } from "../ui/text"
+import { VStack } from "../ui/vstack"
 
 
 export function AddShuttleModal({
@@ -56,41 +57,42 @@ export function AddShuttleModal({
                     </ModalCloseButton>
                 </ModalHeader>
                 <ModalBody>
-                    <Text>Add a Shuttle here</Text>
-                    <Input
-                        variant="outline"
-                        size="md"
-                        isDisabled={false}
-                        isInvalid={false}
-                        isReadOnly={false}
-                    >
-                        <InputField defaultValue={shuttleName} value={shuttleName} onChangeText={(val) => {
-                            setShuttleName(val)
-                        }} placeholder="Enter a Shuttle Name" />
-                    </Input>
-                    <Input
-                        variant="outline"
-                        size="md"
-                        isDisabled={false}
-                        isInvalid={false}
-                        isReadOnly={false}
-                        
-                    >
-                        <InputField defaultValue={shuttlePrice} value={shuttlePrice} onChangeText={(val) => {
-                            setShuttlePrice(val)
-                        }} placeholder="Enter the total price" />
-                    </Input>
-                    <Input
-                        variant="outline"
-                        size="md"
-                        isDisabled={false}
-                        isInvalid={false}
-                        isReadOnly={false}
-                    >
-                        <InputField defaultValue={shuttleAmount} value={shuttleAmount} onChangeText={(val) => {
-                            setShuttleAmount(val)
-                        }} placeholder="Enter the number of shuttles" />
-                    </Input>
+                    <VStack space="sm">
+                        <Text size="sm" className="text-typography-500">Add a Shuttle here</Text>
+                        <Input
+                            variant="outline"
+                            size="md"
+                            isDisabled={false}
+                            isInvalid={false}
+                            isReadOnly={false}
+                        >
+                            <InputField defaultValue={shuttleName} value={shuttleName} onChangeText={(val) => {
+                                setShuttleName(val)
+                            }} placeholder="Enter a Shuttle Name" />
+                        </Input>
+                        <Input
+                            variant="outline"
+                            size="md"
+                            isDisabled={false}
+                            isInvalid={false}
+                            isReadOnly={false}
+                        >
+                            <InputField defaultValue={shuttlePrice} value={shuttlePrice} onChangeText={(val) => {
+                                setShuttlePrice(val)
+                            }} placeholder="Enter the total price" />
+                        </Input>
+                        <Input
+                            variant="outline"
+                            size="md"
+                            isDisabled={false}
+                            isInvalid={false}
+                            isReadOnly={false}
+                        >
+                            <InputField defaultValue={shuttleAmount} value={shuttleAmount} onChangeText={(val) => {
+                                setShuttleAmount(val)
+                            }} placeholder="Enter the number of shuttles" />
+                        </Input>
+                    </VStack>
                 </ModalBody>
                 <ModalFooter>
                     <Button

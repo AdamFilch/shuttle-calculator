@@ -3,10 +3,10 @@
 import { Button, ButtonText } from "@/components/ui/button"
 import { Heading } from "@/components/ui/heading"
 import { CloseIcon, Icon } from "@/components/ui/icon"
-import { Modal, ModalBackdrop, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal"
+import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal"
 import { Player } from "@/services/player"
 import { Fragment, useState } from "react"
-import { FlatList, Text, View } from "react-native"
+import { FlatList, Pressable, Text, View } from "react-native"
 
 
 export function SelectPlayerButton({
@@ -39,6 +39,7 @@ export function SelectPlayerButton({
             </Button>
             <SelectPlayerModal
                 players={players}
+                selectedPlayer={selectedPlayer}
                 open={isOpen}
                 onClose={() => {
                     setIsOpen(false)
@@ -57,12 +58,14 @@ export function SelectPlayerModal({
     open,
     onClose,
     onSelect,
-    players
+    players,
+    selectedPlayer
 }: {
     open: boolean,
     onClose: () => void,
     onSelect: (player) => void,
     players: Player[],
+    selectedPlayer?: string,
 }) {
 
     return (
@@ -87,43 +90,44 @@ export function SelectPlayerModal({
                         />
                     </ModalCloseButton>
                 </ModalHeader>
-                {/* <ModalBody scrollEnabled={false}> */}
-                {players ? (
-                    <FlatList
-
-                        data={players}
-                        numColumns={3}
-                        contentContainerStyle={{
-                            gap: 10
-                        }}
-                        columnWrapperStyle={{
-                            columnGap: 10
-                        }}
-                        
-                        renderItem={(player) => (
-                            <Button 
-                            style={{
-                                width: 100,
-                                height: 100
+                <ModalBody scrollEnabled={false}>
+                    {players ? (
+                        <FlatList
+                            data={players}
+                            numColumns={3}
+                            contentContainerStyle={{
+                                gap: 10
                             }}
-                            onPress={() => {
-                                onSelect(player.item.player_id)
+                            columnWrapperStyle={{
+                                columnGap: 10
                             }}
-                            >
-                                <ButtonText>
-                                    {player.item.name}
-                                </ButtonText>
-                            </Button>
-                        )}
-                    />
-                  ) : (
-                    <View>
-                        <Text>
-                            You have no players recorded.
-                        </Text>
-                    </View>
-                )}
-                {/* </ModalBody> */}
+                            renderItem={(player) => {
+                                const isSelected = selectedPlayer != null && player.item.player_id == parseInt(selectedPlayer)
+                                return (
+                                    <Pressable
+                                        onPress={() => {
+                                            onSelect(player.item.player_id)
+                                        }}
+                                        className={`flex-1 items-center justify-center rounded-xl border px-2 py-4 ${isSelected ? "border-primary-500 bg-primary-50" : "border-outline-100 bg-background-0"}`}
+                                    >
+                                        <Text
+                                            numberOfLines={1}
+                                            className={`text-base font-bold ${isSelected ? "text-primary-700" : "text-typography-900"}`}
+                                        >
+                                            {player.item.name}
+                                        </Text>
+                                    </Pressable>
+                                )
+                            }}
+                        />
+                    ) : (
+                        <View>
+                            <Text>
+                                You have no players recorded.
+                            </Text>
+                        </View>
+                    )}
+                </ModalBody>
                 <ModalFooter>
                     <Button
                         variant="outline"
@@ -139,4 +143,3 @@ export function SelectPlayerModal({
         </Modal>
     )
 }
-

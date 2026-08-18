@@ -3,17 +3,17 @@ import React from 'react';
 import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const TAB_ACTIVE_TINT = '#0C856E';
+const TAB_INACTIVE_TINT = '#8C8C8C';
 
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: TAB_ACTIVE_TINT,
+        tabBarInactiveTintColor: TAB_INACTIVE_TINT,
         headerShown: false,
         tabBarButton: HapticTab,
         // tabBarBackground: TabBarBackground,
@@ -44,6 +44,13 @@ export default function TabLayout() {
         options={{
           title: 'Players',
           tabBarIcon: ({ color }) => <MaterialIcons name={'person'} size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="shuttles/index"
+        options={{
+          title: 'Shuttles',
+          tabBarIcon: ({ color }) => <MaterialIcons name={'inventory-2'} size={28} color={color} />,
         }}
       />
       <Tabs.Screen

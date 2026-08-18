@@ -1,13 +1,15 @@
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
-import { AddIcon, CheckIcon, CloseIcon, Icon } from "@/components/ui/icon";
+import { HStack } from "@/components/ui/hstack";
+import { AddIcon, CheckIcon, ChevronDownIcon, CloseIcon, Icon } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
-import { Modal, ModalBackdrop, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
+import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
+import { Select, SelectBackdrop, SelectContent, SelectDragIndicator, SelectDragIndicatorWrapper, SelectIcon, SelectInput, SelectItem, SelectPortal, SelectTrigger } from "@/components/ui/select";
 import { Text } from "@/components/ui/text";
+import { VStack } from "@/components/ui/vstack";
 import { createNewMatchShuttle, ShuttleCondition } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
-import { Picker } from "@react-native-picker/picker";
-import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useState } from "react";
 import { Keyboard, View } from "react-native";
 
 
@@ -70,7 +72,6 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
     const [currentSelectedShuttle, setCurrentSelectedShuttle] = useState(1)
     const [shuttleCondition, setShuttleCondition] = useState<ShuttleCondition>("New")
     const [numberShuttles, setNumberShuttles] = useState('')
-    const pickerRef = useRef(null)
 
     useEffect(() => {
         if (!open || shuttleList?.length) return;
@@ -102,65 +103,68 @@ export const SelectShuttleModal = React.memo(function SelectShuttleModal({
                     />
                 </ModalCloseButton>
             </ModalHeader>
-            {/* <ModalBody scrollEnabled={false}> */}
-            {shuttleList ? (
-                <View>
-                    <Picker
-                        ref={pickerRef}
-                        selectedValue={currentSelectedShuttle}
-                        onValueChange={(itemValue, itemIndex) =>
-                            setCurrentSelectedShuttle(itemValue)
-                        }
-                    >
-                        {shuttleList.map((shuttle) => (
-                            <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
-                        ))}
-                    </Picker>
-                    <Text>
-                        Number of this shuttle used
-                    </Text>
-                    <View style={{
-                        display: 'flex',
-                        marginBottom: 40,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        maxWidth: 250,
-                        gap: 10
-                    }}>
-                        <Input
-                            style={{
-                                width: '100%'
-                            }}
-                            variant="outline"
-                            size="lg"
-                            isDisabled={false}
-                            isInvalid={false}
-                            isReadOnly={false}
+            <ModalBody scrollEnabled={false}>
+                {shuttleList ? (
+                    <VStack space="md">
+                        <Select
+                            selectedValue={String(currentSelectedShuttle)}
+                            onValueChange={(val) => setCurrentSelectedShuttle(parseInt(val))}
                         >
-                            <InputField keyboardType="number-pad" defaultValue={numberShuttles} value={numberShuttles} onChangeText={(val) => {
-                                setNumberShuttles(val)
-                            }} placeholder="Enter number of shuttles used" />
-                        </Input>
-                        <Button style={{
-                            width: 30,
-                            height: 30,
-                            backgroundColor: 'white'
-                        }} onPress={() => {
-                            Keyboard.dismiss()
-                        }}>
-                            <Icon as={CheckIcon} className="text-typography-400 text-black m-2 w-5 h-5" />
-                        </Button>
+                            <SelectTrigger variant="outline" size="lg">
+                                <SelectInput className="flex-1" placeholder="Select a shuttle" />
+                                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                            </SelectTrigger>
+                            <SelectPortal>
+                                <SelectBackdrop />
+                                <SelectContent>
+                                    <SelectDragIndicatorWrapper>
+                                        <SelectDragIndicator />
+                                    </SelectDragIndicatorWrapper>
+                                    {shuttleList.map((shuttle) => (
+                                        <SelectItem
+                                            key={shuttle.shuttle_id}
+                                            label={`${shuttle.name} (${shuttle.total_price} RM)`}
+                                            value={String(shuttle.shuttle_id)}
+                                        />
+                                    ))}
+                                </SelectContent>
+                            </SelectPortal>
+                        </Select>
+                        <Text size="sm" className="text-typography-500">
+                            Number of this shuttle used
+                        </Text>
+                        <HStack className="items-center gap-2.5">
+                            <Input
+                                className="flex-1"
+                                variant="outline"
+                                size="lg"
+                                isDisabled={false}
+                                isInvalid={false}
+                                isReadOnly={false}
+                            >
+                                <InputField keyboardType="number-pad" defaultValue={numberShuttles} value={numberShuttles} onChangeText={(val) => {
+                                    setNumberShuttles(val)
+                                }} placeholder="Enter number of shuttles used" />
+                            </Input>
+                            <Button
+                                variant="outline"
+                                action="secondary"
+                                size="lg"
+                                onPress={() => {
+                                    Keyboard.dismiss()
+                                }}>
+                                <Icon as={CheckIcon} className="text-typography-700 w-5 h-5" />
+                            </Button>
+                        </HStack>
+                    </VStack>
+                ) : (
+                    <View>
+                        <Text>
+                            You have no Shuttles recorded.
+                        </Text>
                     </View>
-
-                </View>
-            ) : (
-                <View>
-                    <Text>
-                        You have no Shuttles recorded.
-                    </Text>
-                </View>
-            )}
-            {/* </ModalBody> */}
+                )}
+            </ModalBody>
             <ModalFooter>
                 <Button
                     variant="outline"
