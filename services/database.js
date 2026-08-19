@@ -17,6 +17,8 @@ export async function dropDatabase() {
   DROP TABLE IF EXISTS shuttles;
   DROP TABLE IF EXISTS match_shuttles;
   DROP TABLE IF EXISTS shuttle_payments;
+  DROP TABLE IF EXISTS court_bookings;
+  DROP TABLE IF EXISTS court_payments;
 `);
 
 }
@@ -37,7 +39,9 @@ export async function setupDatabase() {
       CREATE TABLE IF NOT EXISTS sessions (
         session_id INTEGER PRIMARY KEY NOT NULL,
         name TEXT,
-        date TIMESTAMP NOT NULL DEFAULT (datetime('now')) 
+        date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
+        status TEXT NOT NULL DEFAULT 'open',
+        closed_date TIMESTAMP
       );
     `);
 
@@ -97,12 +101,39 @@ export async function setupDatabase() {
     `)
 
     db.execSync(`
+      CREATE TABLE IF NOT EXISTS court_bookings (
+        court_booking_id INTEGER PRIMARY KEY NOT NULL,
+        session_id INTEGER NOT NULL,
+        label TEXT,
+        price REAL NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+      );
+    `);
+
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS court_payments (
+        court_booking_id INTEGER NOT NULL,
+        player_id INTEGER NOT NULL,
+        amount_paid REAL NOT NULL,
+        date_paid TIMESTAMP,
+        date_created TIMESTAMP NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (court_booking_id, player_id),
+        FOREIGN KEY (court_booking_id) REFERENCES court_bookings(court_booking_id),
+        FOREIGN KEY (player_id) REFERENCES players(player_id)
+      );
+    `);
+
+    db.execSync(`
       CREATE INDEX IF NOT EXISTS idx_match_players_player ON match_players(player_id);
       CREATE INDEX IF NOT EXISTS idx_match_players_match ON match_players(match_id);
       CREATE INDEX IF NOT EXISTS idx_match_shuttles_match ON match_shuttles(match_id);
       CREATE INDEX IF NOT EXISTS idx_match_shuttles_shuttle ON match_shuttles(shuttle_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_payments_players ON shuttle_payments(player_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_payments_match ON shuttle_payments(match_id);
+      CREATE INDEX IF NOT EXISTS idx_court_bookings_session ON court_bookings(session_id);
+      CREATE INDEX IF NOT EXISTS idx_court_payments_player ON court_payments(player_id);
     `);
 
   });

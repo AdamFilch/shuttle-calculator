@@ -6,6 +6,7 @@ import { Checkbox, CheckboxIcon, CheckboxIndicator } from "@/components/ui/check
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { CheckIcon } from "@/components/ui/icon";
+import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player, ShuttlePaymentsByPlayerSessions } from "@/services/player";
 import { payShuttleByIds } from "@/services/shuttle-payments";
@@ -100,9 +101,16 @@ export default function SelectPlayerPage() {
                         {shuttlePayments.sessions.map((session, idx) => {
                             return (
                                 <VStack key={idx} space="sm">
-                                    <Heading size="md" className="text-typography-900">
-                                        {session.name == '' ? DisplayTimeDDDASHMMDASHYYYY(session.date) : session.name}
-                                    </Heading>
+                                    <HStack space="xs" className="items-center">
+                                        <Heading size="md" className="text-typography-900">
+                                            {session.name == '' ? DisplayTimeDDDASHMMDASHYYYY(session.date) : session.name}
+                                        </Heading>
+                                        {session.court_total_owed > 0 && (
+                                            <Text size="sm" className="text-typography-500">
+                                                (${session.court_total_owed.toFixed(2)})
+                                            </Text>
+                                        )}
+                                    </HStack>
                                     <VStack space="sm">
                                         {session.matches_played
                                             .sort((match1, match2) => {

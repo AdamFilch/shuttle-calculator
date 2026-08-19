@@ -63,7 +63,8 @@ export async function fetchShuttlePaymentsByPlayerId(id: number) {
 
 export type ShuttlePaymentsByPlayerSessions = Player & {
   sessions: (Session & {
-    matches_played: MatchesPlayed[]
+    matches_played: MatchesPlayed[],
+    court_total_owed: number
   })[]
 }
 export type MatchesPlayed = {
@@ -112,6 +113,18 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
   `, [id])
 
 
+  const courtPaymentsRows: any = await db.getAllAsync(`
+  SELECT
+  cp.amount_paid,
+  cb.session_id,
+  s.name AS session_name,
+  s.date AS session_date
+  FROM court_payments cp
+  JOIN court_bookings cb ON cb.court_booking_id = cp.court_booking_id
+  JOIN sessions s ON s.session_id = cb.session_id
+  WHERE cp.player_id = ?
+  `, [id])
+
   const sessionsMap: Record<number, any> = {}
   for (let row of shuttlePaymentsByPlayerRows) {
     let session = sessionsMap[row.session_id]
@@ -120,7 +133,8 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
         session_id: row.session_id,
         date: row.session_date,
         name: row.session_name,
-        matches_played: {}
+        matches_played: {},
+        court_total_owed: 0
       }
       sessionsMap[row.session_id] = session
     }
@@ -155,10 +169,26 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
     }
   }
 
+  for (let row of courtPaymentsRows) {
+    let session = sessionsMap[row.session_id]
+    if (!session) {
+      session = {
+        session_id: row.session_id,
+        date: row.session_date,
+        name: row.session_name,
+        matches_played: {},
+        court_total_owed: 0
+      }
+      sessionsMap[row.session_id] = session
+    }
+    session.court_total_owed += row.amount_paid
+  }
+
   const sessions = Object.values(sessionsMap).map((s) => ({
     session_id: s.session_id,
     date: s.date,
     name: s.name,
+    court_total_owed: s.court_total_owed,
     matches_played: Object.values(s.matches_played).map((mp: any) => ({
       date: mp.date,
       match_id: mp.match_id,
@@ -186,6 +216,13 @@ export type PlayersShuttlePayments = {
     date_created: string,
     date_paid: string,
     match_id: number
+  }[],
+  court_payments: {
+    court_booking_id: number,
+    label: string | null,
+    owed_amount: number,
+    date_created: string,
+    date_paid: string
   }[]
 }
 
@@ -207,23 +244,41 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
     WHERE m.session_id = ?
       `, [id])
 
+  const courtPaymentsByPlayerRows: any = await db.getAllAsync(`
+      SELECT
+    p.player_id,
+    p.name AS player_name,
+    cp.court_booking_id,
+    cp.amount_paid,
+    cp.date_paid,
+    cp.date_created,
+    cb.label AS court_label
+    FROM court_payments cp
+    JOIN court_bookings cb ON cb.court_booking_id = cp.court_booking_id
+    JOIN players p ON p.player_id = cp.player_id
+    WHERE cb.session_id = ?
+      `, [id])
 
+  const playersMap: Record<number, any> = {}
 
-  const playersMap = {}
-
-  for (const row of shuttlePaymentsByPlayerRows) {
-    if (!playersMap[row.player_id]) {
-      playersMap[row.player_id] = {
-        player_id: row.player_id,
-        name: row.player_name,
+  const ensurePlayer = (playerId: number, playerName: string) => {
+    if (!playersMap[playerId]) {
+      playersMap[playerId] = {
+        player_id: playerId,
+        name: playerName,
         total_owed_amount: 0,
-        shuttle_payments: []
+        shuttle_payments: [],
+        court_payments: []
       }
     }
+    return playersMap[playerId]
+  }
 
+  for (const row of shuttlePaymentsByPlayerRows) {
     if (row.shuttle_id !== null) {
-      playersMap[row.player_id].total_owed_amount += row.amount_paid
-      playersMap[row.player_id].shuttle_payments.push({
+      const player = ensurePlayer(row.player_id, row.player_name)
+      player.total_owed_amount += row.amount_paid
+      player.shuttle_payments.push({
         shuttle_id: row.shuttle_id,
         name: row.shuttle_name,
         owed_amount: row.amount_paid,
@@ -233,6 +288,19 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
       })
     }
   }
+
+  for (const row of courtPaymentsByPlayerRows) {
+    const player = ensurePlayer(row.player_id, row.player_name)
+    player.total_owed_amount += row.amount_paid
+    player.court_payments.push({
+      court_booking_id: row.court_booking_id,
+      label: row.court_label,
+      owed_amount: row.amount_paid,
+      date_created: row.date_created,
+      date_paid: row.date_paid
+    })
+  }
+
   return Object.values(playersMap)
 }
 
@@ -251,6 +319,18 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
       LEFT JOIN shuttles sh ON sp.shuttle_id = sh.shuttle_id
       `)
 
+  const courtPaymentsByPlayerRows: any = await db.getAllAsync(`
+      SELECT
+      p.player_id,
+      cp.court_booking_id,
+      cp.amount_paid,
+      cp.date_paid,
+      cp.date_created,
+      cb.label AS court_label
+      FROM court_payments cp
+      JOIN players p ON p.player_id = cp.player_id
+      LEFT JOIN court_bookings cb ON cb.court_booking_id = cp.court_booking_id
+      `)
 
   const playersMap: Record<number, any> = {}
   for (let row of shuttlePaymentsByPlayerRows) {
@@ -261,7 +341,8 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
         player_id: row.player_id,
         name: row.player_name,
         total_owed_amount: 0,
-        shuttle_payments: []
+        shuttle_payments: [],
+        court_payments: []
       }
       playersMap[row.player_id] = thisPlayer
     }
@@ -271,6 +352,19 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
       playersMap[row.player_id].shuttle_payments.push({
         shuttle_id: row.shuttle_id,
         name: row.shuttle_name,
+        owed_amount: row.amount_paid,
+        date_created: row.date_created,
+        date_paid: row.date_paid
+      })
+    }
+  }
+
+  for (let row of courtPaymentsByPlayerRows) {
+    if (playersMap[row.player_id]) {
+      playersMap[row.player_id].total_owed_amount += row.amount_paid
+      playersMap[row.player_id].court_payments.push({
+        court_booking_id: row.court_booking_id,
+        label: row.court_label,
         owed_amount: row.amount_paid,
         date_created: row.date_created,
         date_paid: row.date_paid

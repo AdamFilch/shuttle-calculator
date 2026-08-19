@@ -46,8 +46,15 @@ export async function payShuttleByPlayers({
              const res = await db.runAsync(`
                 UPDATE shuttle_payments
                 SET amount_paid = 0, date_paid = ?
-                WHERE match_id = ? AND shuttle_id = ? AND player_id = ? 
-                `, [convertTimeToSQLTimeStamp(today), shuttle.match_id, shuttle.shuttle_id, player.player_id])           
+                WHERE match_id = ? AND shuttle_id = ? AND player_id = ?
+                `, [convertTimeToSQLTimeStamp(today), shuttle.match_id, shuttle.shuttle_id, player.player_id])
+        }
+        for (let court of player.court_payments ?? []) {
+            await db.runAsync(`
+                UPDATE court_payments
+                SET amount_paid = 0, date_paid = ?
+                WHERE court_booking_id = ? AND player_id = ?
+                `, [convertTimeToSQLTimeStamp(today), court.court_booking_id, player.player_id])
         }
     }
 }
