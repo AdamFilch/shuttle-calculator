@@ -115,7 +115,7 @@ export default function SelectedSessionPage() {
           className="mt-2"
           onPress={() => setOpenPPPModal(true)}
         >
-          <ButtonText>Pay by Player</ButtonText>
+          <ButtonText>Pay Early</ButtonText>
         </Button>
 
         {!isClosed && (

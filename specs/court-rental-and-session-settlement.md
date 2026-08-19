@@ -1,7 +1,7 @@
 # Court Rental & Session Settlement
 
 ## Status
-Draft — not yet implemented. Written before any code changes, per request.
+Phases A, B, and C (schema, services, UI listed below) are **already implemented and shipped**. This spec has since been revised to add **progressive "Pay Early" settlement** (see that section below), which changes the already-built court settlement model — that rework is not yet implemented (tracked as Phase D).
 
 ## Motivation
 
@@ -27,6 +27,7 @@ While scoping this, a related fairness gap in the *existing* shuttle logic came 
 
 1. **Session participants = derived from matches.** A player counts toward the split if they appear in `match_players` for any match in the session. Simplest option; accepted trade-off: someone who's present but hasn't played a recorded match yet isn't counted until they do.
 2. **Splits lock in at session close, not at booking time and not live-recomputed.** This diverges from the existing shuttle model (which locks in per-match, immediately) — that's the gap described above. Court rental is built against the "lock at close" model from the start; shuttle logic is retrofitted to match in Phase 2, not now.
+   - **Refined by Phase D:** "not live-recomputed" still holds *per player, once settled* — a locked-in amount never changes. But settlement itself is no longer only-at-close: a player can trigger it early, using a live snapshot of the formula at that moment. Close becomes "run the same live settlement for whoever's left," not a separate one-shot calculation.
 
 ## Data model
 
@@ -61,8 +62,11 @@ CREATE TABLE IF NOT EXISTS court_bookings (
 CREATE TABLE IF NOT EXISTS court_payments (
   court_booking_id INTEGER NOT NULL,
   player_id INTEGER NOT NULL,
-  amount_paid REAL NOT NULL,     -- reuses shuttle_payments' naming: this is amount OWED; 0 once settled, mirroring existing payShuttleBy* convention
-  date_paid TIMESTAMP,
+  amount_paid REAL NOT NULL,     -- the player's LOCKED-IN share, permanent once written -- see "Pay Early" below.
+                                  -- NOTE: as originally shipped this was zeroed on payment (mirroring shuttle_payments'
+                                  -- convention at the time); the "Pay Early" rework changes this -- see below.
+  date_paid TIMESTAMP,           -- NULL = owed but not yet paid; timestamp = paid. Sole "is this settled" signal
+                                  -- once the rework lands -- amount_paid is no longer zeroed alongside it.
   date_created TIMESTAMP NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (court_booking_id, player_id),
   FOREIGN KEY (court_booking_id) REFERENCES court_bookings(court_booking_id),
@@ -73,13 +77,13 @@ CREATE INDEX IF NOT EXISTS idx_court_bookings_session ON court_bookings(session_
 CREATE INDEX IF NOT EXISTS idx_court_payments_player ON court_payments(player_id);
 ```
 
-`court_payments` rows don't exist until the session is closed — unlike `shuttle_payments`, which today is written at match-creation time. `court_bookings` rows exist as soon as a court is added (price is known immediately; only the *split* waits for close).
+As shipped, `court_payments` rows only exist once the session is closed. The "Pay Early" rework (below) changes this: a row can now be created **before** close too, the moment a player locks in their current share. `court_bookings` rows still exist as soon as a court is added regardless (price is known immediately; only the *split* is ever deferred).
 
 `dropDatabase()` must add `court_bookings` and `court_payments` to its `DROP TABLE IF EXISTS` list.
 
 ## Cost-splitting rule (courts)
 
-At session close, for each `court_bookings` row in the session:
+**As shipped (Phases A-C):** at session close, for each `court_bookings` row in the session, a single one-shot even split across every session participant:
 
 ```
 participant_count = COUNT(DISTINCT player_id) across match_players
@@ -90,17 +94,56 @@ amount_per_player  = booking_total / participant_count
 
 One `court_payments` row per (booking, participant), `amount_paid` = `amount_per_player.toFixed(2)` — mirroring the rounding convention already used for `shuttle_payments` in `services/match.ts:58`.
 
-**Edge case — zero participants:** if a session has court bookings but no player has ever appeared in a match in that session, `participant_count` is 0 and the split is undefined. `closeSession()` should reject the close with an error in this case (surfaced in the UI as "Add at least one match before closing this session") rather than silently skipping or dividing by zero.
+**Superseded by "Pay Early" (Phase D, not yet built):** the formula above only actually applies to whoever is still unpaid *at close time*. Players can now lock in their share earlier, at which point the formula becomes progressive — see the next section, which replaces this one as the target design.
+
+**Edge case — zero participants:** if a session has court bookings but no player has ever appeared in a match in that session, `participant_count` is 0 and the split is undefined. `closeSession()` should reject the close with an error in this case (surfaced in the UI as "Add at least one match before closing this session") rather than silently skipping or dividing by zero. This guard still applies unchanged under Pay Early.
+
+## Pay Early (Progressive Settlement) — Phase D, not yet built
+
+### Motivation
+
+As shipped, nobody can pay their share of a court booking until the whole session closes — there's no `court_payments` row for anyone before then. But a player often wants to leave early and settle up before the session (and its final participant count) is even known. The fix: let a player lock in their **current** fair share at any point, using only what's known *right now*, and never revise it later — whatever the pool looks like when more people join or leave is the remaining players' problem to divide, not something that reaches back and changes an early payer's already-settled amount.
+
+### The formula
+
+For a given `court_bookings` row, at any point in time:
+
+```
+known_participants   = COUNT(DISTINCT player_id) across match_players
+                        for all matches in this session (same derivation as today, evaluated live)
+settled_total         = SUM(amount_paid) across existing court_payments rows for this booking
+unsettled_count       = known_participants - COUNT(existing court_payments rows for this booking)
+booking_total         = price * quantity
+current_share         = (booking_total - settled_total) / unsettled_count
+```
+
+A player paying early gets `current_share.toFixed(2)` locked in as their permanent `amount_paid` for this booking — this can never change afterward, even if `known_participants` grows later. Whoever hasn't settled yet absorbs however the remaining pool changes.
+
+**Worked example** (confirmed with the user): a $20 court, 4 players known at the time. One pays early: `current_share = 20/4 = $5`, locked in. Two more players later join the session (6 known participants total). The other 5 (still-unsettled) players now share `(20 - 5) / 5 = $3` each when they settle — not recomputed from `20/6`. Total collected across all 6 people always sums to exactly $20 regardless of settlement order, since each `current_share` is computed against whatever's left in the pool at that moment.
+
+### Session close is the same formula, applied to everyone still unsettled
+
+`closeSession()`'s court step no longer does one fresh even split for all participants — it becomes: for each court booking, for each `known_participant` who does **not** already have a `court_payments` row (i.e., didn't pay early), compute `current_share` per the formula above and insert a row with `date_paid = NULL` (owed, not yet paid — to be settled later via the existing "Pay by Player" flow, same as today). This makes "Pay Early" and "close" the same underlying operation — just triggered per-player on demand versus for the whole remaining group at once. `closeSession` should reuse a single shared function for this rather than duplicating the formula.
+
+### `amount_paid` is no longer zeroed on payment
+
+This is the one real behavior change to already-shipped code beyond just courts: `payShuttleByPlayers` (`services/shuttle-payments.ts`) currently does `UPDATE court_payments SET amount_paid = 0, date_paid = ?` when a player settles up. Under Pay Early, `settled_total` in the formula above needs to keep summing already-locked-in amounts even after they're paid — so zeroing on payment would break the math for anyone who settles after someone else already paid. The fix: stop zeroing. `date_paid IS NULL` vs `NOT NULL` becomes the sole "is this paid" signal; `amount_paid` always holds the real locked-in figure, before and after payment.
+
+This has one knock-on effect that must be fixed alongside it: `services/player.ts`'s "amount owed" aggregations (`fetchAllPlayerPaymentsBySession`, `fetchAllPlayerPayments`) currently compute totals by summing `amount_paid` and relying on paid rows already being zero. Once zeroing stops, those sums must explicitly filter `WHERE date_paid IS NULL`, or a player's "total owed" would incorrectly include amounts they've already paid. **This is a correctness-critical follow-up, not optional** — see Risks.
+
+### New service function
+
+A new function is needed to perform a single player's early settlement — e.g. `payCourtShareEarly({ courtBookingId, playerId })` in a new `services/court-payments.ts` (mirroring the existing `shuttle.ts` / `shuttle-payments.ts` split: the "item" lives in `court.ts`, the "payment action" gets its own file). It computes `current_share` per the formula, inserts one `court_payments` row with `date_paid = NOW()`, inside a transaction (guard: reject if the player already has a row for this booking, or isn't in `known_participants`).
 
 ## Session lifecycle
 
 - New sessions start `status = 'open'` (default).
-- **While open:** matches, court bookings can be added/edited freely, same as today. No court debt exists yet — `court_payments` has no rows for this session.
+- **While open:** matches, court bookings can be added/edited freely, same as today. As shipped, no court debt exists until close. Under Pay Early (Phase D), a player may already have a locked-in `court_payments` row from settling early, mid-session.
 - **Closing a session** (`closeSession(sessionId)` in `services/session.ts`):
   1. Reject if `status != 'open'`.
   2. Compute distinct participants (query above).
   3. Reject if participants is empty and `court_bookings` is non-empty (see edge case above). A session with zero court bookings can close with zero participants — there's nothing to split.
-  4. For each court booking, insert `court_payments` rows per the rule above, inside a transaction (mirror `createNewMatch`'s `BEGIN TRANSACTION` / `COMMIT` pattern in `services/match.ts:41-71`).
+  4. For each court booking, insert `court_payments` rows per the rule above, inside a transaction (mirror `createNewMatch`'s `BEGIN TRANSACTION` / `COMMIT` pattern in `services/match.ts:41-71`). **Under Phase D:** skip any participant who already has a row (paid early); compute `current_share` for the rest per the Pay Early formula, not a flat re-split of the full total.
   5. Set `status = 'closed'`, `closed_date = now`.
 - **While closed:** "Add Match" and "Book a Court" actions are disabled in the UI. Existing debt (shuttle, now also court) still shows and can still be settled via the existing pay-by-player/pay-by-match flows.
 - **Reopening:** out of scope for the first build. If a mistake needs fixing, the workaround is Settings → Reset Database (existing, destructive, whole-app) until a scoped "reopen" is designed. Flagging this as a likely near-term ask, not solving it now to keep the first cut small.
@@ -114,6 +157,7 @@ Mirrors existing patterns in `app/session/[sessionId]/index.tsx` and `components
   - "Book a Court" button next to/alongside the existing "Add Match" header action — hidden or disabled when `status === 'closed'`.
   - New "Courts Booked" list section, styled like the existing "Shuttles Used" section (`index.tsx:99-114`), listing each booking's label and price.
   - "Close Session" button, visible only when open. Uses a confirmation dialog (reuse `PaymentConfirmationDialog` from `components/shared/PaymentConfirmationDialog`, already used for the pay-by-player confirm flow) since closing locks in real debt.
+  - **Phase D:** each row in "Courts Booked" gets a "Pay Early" action (e.g. a button on the row, open while the session is still open) that opens a player picker scoped to that booking's not-yet-settled `known_participants`, computes `current_share` live, and confirms before writing the row (reuse `PaymentConfirmationDialog`, showing the live-computed amount).
 - **New modal**, e.g. `components/session/bookCourtModal.tsx`, modeled directly on `AddSessionModal` in `components/session/modal.tsx:19-106`: a label input (optional) + a price input, "Cancel"/"Book Court" actions.
 - **Player-facing totals**: `fetchAllPlayerPaymentsBySession` (`services/player.ts`) and the player debt aggregation used by `PayByPlayerModal` / player detail pages need to fold in `court_payments` alongside `shuttle_payments` once a session is closed, so "total owed" reflects both.
 - **Player detail page** (`app/player/[playerId]/index.tsx`, via `fetchShuttlePaymentsByPlayerSessions`): each session's block gets a "Court cost: $X" line (that player's `court_payments` total for that session), alongside the existing per-match shuttle breakdown. Court cost is shown at the session level, not per-match, since it isn't tied to a match. Display only for now -- no "pay courts" action on this page; settling court debt still goes through "Pay by Player" on the session page.
@@ -138,14 +182,17 @@ Mirrors existing patterns in `app/session/[sessionId]/index.tsx` and `components
 | Zero-participant close (divide by zero) | Low | Explicit guard, see edge case above. |
 | Floating point drift on repeated `.toFixed(2)` splits | Low (pre-existing risk, not new) | Same rounding approach already accepted for shuttle splits; not solving broader currency-precision handling here. |
 | `bookCourt()`/`createNewMatch()` have no service-layer check against `sessions.status` — only the UI hides "Add Match"/"Book a Court" once closed | Low | Considered and accepted as-is: no current code path calls these outside the UI actions that already gate on status, so there's no realistic way to hit this today. Not adding a guard now; revisit if a second entry point (e.g. deep link, bulk import) is ever added. |
+| **(Phase D)** Removing the "zero `amount_paid` on payment" convention silently breaks `total_owed_amount` in `services/player.ts` if the aggregation queries aren't updated in the same change | High if missed | Must ship atomically with the aggregation fix: switch every `SUM(amount_paid)` "owed" calculation to `WHERE date_paid IS NULL`. Treat this as a single change, not two — a player's paid amount would otherwise silently double-count as still-owed. |
+| **(Phase D)** A player pays early, then more people join later and the remaining players' share drops below what the early payer paid — early payers may feel they "overpaid" relative to the final group | Low (accepted trade-off, not a bug) | This is the intentional cost of leaving early, confirmed with the user via the worked example. Not something to fix; worth surfacing in the Pay Early confirmation copy ("this amount is based on who's played so far and won't be adjusted later") so it's not a surprise. |
 
 ## Phase 2 (not built now) — shuttle settlement rework
 
-Documented so the intent isn't lost, not part of this build:
+Fully designed in its own spec: **`specs/shuttle-instance-settlement.md`**. Summary:
 
-- Stop writing `shuttle_payments` inside `createNewMatch`. Instead, at session close, aggregate `match_shuttles.quantity_used` for each shuttle batch across *all* matches in the session, compute total cost for that batch, and split it evenly across the distinct set of players who used it anywhere in the session (not per-match).
-- This changes `services/match.ts::createNewMatch` (remove the immediate `shuttle_payments` insert) and moves that logic into the same `closeSession()` used for courts, so both settle at the same instant.
-- Needs its own design pass on what "used it anywhere in the session" means precisely, and how partially-open sessions display *provisional* (not-yet-owed) shuttle cost in the UI before close — deliberately deferred.
+- Stop writing `shuttle_payments` inside `createNewMatch`. Instead, at session close, settle each individual shuttlecock ("instance") used anywhere in the session, splitting its cost evenly across the distinct set of players who used *that specific instance* (not per-match, and not the whole batch as one lump).
+- Requires real per-shuttlecock identity — a `shuttle_instances` table (finally implementing what the currently-orphaned `services/shuttle_instances.ts` stub anticipated) plus a three-mode shuttle picker at match creation: introduce a **New** shuttlecock from a batch, **Reuse** a specific one already in play this session, or attach a **Free** no-cost one.
+- This changes `services/match.ts::createNewMatch` (remove the immediate `shuttle_payments` insert) and moves that logic into the same `closeSession()` used for courts, so both settle in the same transaction.
+- See `specs/shuttle-instance-settlement.md` for the full data model, match-creation flow, close-time settlement algorithm, and the display/payment UI rework this cascades into (match detail, session detail, player detail, and the "Pay Shuttles" flow).
 
 ## Phase 3 (not built now) — flat-rate court split
 
@@ -175,12 +222,25 @@ Documented so the intent isn't lost, not part of this build. An alternative to e
 ### Phase C: Manual verification
 - Run the app (`npx expo start`), Settings → Reset Database, then: create a session, add 2+ matches with different players, book 2 courts, close the session, confirm the split amounts and that "Add Match"/"Book a Court" are disabled post-close, confirm player debt totals include court cost.
 
+**Phases A-C are complete and shipped as of this writing.**
+
+### Phase D: Progressive "Pay Early" settlement (not yet built)
+- Stop zeroing `amount_paid` on payment in `payShuttleByPlayers` (`services/shuttle-payments.ts`) for the court-payment branch; `date_paid` becomes the sole paid/unpaid signal.
+- Update `services/player.ts`'s owed-amount aggregations (`fetchAllPlayerPaymentsBySession`, `fetchAllPlayerPayments`) to filter `WHERE date_paid IS NULL` when summing — must ship in the same change as the line above, not separately.
+- New `services/court-payments.ts`: `payCourtShareEarly({ courtBookingId, playerId })` implementing the live formula.
+- Rework `closeSession`'s court step to skip already-settled participants and compute `current_share` for the rest, per the Pay Early section above.
+- UI: "Pay Early" action per row in "Courts Booked" on the session page, with a player picker and a live-computed confirmation amount.
+- Validate: worked example from the Pay Early section above (4 players, $20 court, one pays early at $5, two more join, remaining 5 settle at $3 each; total collected sums to exactly $20).
+
 ## Acceptance
 
-- [ ] Schema changes applied and `dropDatabase()`/`setupDatabase()` cover the new tables.
-- [ ] Courts can be booked with a price while a session is open.
-- [ ] Closing a session locks in an even split of each court's price across that session's distinct match participants.
-- [ ] Closing with court bookings but zero participants is rejected with a clear message.
-- [ ] Session UI reflects open/closed state and disables further match/court additions once closed.
-- [ ] Player debt views include court cost alongside shuttle cost.
+- [x] Schema changes applied and `dropDatabase()`/`setupDatabase()` cover the new tables. *(shipped)*
+- [x] Courts can be booked with a price while a session is open. *(shipped)*
+- [x] Closing a session locks in a split of each court's price across that session's distinct match participants. *(shipped, one-shot even split)*
+- [x] Closing with court bookings but zero participants is rejected with a clear message. *(shipped)*
+- [x] Session UI reflects open/closed state and disables further match/court additions once closed. *(shipped)*
+- [x] Player debt views include court cost alongside shuttle cost. *(shipped)*
 - [ ] Phase 2 (shuttle settlement rework) is *not* implemented as part of this — confirmed still isolated/documented only.
+- [ ] **(Phase D)** A player can lock in their current fair share of a court booking before session close, and it never changes afterward.
+- [ ] **(Phase D)** Session close settles only the remaining not-yet-paid participants, using the same live formula as Pay Early.
+- [ ] **(Phase D)** `amount_paid` is preserved (not zeroed) after payment; all "total owed" aggregations correctly exclude paid rows via `date_paid IS NULL` instead.
