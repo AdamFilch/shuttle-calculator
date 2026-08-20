@@ -34,17 +34,27 @@ export async function fetchPlayerById(id: string): Promise<Player[]> {
 export type ShuttlePaymentsByPlayerSessions = Player & {
   sessions: (Session & {
     shuttle_charges: ShuttleInstanceCharge[],
+    matches: SessionMatchSummary[],
+    shuttle_total_owed: number,
     court_total_owed: number
   })[]
 }
 export type ShuttleInstanceCharge = {
   shuttle_instance_id: number,
   shuttle_id: number | null,
+  session_id: number,
   name: string,
   owed_amount: number,
   date_created: string,
   date_paid: string | null,
   matches_used_in: number[]
+}
+export type SessionMatchSummary = {
+  match_id: number,
+  match_number: number,
+  date: string,
+  players: { player_id: number, name: string, position: number }[],
+  charges: ShuttleInstanceCharge[]
 }
 
 export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<ShuttlePaymentsByPlayerSessions> {
@@ -82,6 +92,7 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
 
   const instanceIds: number[] = shuttlePaymentsByPlayerRows.map((r: any) => r.shuttle_instance_id)
   const matchesByInstance: Record<number, number[]> = {}
+  const allMatchIds = new Set<number>()
   if (instanceIds.length > 0) {
     const placeholders = instanceIds.map(() => '?').join(',')
     const matchRows: any = await db.getAllAsync(`
@@ -90,6 +101,41 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
     for (const row of matchRows) {
       if (!matchesByInstance[row.shuttle_instance_id]) matchesByInstance[row.shuttle_instance_id] = []
       matchesByInstance[row.shuttle_instance_id].push(row.match_id)
+      allMatchIds.add(row.match_id)
+    }
+  }
+
+  // Full match info + roster for every match touched by any of this player's shuttle
+  // charges -- including matches they didn't personally play in, since a reused
+  // shuttle instance can pull in a charge from a match with an entirely different
+  // roster (that's the whole point of "reuse").
+  const matchInfoById: Record<number, { match_id: number, match_number: number, date: string, players: { player_id: number, name: string, position: number }[] }> = {}
+  if (allMatchIds.size > 0) {
+    const matchIds = [...allMatchIds]
+    const placeholders = matchIds.map(() => '?').join(',')
+    const matchInfoRows: any = await db.getAllAsync(`
+      SELECT m.match_id, m.match_number, m.date, mp.player_id, mp.position, p.name AS player_name
+      FROM matches m
+      LEFT JOIN match_players mp ON mp.match_id = m.match_id
+      LEFT JOIN players p ON p.player_id = mp.player_id
+      WHERE m.match_id IN (${placeholders})
+      `, matchIds)
+    for (const row of matchInfoRows) {
+      if (!matchInfoById[row.match_id]) {
+        matchInfoById[row.match_id] = {
+          match_id: row.match_id,
+          match_number: row.match_number,
+          date: row.date,
+          players: []
+        }
+      }
+      if (row.player_id !== null) {
+        matchInfoById[row.match_id].players.push({
+          player_id: row.player_id,
+          name: row.player_name,
+          position: row.position
+        })
+      }
     }
   }
 
@@ -112,6 +158,7 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
     session.shuttle_charges.push({
       shuttle_instance_id: row.shuttle_instance_id,
       shuttle_id: row.shuttle_id,
+      session_id: row.session_id,
       name: row.shuttle_id === null ? 'Free shuttle' : row.shuttle_name,
       owed_amount: row.amount_paid,
       date_created: row.shuttle_payment_requested_date,
@@ -125,13 +172,36 @@ export async function fetchShuttlePaymentsByPlayerSessions(id: number): Promise<
     session.court_total_owed += row.amount_paid
   }
 
-  const sessions = Object.values(sessionsMap).map((s: any) => ({
-    session_id: s.session_id,
-    date: s.date,
-    name: s.name,
-    court_total_owed: s.court_total_owed,
-    shuttle_charges: s.shuttle_charges
-  }))
+  const sessions = Object.values(sessionsMap).map((s: any) => {
+    const sessionMatchIds = new Set<number>()
+    for (const charge of s.shuttle_charges) {
+      for (const matchId of charge.matches_used_in) sessionMatchIds.add(matchId)
+    }
+
+    const matches: SessionMatchSummary[] = [...sessionMatchIds]
+      .map((matchId) => matchInfoById[matchId])
+      .filter(Boolean)
+      .sort((a, b) => a.match_number - b.match_number)
+      .map((info) => ({
+        match_id: info.match_id,
+        match_number: info.match_number,
+        date: info.date,
+        players: info.players,
+        charges: s.shuttle_charges.filter((c: ShuttleInstanceCharge) => c.matches_used_in.includes(info.match_id))
+      }))
+
+    const shuttle_total_owed = s.shuttle_charges.reduce((acc: number, c: ShuttleInstanceCharge) => acc + c.owed_amount, 0)
+
+    return {
+      session_id: s.session_id,
+      date: s.date,
+      name: s.name,
+      court_total_owed: s.court_total_owed,
+      shuttle_total_owed,
+      shuttle_charges: s.shuttle_charges,
+      matches
+    }
+  })
 
   return {
     ...player,

@@ -32,6 +32,48 @@ export async function payShuttleInstancesByIds({
     }
 }
 
+export async function payCourtBySessionId({
+    sessionId,
+    player_id
+}: {
+    sessionId: number,
+    player_id: string
+}) {
+    const today = new Date()
+
+    await db.runAsync(`
+        UPDATE court_payments
+        SET amount_paid = 0, date_paid = ?
+        WHERE player_id = ?
+        AND date_paid IS NULL
+        AND court_booking_id IN (
+            SELECT court_booking_id FROM court_bookings WHERE session_id = ?
+        )
+        `, [convertTimeToSQLTimeStamp(today), player_id, sessionId])
+}
+
+export async function paySessionInFull({
+    sessionId,
+    player_id
+}: {
+    sessionId: number,
+    player_id: string
+}) {
+    const today = new Date()
+
+    await db.runAsync(`
+        UPDATE shuttle_payments
+        SET amount_paid = 0, date_paid = ?
+        WHERE player_id = ?
+        AND date_paid IS NULL
+        AND shuttle_instance_id IN (
+            SELECT shuttle_instance_id FROM shuttle_instances WHERE session_id = ?
+        )
+        `, [convertTimeToSQLTimeStamp(today), player_id, sessionId])
+
+    await payCourtBySessionId({ sessionId, player_id })
+}
+
 export async function payShuttleByPlayers({
     players
 }: {
