@@ -1,9 +1,9 @@
 import { openDatabaseSync } from "expo-sqlite";
-import { MatchesPlayed, PlayersShuttlePayments } from "./player";
+import { PlayersShuttlePayments, ShuttleInstanceCharge } from "./player";
 import { convertTimeToSQLTimeStamp } from "./time-display";
 
 type ShuttlePayment = {
-    
+
 }
 
 const db = openDatabaseSync('db.db')
@@ -14,23 +14,21 @@ export async function fetchAllShuttlePayments(): Promise<ShuttlePayment[]> {
 }
 
 
-export async function payShuttleByIds({
-    matches,
+export async function payShuttleInstancesByIds({
+    shuttleCharges,
     player_id
 }: {
-    matches: MatchesPlayed[],
+    shuttleCharges: ShuttleInstanceCharge[],
     player_id: string
 }) {
-   const today = new Date() 
+   const today = new Date()
 
-    for (let match of matches) {
-        for (let shuttle of match.shuttles) {
-            const res = await db.runAsync(`
-                UPDATE shuttle_payments
-                SET amount_paid = 0, date_paid = ?
-                WHERE match_id = ? AND shuttle_id = ? AND player_id = ? 
-                `, [convertTimeToSQLTimeStamp(today), match.match_id, shuttle.shuttle_id, player_id])
-        }
+    for (let charge of shuttleCharges) {
+        await db.runAsync(`
+            UPDATE shuttle_payments
+            SET amount_paid = 0, date_paid = ?
+            WHERE shuttle_instance_id = ? AND player_id = ?
+            `, [convertTimeToSQLTimeStamp(today), charge.shuttle_instance_id, player_id])
     }
 }
 
@@ -43,11 +41,11 @@ export async function payShuttleByPlayers({
 
     for (let player of players) {
         for (let shuttle of player.shuttle_payments) {
-             const res = await db.runAsync(`
+             await db.runAsync(`
                 UPDATE shuttle_payments
                 SET amount_paid = 0, date_paid = ?
-                WHERE match_id = ? AND shuttle_id = ? AND player_id = ?
-                `, [convertTimeToSQLTimeStamp(today), shuttle.match_id, shuttle.shuttle_id, player.player_id])
+                WHERE shuttle_instance_id = ? AND player_id = ?
+                `, [convertTimeToSQLTimeStamp(today), shuttle.shuttle_instance_id, player.player_id])
         }
         for (let court of player.court_payments ?? []) {
             await db.runAsync(`

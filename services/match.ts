@@ -1,21 +1,17 @@
 import { openDatabaseSync } from "expo-sqlite";
-import { fetchShuttleById } from "./shuttle";
 
 const db = openDatabaseSync('db.db')
+
+export type ShuttleSelection =
+    | { mode: 'new', shuttleId: number, quantity: number }
+    | { mode: 'reused', shuttleInstanceId: number }
+    | { mode: 'free' }
 
 type newMatchPayload = {
     sessionId: number,
     playersId: number[] // TL BL TR BR
-    shuttles: createNewMatchShuttle[]
+    shuttleSelections: ShuttleSelection[]
 }
-
-export type createNewMatchShuttle = {
-    shuttleId: number,
-    quantityUsed: number,
-    condition: ShuttleCondition
-}
-
-export type ShuttleCondition = "New" | "Reused" | "Random"
 
 export type Match = {
     session_id: number,
@@ -33,11 +29,6 @@ export async function createNewMatch(payload: newMatchPayload) {
     );
     const matchId = matchRes.lastInsertRowId;
 
-    const shuttleData = await Promise.all(payload.shuttles.map(async s => {
-        const [res] = await fetchShuttleById(s.shuttleId);
-        return { ...s, ...res, pricePerUnit: res.total_price / res.num_of_shuttles };
-    }));
-
     await db.execAsync("BEGIN TRANSACTION");
 
     await Promise.all(payload.playersId.map((playerId, i) => {
@@ -48,25 +39,34 @@ export async function createNewMatch(payload: newMatchPayload) {
         );
     }));
 
-    const payments = [];
-    for (const playerId of payload.playersId) {
-        if (!playerId) continue;
-        for (const shuttle of shuttleData) {
-            let amount_to_pay = (shuttle.pricePerUnit * shuttle.quantityUsed) / payload.playersId.filter((playerId) => playerId != null).length
-            payments.push(db.runAsync(
-                `INSERT INTO shuttle_payments (match_id, shuttle_id, player_id, amount_paid) VALUES (?, ?, ?, ?)`,
-                [matchId, shuttle.shuttleId, playerId, amount_to_pay.toFixed(2)]
-            ));
+    for (const selection of payload.shuttleSelections) {
+        if (selection.mode === 'new') {
+            for (let i = 0; i < selection.quantity; i++) {
+                const instanceRes = await db.runAsync(
+                    `INSERT INTO shuttle_instances (session_id, shuttle_id) VALUES (?, ?)`,
+                    [payload.sessionId, selection.shuttleId]
+                );
+                await db.runAsync(
+                    `INSERT INTO match_shuttle_instances (match_id, shuttle_instance_id) VALUES (?, ?)`,
+                    [matchId, instanceRes.lastInsertRowId]
+                );
+            }
+        } else if (selection.mode === 'reused') {
+            await db.runAsync(
+                `INSERT INTO match_shuttle_instances (match_id, shuttle_instance_id) VALUES (?, ?)`,
+                [matchId, selection.shuttleInstanceId]
+            );
+        } else {
+            const instanceRes = await db.runAsync(
+                `INSERT INTO shuttle_instances (session_id, shuttle_id) VALUES (?, ?)`,
+                [payload.sessionId, null]
+            );
+            await db.runAsync(
+                `INSERT INTO match_shuttle_instances (match_id, shuttle_instance_id) VALUES (?, ?)`,
+                [matchId, instanceRes.lastInsertRowId]
+            );
         }
     }
-    await Promise.all(payments);
-
-    await Promise.all(shuttleData.map(s =>
-        db.runAsync(
-            `INSERT INTO match_shuttles (match_id, shuttle_id, quantity_used) VALUES (?, ?, ?)`,
-            [matchId, s.shuttleId, s.quantityUsed]
-        )
-    ));
 
     await db.execAsync("COMMIT");
 
@@ -84,7 +84,7 @@ export type MatchFull = {
         position: number,
     }>,
     shuttles: {
-        shuttle_id: number,
+        shuttle_id: number | null,
         name: string,
         quantity_used: number,
     }[]
@@ -97,25 +97,29 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
         m.session_id,
         m.match_id,
         m.date,
-        ms.shuttle_id,
+        si.shuttle_instance_id,
+        si.shuttle_id,
+        s.name AS shuttle_name,
         mp.player_id,
         mp.position,
-        p.name AS player_name,
-        ms.quantity_used,
-        s.name AS shuttle_name
+        p.name AS player_name
         FROM matches m
-        LEFT JOIN match_shuttles ms ON ms.match_id = m.match_id
+        LEFT JOIN match_shuttle_instances msi ON msi.match_id = m.match_id
+        LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = msi.shuttle_instance_id
+        LEFT JOIN shuttles s ON s.shuttle_id = si.shuttle_id
         LEFT JOIN match_players mp ON mp.match_id = m.match_id
-        LEFT JOIN shuttles s ON s.shuttle_id = ms.shuttle_id
         LEFT JOIN players p ON p.player_id = mp.player_id
         WHERE m.match_id = ?
         `, [id])
 
     const playersMap: Record<number, any> = {}
-    const shuttlesMap: Record<number, any> = {}
+    const shuttlesMap: Record<string, { shuttle_id: number | null, name: string, quantity_used: number }> = {}
+    // match_shuttle_instances rows are cross-joined against match_players rows above,
+    // so the same shuttle_instance_id appears once per player -- dedupe before counting.
+    const seenInstances = new Set<number>()
 
     for (let row of matchRows) {
-        if (!playersMap[row.position]) {
+        if (row.position !== null && !playersMap[row.position]) {
             playersMap[row.position] = {
                 player_id: row.player_id,
                 name: row.player_name,
@@ -123,12 +127,17 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
             }
         }
 
-        if (!shuttlesMap[row.shuttle_id]) {
-            shuttlesMap[row.shuttle_id] = {
-                shuttle_id: row.shuttle_id,
-                name: row.shuttle_name,
-                quantity_used: row.quantity_used
+        if (row.shuttle_instance_id !== null && !seenInstances.has(row.shuttle_instance_id)) {
+            seenInstances.add(row.shuttle_instance_id)
+            const key = row.shuttle_id === null ? 'free' : String(row.shuttle_id)
+            if (!shuttlesMap[key]) {
+                shuttlesMap[key] = {
+                    shuttle_id: row.shuttle_id,
+                    name: row.shuttle_id === null ? 'Free' : row.shuttle_name,
+                    quantity_used: 0
+                }
             }
+            shuttlesMap[key].quantity_used += 1
         }
     }
 

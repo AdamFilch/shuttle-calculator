@@ -59,8 +59,8 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         SELECT
         m.match_id,
         m.date as match_date,
-        z.shuttle_id,
-        z.quantity_used,
+        si.shuttle_instance_id,
+        si.shuttle_id,
         s.name as shuttle_name,
         s.total_price,
         s.num_of_shuttles,
@@ -68,8 +68,9 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         mp.position,
         p.name as player_name
         FROM matches m
-        LEFT JOIN match_shuttles z ON m.match_id = z.match_id
-        LEFT JOIN shuttles s ON z.match_id = s.shuttle_id
+        LEFT JOIN match_shuttle_instances msi ON m.match_id = msi.match_id
+        LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = msi.shuttle_instance_id
+        LEFT JOIN shuttles s ON s.shuttle_id = si.shuttle_id
         LEFT JOIN match_players mp ON m.match_id = mp.match_id
         LEFT JOIN players p ON p.player_id = mp.player_id
         WHERE m.session_id = ?
@@ -82,20 +83,29 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
             match = {
                 match_id: row.match_id,
                 match_date: row.match_date,
-                shuttlesMap: {}, 
+                shuttlesMap: {},
+                seenInstances: new Set<number>(),
                 playersMap: {},
             }
             matchesMap[row.match_id] = match
         }
 
-        if (row.shuttle_id && !match.shuttlesMap[row.shuttle_id]) {
-            match.shuttlesMap[row.shuttle_id] = {
-                shuttle_id: row.shuttle_id,
-                name: row.shuttle_name,
-                quantity_used: row.quantity_used,
-                total_price: row.total_price,
-                num_of_shuttles: row.num_of_shuttles
+        // match_shuttle_instances rows are cross-joined against match_players rows
+        // above, so the same shuttle_instance_id appears once per player -- dedupe
+        // before counting.
+        if (row.shuttle_instance_id !== null && !match.seenInstances.has(row.shuttle_instance_id)) {
+            match.seenInstances.add(row.shuttle_instance_id)
+            const key = row.shuttle_id === null ? 'free' : String(row.shuttle_id)
+            if (!match.shuttlesMap[key]) {
+                match.shuttlesMap[key] = {
+                    shuttle_id: row.shuttle_id,
+                    name: row.shuttle_id === null ? 'Free shuttle' : row.shuttle_name,
+                    quantity_used: 0,
+                    total_price: row.shuttle_id === null ? 0 : row.total_price,
+                    num_of_shuttles: row.shuttle_id === null ? null : row.num_of_shuttles
+                }
             }
+            match.shuttlesMap[key].quantity_used += 1
         }
 
         if (row.player_id && !match.playersMap[row.player_id]) {
@@ -145,6 +155,44 @@ export async function closeSession(sessionId: string) {
         throw new Error('Add at least one match before closing this session')
     }
 
+    const shuttleInstanceRows: any = await db.getAllAsync(`
+        SELECT DISTINCT si.shuttle_instance_id, si.shuttle_id
+        FROM match_shuttle_instances msi
+        JOIN matches m ON m.match_id = msi.match_id
+        JOIN shuttle_instances si ON si.shuttle_instance_id = msi.shuttle_instance_id
+        WHERE m.session_id = ?
+        `, [sessionId])
+
+    const payableInstances = shuttleInstanceRows.filter((r: any) => r.shuttle_id !== null)
+
+    const shuttleIds: number[] = [...new Set(payableInstances.map((r: any) => r.shuttle_id))] as number[]
+    const priceByShuttleId: Record<number, { total_price: number, num_of_shuttles: number }> = {}
+    if (shuttleIds.length > 0) {
+        const shuttlePlaceholders = shuttleIds.map(() => '?').join(',')
+        const shuttleRows: any = await db.getAllAsync(`
+            SELECT shuttle_id, total_price, num_of_shuttles FROM shuttles WHERE shuttle_id IN (${shuttlePlaceholders})
+            `, shuttleIds)
+        for (const row of shuttleRows) {
+            priceByShuttleId[row.shuttle_id] = { total_price: row.total_price, num_of_shuttles: row.num_of_shuttles }
+        }
+    }
+
+    const instanceIds: number[] = payableInstances.map((r: any) => r.shuttle_instance_id)
+    const playersByInstance: Record<number, number[]> = {}
+    if (instanceIds.length > 0) {
+        const instancePlaceholders = instanceIds.map(() => '?').join(',')
+        const instancePlayerRows: any = await db.getAllAsync(`
+            SELECT DISTINCT msi.shuttle_instance_id, mp.player_id
+            FROM match_shuttle_instances msi
+            JOIN match_players mp ON mp.match_id = msi.match_id
+            WHERE msi.shuttle_instance_id IN (${instancePlaceholders})
+            `, instanceIds)
+        for (const row of instancePlayerRows) {
+            if (!playersByInstance[row.shuttle_instance_id]) playersByInstance[row.shuttle_instance_id] = []
+            playersByInstance[row.shuttle_instance_id].push(row.player_id)
+        }
+    }
+
     await db.execAsync("BEGIN TRANSACTION")
 
     const payments = []
@@ -158,6 +206,24 @@ export async function closeSession(sessionId: string) {
         }
     }
     await Promise.all(payments)
+
+    const shuttlePayments = []
+    for (const instance of payableInstances) {
+        const shuttle = priceByShuttleId[instance.shuttle_id]
+        const pricePerUnit = shuttle.total_price / shuttle.num_of_shuttles
+
+        const instancePlayerIds = playersByInstance[instance.shuttle_instance_id] ?? []
+        if (instancePlayerIds.length === 0) continue
+
+        const amountPerPlayer = (pricePerUnit / instancePlayerIds.length).toFixed(2)
+        for (const playerId of instancePlayerIds) {
+            shuttlePayments.push(db.runAsync(
+                `INSERT INTO shuttle_payments (shuttle_instance_id, player_id, amount_paid) VALUES (?, ?, ?)`,
+                [instance.shuttle_instance_id, playerId, amountPerPlayer]
+            ))
+        }
+    }
+    await Promise.all(shuttlePayments)
 
     await db.runAsync(
         `UPDATE sessions SET status = 'closed', closed_date = datetime('now') WHERE session_id = ?`,

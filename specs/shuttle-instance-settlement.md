@@ -143,6 +143,9 @@ Extend `closeSession` in `services/session.ts:126-168` — it already computes `
 | Largest, most invasive change so far — touches match creation, match detail, session detail, player detail, and 3 service files | High (by nature of the fix) | Build in order: schema → creation → close → display, so each step is checkable before the next. The close-time logic directly reuses the just-shipped court settlement pattern, reducing net-new design risk. |
 | `match_shuttles` removal breaks anything still reading it | Low | Full-repo grep confirms only `services/match-shuttles.ts` (one thin, already-unused function) and the queries rewritten above touch it. |
 | Free instances cluttering the "Shuttles Used" session view | Low | Shown as a distinct `$0` entry rather than hidden, per the "generic free entry" decision — visible but clearly costs nothing. |
+| Deferring settlement to session close removes the ability to pay off shuttle debt mid-session (possible today, since `shuttle_payments` currently writes immediately at match creation) | Medium | Same gap courts shipped with before Phase D ("Pay Early") — see `specs/court-rental-and-session-settlement.md`. Not solved here; a per-instance equivalent of Pay Early is a candidate follow-up, not in this spec's scope. |
+
+Future work: **partial payments** (paying a balance down over multiple installments from the player profile page) is documented as Phase E in `specs/court-rental-and-session-settlement.md`, and applies equally to this spec's re-keyed `shuttle_payments` once it adopts the same "never zero `amount_paid`" convention — not scoped here.
 
 ## Implementation Phases
 

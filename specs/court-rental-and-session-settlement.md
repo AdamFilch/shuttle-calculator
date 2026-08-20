@@ -194,6 +194,26 @@ Fully designed in its own spec: **`specs/shuttle-instance-settlement.md`**. Summ
 - This changes `services/match.ts::createNewMatch` (remove the immediate `shuttle_payments` insert) and moves that logic into the same `closeSession()` used for courts, so both settle in the same transaction.
 - See `specs/shuttle-instance-settlement.md` for the full data model, match-creation flow, close-time settlement algorithm, and the display/payment UI rework this cascades into (match detail, session detail, player detail, and the "Pay Shuttles" flow).
 
+## Phase E (not built now) — partial payments
+
+Documented so the intent isn't lost, not part of this build. Once `amount_paid` stops being zeroed on payment (Phase D) and instead always holds the true locked-in share with `date_paid` as the sole paid/unpaid flag, the natural next step is letting a player pay down a balance across **multiple partial payments** instead of only in one lump sum — e.g. settling an older session's debt over time from their player profile page, rather than being forced to pay the whole thing at once.
+
+- Requires a real ledger, not a single `amount_paid`/`date_paid` pair per `(entity, player)` row — e.g. a `payment_transactions` table (one row per partial payment: entity type, entity id, player_id, amount, paid_at). Outstanding balance becomes `locked_share - SUM(transactions for this row)`.
+- "Paid" becomes `SUM(transactions) >= locked_share`, not a single timestamp check.
+- UI: player profile page gets a "pay $X toward this balance" action, alongside/instead of "mark fully paid."
+- Applies equally to `court_payments` and `shuttle_payments` (and their shuttle-instance successor — see `specs/shuttle-instance-settlement.md`) once both share the same locked-share-on-insert convention.
+
+**Allocation policy (decided): oldest-first.** The existing "Pay Shuttles" flow (`app/player/[playerId]/index.tsx`) already lets a player select outstanding rows spanning multiple sessions and pay them in one action — a partial payment amount needs a rule for which selected rows it applies to:
+
+1. Sort the outstanding rows being paid **oldest → newest** (by `date_created`, or the owning session's date).
+2. Walk the list in that order, applying the payment amount to each row's remaining balance (`locked_share - SUM(existing transactions for that row)`) in turn:
+   - If the payment covers a row's full remaining balance, that row is fully paid off (insert a transaction for the remaining balance), subtract it from the payment amount, and move to the next (newer) row.
+   - Once the remaining payment amount is smaller than a row's remaining balance, that row absorbs whatever's left as a single transaction — a plain deduction, balance reduced but the row stays unpaid — and allocation stops.
+3. Any rows newer than that one are left completely untouched.
+
+So a single payment fully clears zero or more of the oldest rows, then at most one row takes a partial deduction, and everything newer than that is unaffected.
+- Not scoped now — flagging only so Phase D's design doesn't accidentally foreclose it. A single `amount_paid` column that's overwritten in place (as Phase D designs it) would need to become additive/transactional if this is ever built; worth keeping in mind but not worth solving ahead of an actual requirement.
+
 ## Phase 3 (not built now) — flat-rate court split
 
 Documented so the intent isn't lost, not part of this build. An alternative to even splitting: the manager sets a flat amount owed per participant instead of a total price to divide.

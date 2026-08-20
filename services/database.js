@@ -15,7 +15,8 @@ export async function dropDatabase() {
   DROP TABLE IF EXISTS matches;
   DROP TABLE IF EXISTS match_players;
   DROP TABLE IF EXISTS shuttles;
-  DROP TABLE IF EXISTS match_shuttles;
+  DROP TABLE IF EXISTS shuttle_instances;
+  DROP TABLE IF EXISTS match_shuttle_instances;
   DROP TABLE IF EXISTS shuttle_payments;
   DROP TABLE IF EXISTS court_bookings;
   DROP TABLE IF EXISTS court_payments;
@@ -76,26 +77,35 @@ export async function setupDatabase() {
     `);
 
     db.execSync(`
-      CREATE TABLE IF NOT EXISTS match_shuttles (
-        match_id INTEGER NOT NULL,
-        shuttle_id INTEGER NOT NULL,
-        quantity_used INTEGER NOT NULL,
-        PRIMARY KEY (match_id, shuttle_id),
-        FOREIGN KEY (match_id) REFERENCES matches(match_id),
+      CREATE TABLE IF NOT EXISTS shuttle_instances (
+        shuttle_instance_id INTEGER PRIMARY KEY NOT NULL,
+        session_id INTEGER NOT NULL,
+        shuttle_id INTEGER,
+        date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (session_id) REFERENCES sessions(session_id),
         FOREIGN KEY (shuttle_id) REFERENCES shuttles(shuttle_id)
       );
     `);
 
     db.execSync(`
-      CREATE TABLE IF NOT EXISTS shuttle_payments (
+      CREATE TABLE IF NOT EXISTS match_shuttle_instances (
         match_id INTEGER NOT NULL,
-        shuttle_id INTEGER NOT NULL,
+        shuttle_instance_id INTEGER NOT NULL,
+        PRIMARY KEY (match_id, shuttle_instance_id),
+        FOREIGN KEY (match_id) REFERENCES matches(match_id),
+        FOREIGN KEY (shuttle_instance_id) REFERENCES shuttle_instances(shuttle_instance_id)
+      );
+    `);
+
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS shuttle_payments (
+        shuttle_instance_id INTEGER NOT NULL,
         player_id INTEGER NOT NULL,
         amount_paid REAL NOT NULL,
         date_paid TIMESTAMP,
         date_created TIMESTAMP NOT NULL DEFAULT (datetime('now')),
-        PRIMARY KEY (match_id, shuttle_id, player_id),
-        FOREIGN KEY (match_id, shuttle_id) REFERENCES match_shuttles(match_id, shuttle_id),
+        PRIMARY KEY (shuttle_instance_id, player_id),
+        FOREIGN KEY (shuttle_instance_id) REFERENCES shuttle_instances(shuttle_instance_id),
         FOREIGN KEY (player_id) REFERENCES players(player_id)
       );
     `)
@@ -128,10 +138,9 @@ export async function setupDatabase() {
     db.execSync(`
       CREATE INDEX IF NOT EXISTS idx_match_players_player ON match_players(player_id);
       CREATE INDEX IF NOT EXISTS idx_match_players_match ON match_players(match_id);
-      CREATE INDEX IF NOT EXISTS idx_match_shuttles_match ON match_shuttles(match_id);
-      CREATE INDEX IF NOT EXISTS idx_match_shuttles_shuttle ON match_shuttles(shuttle_id);
+      CREATE INDEX IF NOT EXISTS idx_shuttle_instances_session ON shuttle_instances(session_id);
+      CREATE INDEX IF NOT EXISTS idx_match_shuttle_instances_match ON match_shuttle_instances(match_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_payments_players ON shuttle_payments(player_id);
-      CREATE INDEX IF NOT EXISTS idx_shuttle_payments_match ON shuttle_payments(match_id);
       CREATE INDEX IF NOT EXISTS idx_court_bookings_session ON court_bookings(session_id);
       CREATE INDEX IF NOT EXISTS idx_court_payments_player ON court_payments(player_id);
     `);

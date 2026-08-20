@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { PaymentConfirmationDialog } from "@/components/shared/PaymentConfirmationDialog";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { Heading } from "@/components/ui/heading";
@@ -20,7 +19,6 @@ export default function MatchPage() {
 
 
     const [match, setMatch] = useState<MatchFull | null>(null)
-    const [openConfirmation, setOpenConfirmation] = useState(false)
 
     useFocusEffect(
         useCallback(() => {
@@ -52,26 +50,6 @@ export default function MatchPage() {
             />
 
             <View className="flex-1 px-4">
-                <Button
-                    className="mt-2"
-                    onPress={() => {
-                        setOpenConfirmation(true)
-                    }}
-                >
-                    <ButtonText>
-                        Pay for this Match
-                    </ButtonText>
-                </Button>
-                <PaymentConfirmationDialog
-                    isOpen={openConfirmation}
-                    onClose={() => {
-                        setOpenConfirmation(false)
-                    }}
-                    onConfirm={() => {
-
-                    }}
-                />
-
                 <Heading size="md" className="text-typography-900 mt-6 mb-2">
                     Players in this match
                 </Heading>

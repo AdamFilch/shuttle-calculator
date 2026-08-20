@@ -4,7 +4,7 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
-import { createNewMatch, createNewMatchShuttle } from "@/services/match";
+import { createNewMatch, ShuttleSelection } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { useFocusEffect } from "@react-navigation/native";
@@ -14,13 +14,10 @@ import { ScrollView, Text, View } from "react-native";
 
 export default function CreateNewMatchPage() {
   const { sessionId } = useLocalSearchParams();
-  const [selectedShuttle, setSelectedShuttle] = useState(1);
   const [selectedPlayers, setSelectedPlayers] = useState(
     new Array(4).fill(null),
   );
-  const [usedShuttles, setUsedShuttles] = useState<
-    createNewMatchShuttle[] | []
-  >([]);
+  const [usedShuttles, setUsedShuttles] = useState<ShuttleSelection[]>([]);
   const router = useRouter();
 
   const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([]);
@@ -41,12 +38,10 @@ export default function CreateNewMatchPage() {
     });
   };
   async function onClickSave() {
-    console.log("UsedShuttles", usedShuttles);
-
-    const res = await createNewMatch({
+    await createNewMatch({
       sessionId: parseInt(sessionId.toString()),
       playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
-      shuttles: usedShuttles,
+      shuttleSelections: usedShuttles,
     });
     router.back();
   }
@@ -80,22 +75,38 @@ export default function CreateNewMatchPage() {
                         ))}
                     </Picker> */}
           <SelectShuttleButton
+            sessionId={parseInt(sessionId.toString())}
             selectedShuttles={usedShuttles}
-            onSelect={(selected) => {
-              const indexOfShuttleUsedBefore =
-                usedShuttles.length > 0
-                  ? usedShuttles.findIndex(
-                      (el: any) => el.shuttleId == selected.shuttleId,
-                    )
-                  : -1;
-              console.log("SelectedShuttles", indexOfShuttleUsedBefore);
+            onSelect={(selected: ShuttleSelection) => {
+              setUsedShuttles((prev) => {
+                if (selected.mode === "new") {
+                  const indexOfShuttleUsedBefore = prev.findIndex(
+                    (el) => el.mode === "new" && el.shuttleId === selected.shuttleId,
+                  );
+                  if (indexOfShuttleUsedBefore !== -1) {
+                    const updated = [...prev];
+                    const existing = updated[indexOfShuttleUsedBefore];
+                    if (existing.mode === "new") {
+                      updated[indexOfShuttleUsedBefore] = {
+                        ...existing,
+                        quantity: existing.quantity + selected.quantity,
+                      };
+                    }
+                    return updated;
+                  }
+                  return [...prev, selected];
+                }
 
-              if (indexOfShuttleUsedBefore != -1) {
-                usedShuttles[indexOfShuttleUsedBefore].quantityUsed +=
-                  selected.quantityUsed;
-              } else {
-                setUsedShuttles((prev) => [...prev, selected]);
-              }
+                if (selected.mode === "reused") {
+                  const alreadySelected = prev.some(
+                    (el) => el.mode === "reused" && el.shuttleInstanceId === selected.shuttleInstanceId,
+                  );
+                  if (alreadySelected) return prev;
+                  return [...prev, selected];
+                }
+
+                return [...prev, selected];
+              });
             }}
           />
         </View>

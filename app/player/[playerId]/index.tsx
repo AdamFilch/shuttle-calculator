@@ -8,8 +8,8 @@ import { HStack } from "@/components/ui/hstack";
 import { CheckIcon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player, ShuttlePaymentsByPlayerSessions } from "@/services/player";
-import { payShuttleByIds } from "@/services/shuttle-payments";
+import { fetchPlayerById, fetchShuttlePaymentsByPlayerSessions, Player, ShuttleInstanceCharge, ShuttlePaymentsByPlayerSessions } from "@/services/player";
+import { payShuttleInstancesByIds } from "@/services/shuttle-payments";
 import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
@@ -23,7 +23,7 @@ export default function SelectPlayerPage() {
     const [player, setPlayer] = useState<Player | null>(null)
     const [shuttlePayments, setShuttlePayments] = useState<ShuttlePaymentsByPlayerSessions | null>(null)
     const [SelectShuttleMode, toggleShuttleMode] = useState(false)
-    const [selectedShuttles, setSelectedShuttles] = useState([])
+    const [selectedCharges, setSelectedCharges] = useState<ShuttleInstanceCharge[]>([])
     const [openConfirmation, setOpenConfirmation] = useState(false)
 
 
@@ -43,11 +43,12 @@ export default function SelectPlayerPage() {
     }
 
     const handlePayShuttles = async () => {
-        payShuttleByIds({
-            matches: selectedShuttles,
+        payShuttleInstancesByIds({
+            shuttleCharges: selectedCharges,
             player_id: playerId.toString()
         }).then(() => {
             setOpenConfirmation(false)
+            setSelectedCharges([])
             fetchPlayerAndShuttles()
         })
     }
@@ -74,13 +75,13 @@ export default function SelectPlayerPage() {
                                             setOpenConfirmation(true)
                                         }}
                                     >
-                                        <ButtonText>Pay ({selectedShuttles.length})</ButtonText>
+                                        <ButtonText>Pay ({selectedCharges.length})</ButtonText>
                                     </Button>
                                     <Button
                                         variant="outline"
                                         action="secondary"
                                         onPress={() => {
-                                            setSelectedShuttles([])
+                                            setSelectedCharges([])
                                             toggleShuttleMode(false)
                                         }}
                                     >
@@ -99,6 +100,10 @@ export default function SelectPlayerPage() {
                         </HStack>
 
                         {shuttlePayments.sessions.map((session, idx) => {
+                            const unpaidCharges = session.shuttle_charges.filter((c) => c.date_paid === null)
+
+                            if (unpaidCharges.length === 0) return null
+
                             return (
                                 <VStack key={idx} space="sm">
                                     <HStack space="xs" className="items-center">
@@ -112,40 +117,23 @@ export default function SelectPlayerPage() {
                                         )}
                                     </HStack>
                                     <VStack space="sm">
-                                        {session.matches_played
-                                            .sort((match1, match2) => {
-                                                let totalCostsM2 = match2.shuttles.reduce((acc, shuttle) => {
-                                                    return acc + shuttle.owed_amount
-                                                }, 0)
-                                                let totalCostsM1 = match1.shuttles.reduce((acc, shuttle) => {
-                                                    return acc + shuttle.owed_amount
-                                                }, 0)
-
-                                                return totalCostsM2 - totalCostsM1
-                                            })
-                                            .map((match, matchIdx) => {
-                                                const numOfShuttle = match.shuttles.filter((shu) => shu.owed_amount > 0).length
-                                                const totalCosts = match.shuttles.reduce((acc, shuttle) => {
-                                                    return acc + shuttle.owed_amount
-                                                }, 0)
-                                                const isSelected = selectedShuttles.some((v) => v.match_id == match.match_id)
+                                        {unpaidCharges
+                                            .sort((a, b) => b.owed_amount - a.owed_amount)
+                                            .map((charge, chargeIdx) => {
+                                                const isSelected = selectedCharges.some((v) => v.shuttle_instance_id == charge.shuttle_instance_id)
 
                                                 return (
                                                     <ListRow
-                                                        key={matchIdx}
-                                                        title={`Match ${match.match_number}`}
-                                                        subtitle={`${numOfShuttle} unpaid · $${totalCosts.toFixed(2)} total`}
+                                                        key={chargeIdx}
+                                                        title={charge.name}
+                                                        subtitle={`$${charge.owed_amount.toFixed(2)}${charge.matches_used_in.length > 1 ? ` · used in ${charge.matches_used_in.length} matches` : ""}`}
                                                         selected={SelectShuttleMode && isSelected}
                                                         trailing={SelectShuttleMode ? (
-                                                            <Checkbox value={String(match.match_id)} isChecked={isSelected} onChange={() => {
+                                                            <Checkbox value={String(charge.shuttle_instance_id)} isChecked={isSelected} onChange={() => {
                                                                 if (!isSelected) {
-                                                                    setSelectedShuttles([...selectedShuttles, {
-                                                                        ...match,
-                                                                        numOfShuttle,
-                                                                        totalCosts
-                                                                    }])
+                                                                    setSelectedCharges([...selectedCharges, charge])
                                                                 } else {
-                                                                    setSelectedShuttles(prev => prev.filter((v) => v.match_id !== match.match_id))
+                                                                    setSelectedCharges(prev => prev.filter((v) => v.shuttle_instance_id !== charge.shuttle_instance_id))
                                                                 }
                                                             }}>
                                                                 <CheckboxIndicator>
@@ -156,23 +144,15 @@ export default function SelectPlayerPage() {
                                                         onLongPress={() => {
                                                             if (!SelectShuttleMode) {
                                                                 toggleShuttleMode(true)
-                                                                setSelectedShuttles([{
-                                                                    ...match,
-                                                                    numOfShuttle,
-                                                                    totalCosts
-                                                                }])
+                                                                setSelectedCharges([charge])
                                                             }
                                                         }}
                                                         onPress={() => {
                                                             if (SelectShuttleMode) {
                                                                 if (!isSelected) {
-                                                                    setSelectedShuttles([...selectedShuttles, {
-                                                                        ...match,
-                                                                        numOfShuttle,
-                                                                        totalCosts
-                                                                    }])
+                                                                    setSelectedCharges([...selectedCharges, charge])
                                                                 } else {
-                                                                    setSelectedShuttles(prev => prev.filter((v) => v.match_id !== match.match_id))
+                                                                    setSelectedCharges(prev => prev.filter((v) => v.shuttle_instance_id !== charge.shuttle_instance_id))
                                                                 }
                                                             }
                                                         }}
