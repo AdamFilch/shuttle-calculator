@@ -1,6 +1,7 @@
 import { openDatabaseSync } from "expo-sqlite";
 import { CourtBooking, fetchCourtBookingsBySessionId } from "./court";
 import { Shuttle } from "./shuttle";
+import { DisplayTimeDDDASHMMDASHYYYY } from "./time-display";
 
 export type Session = {
     session_id: number,
@@ -12,6 +13,18 @@ export type Session = {
 
 const db = openDatabaseSync('db.db')
 
+async function generateDefaultSessionName(date: string): Promise<string> {
+    const base = DisplayTimeDDDASHMMDASHYYYY(date) ?? date
+    let candidate = base
+    let suffix = 2
+    while (true) {
+        const existing = await db.getFirstAsync(`SELECT 1 FROM sessions WHERE name = ?`, [candidate])
+        if (!existing) return candidate
+        candidate = `${base} #${suffix}`
+        suffix++
+    }
+}
+
 export async function createNewSession({
     name,
     date
@@ -19,9 +32,11 @@ export async function createNewSession({
     name?: string,
     date: string
 }) {
+    const finalName = name && name.trim() !== '' ? name : await generateDefaultSessionName(date)
+
     const res = await db.runAsync(
         `INSERT into sessions (name, date) VALUES (?, ?)`,
-        [name ?? null, date]
+        [finalName, date]
     );
 
     return res.lastInsertRowId
