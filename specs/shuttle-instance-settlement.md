@@ -1,7 +1,7 @@
 # Shuttle Instance Tracking & Session-Close Settlement
 
 ## Status
-Draft — not yet implemented. This is "Phase 2" referenced in `specs/court-rental-and-session-settlement.md`, now written up in full.
+Implemented and verified (Phases A-D complete). This was "Phase 2" referenced in `specs/court-rental-and-session-settlement.md`.
 
 ## Motivation
 
@@ -170,9 +170,9 @@ No test framework exists in this repo (per `CLAUDE.md`) — verification is manu
 6. Confirm: the batch-X instance's cost is split 3 ways (A, B, C) — not charged twice to A. The free shuttle generated no charges. Match detail page still shows shuttle counts correctly. Player detail pages for A, B, C show the right per-session shuttle charge, payable via the reworked "Pay Shuttles" flow. Session's "Pay by Player" still clears both shuttle and court debt together (already built).
 
 ## Acceptance
-- [ ] `shuttle_instances`, `match_shuttle_instances` tables real and wired; `match_shuttles` removed.
-- [ ] `shuttle_payments` re-keyed to `(shuttle_instance_id, player_id)`; no longer written during `createNewMatch`.
-- [ ] `closeSession` computes and locks in shuttle splits per-instance, across all matches that used it, alongside the existing court split, in one transaction.
-- [ ] Match creation UI offers New / Reused / Free; dead `ShuttleCondition` code removed.
-- [ ] Match detail, session detail "Shuttles Used", and player detail pages all reflect the new model without losing existing display capability.
-- [ ] Manual verification flow above passes.
+- [x] `shuttle_instances`, `match_shuttle_instances` tables real and wired; `match_shuttles` removed.
+- [x] `shuttle_payments` re-keyed to `(shuttle_instance_id, player_id)`; no longer written during `createNewMatch`.
+- [x] `closeSession` computes and locks in shuttle splits per-instance, across all matches that used it, alongside the existing court split, in one transaction.
+- [x] Match creation UI offers New / Reused / Free; dead `ShuttleCondition` code removed.
+- [x] Match detail, session detail "Shuttles Used", and player detail pages all reflect the new model without losing existing display capability.
+- [x] Manual verification flow above passes.

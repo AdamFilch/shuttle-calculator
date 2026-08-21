@@ -62,11 +62,16 @@ CREATE TABLE IF NOT EXISTS court_bookings (
 CREATE TABLE IF NOT EXISTS court_payments (
   court_booking_id INTEGER NOT NULL,
   player_id INTEGER NOT NULL,
-  amount_paid REAL NOT NULL,     -- the player's LOCKED-IN share, permanent once written -- see "Pay Early" below.
-                                  -- NOTE: as originally shipped this was zeroed on payment (mirroring shuttle_payments'
-                                  -- convention at the time); the "Pay Early" rework changes this -- see below.
-  date_paid TIMESTAMP,           -- NULL = owed but not yet paid; timestamp = paid. Sole "is this settled" signal
-                                  -- once the rework lands -- amount_paid is no longer zeroed alongside it.
+  amount_owed REAL NOT NULL,     -- the player's LOCKED-IN share, permanent once written -- see "Pay Early" below.
+                                  -- Added by the Pay Early rework (Phase D, not yet shipped). As originally
+                                  -- shipped, this column doesn't exist -- the single `amount_paid` column held
+                                  -- the locked share directly and was zeroed to 0 on payment.
+  amount_paid REAL NOT NULL DEFAULT 0, -- how much of `amount_owed` has actually been collected. Starts at 0
+                                  -- (nothing paid). Never decreases. "Fully paid" = `amount_paid = amount_owed`
+                                  -- (not a separate flag, and not a zeroed value).
+  date_paid TIMESTAMP,           -- NULL = nothing paid yet. Once anything's been paid, the timestamp of the
+                                  -- most recent payment action (partial or full) -- informational only; compare
+                                  -- `amount_paid` to `amount_owed` for the actual paid/unpaid signal.
   date_created TIMESTAMP NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (court_booking_id, player_id),
   FOREIGN KEY (court_booking_id) REFERENCES court_bookings(court_booking_id),
@@ -117,23 +122,25 @@ booking_total         = price * quantity
 current_share         = (booking_total - settled_total) / unsettled_count
 ```
 
-A player paying early gets `current_share.toFixed(2)` locked in as their permanent `amount_paid` for this booking — this can never change afterward, even if `known_participants` grows later. Whoever hasn't settled yet absorbs however the remaining pool changes.
+A player paying early gets a new row inserted: `amount_owed = current_share.toFixed(2)` (their permanent locked-in share — never changes afterward, even if `known_participants` grows later) and `amount_paid` set equal to it immediately, since paying early means paying in full, right now. Whoever hasn't settled yet absorbs however the remaining pool changes.
 
-**Worked example** (confirmed with the user): a $20 court, 4 players known at the time. One pays early: `current_share = 20/4 = $5`, locked in. Two more players later join the session (6 known participants total). The other 5 (still-unsettled) players now share `(20 - 5) / 5 = $3` each when they settle — not recomputed from `20/6`. Total collected across all 6 people always sums to exactly $20 regardless of settlement order, since each `current_share` is computed against whatever's left in the pool at that moment.
+**Worked example** (confirmed with the user): a $20 court, 4 players known at the time. One pays early: `current_share = 20/4 = $5` — row inserted with `amount_owed = 5, amount_paid = 5`. Two more players later join the session (6 known participants total). The other 5 (still-unsettled) players now share `(20 - 5) / 5 = $3` each when they settle — not recomputed from `20/6`. Total collected across all 6 people always sums to exactly $20 regardless of settlement order, since each `current_share` is computed against whatever's left in the pool at that moment.
 
 ### Session close is the same formula, applied to everyone still unsettled
 
-`closeSession()`'s court step no longer does one fresh even split for all participants — it becomes: for each court booking, for each `known_participant` who does **not** already have a `court_payments` row (i.e., didn't pay early), compute `current_share` per the formula above and insert a row with `date_paid = NULL` (owed, not yet paid — to be settled later via the existing "Pay by Player" flow, same as today). This makes "Pay Early" and "close" the same underlying operation — just triggered per-player on demand versus for the whole remaining group at once. `closeSession` should reuse a single shared function for this rather than duplicating the formula.
+`closeSession()`'s court step no longer does one fresh even split for all participants — it becomes: for each court booking, for each `known_participant` who does **not** already have a `court_payments` row (i.e., didn't pay early), compute `current_share` per the formula above and insert a row with `amount_owed = current_share`, `amount_paid = 0` (owed, not yet paid — to be settled later via the existing "Pay by Player" flow, same as today). This makes "Pay Early" and "close" the same underlying operation — just triggered per-player on demand versus for the whole remaining group at once. `closeSession` should reuse a single shared function for this rather than duplicating the formula.
 
-### `amount_paid` is no longer zeroed on payment
+### `amount_paid` / `amount_owed` split, replacing the zero-on-payment convention
 
-This is the one real behavior change to already-shipped code beyond just courts: `payShuttleByPlayers` (`services/shuttle-payments.ts`) currently does `UPDATE court_payments SET amount_paid = 0, date_paid = ?` when a player settles up. Under Pay Early, `settled_total` in the formula above needs to keep summing already-locked-in amounts even after they're paid — so zeroing on payment would break the math for anyone who settles after someone else already paid. The fix: stop zeroing. `date_paid IS NULL` vs `NOT NULL` becomes the sole "is this paid" signal; `amount_paid` always holds the real locked-in figure, before and after payment.
+This is the one real behavior change to already-shipped code beyond just courts: `payShuttleByPlayers` (`services/shuttle-payments.ts`) currently does `UPDATE court_payments SET amount_paid = 0, date_paid = ?` when a player settles up — a single column doing double duty as both "the locked share" and "the paid flag," zeroed to signal "paid." Under Pay Early, `settled_total` in the formula above needs to keep summing already-collected amounts even after they're paid, so zeroing on payment breaks the math for anyone who settles after someone else already paid.
 
-This has one knock-on effect that must be fixed alongside it: `services/player.ts`'s "amount owed" aggregations (`fetchAllPlayerPaymentsBySession`, `fetchAllPlayerPayments`) currently compute totals by summing `amount_paid` and relying on paid rows already being zero. Once zeroing stops, those sums must explicitly filter `WHERE date_paid IS NULL`, or a player's "total owed" would incorrectly include amounts they've already paid. **This is a correctness-critical follow-up, not optional** — see Risks.
+The fix: split the single column into two. `amount_owed` holds the player's permanent locked-in share, written once at settlement time and never touched again. `amount_paid` starts at `0` and tracks how much of that has actually been collected — a full payment sets `amount_paid = amount_owed` in one step. `amount_paid === amount_owed` is the "fully paid" signal, not a separate flag or a zeroed value. `date_paid` becomes purely informational: `NULL` until the first payment, then the timestamp of the most recent payment action (partial or full) — it no longer decides paid/unpaid; comparing `amount_paid` to `amount_owed` does. Existing full-payment call sites (`payShuttleByPlayers`, and the shuttle-instance equivalents once that Phase D lands too) change from `SET amount_paid = 0, date_paid = ?` to `SET amount_paid = amount_owed, date_paid = ?`.
+
+This has one knock-on effect that must be fixed alongside it: `services/player.ts`'s "amount owed" aggregations (`fetchAllPlayerPaymentsBySession`, `fetchAllPlayerPayments`) currently compute totals by summing `amount_paid` and relying on paid rows already being zero. Once the column splits, those sums must switch to `SUM(amount_owed - amount_paid)` (the true remaining balance) — summing `amount_paid` alone would now report how much has been *collected*, the opposite of "total owed." **This is a correctness-critical follow-up, not optional** — see Risks.
 
 ### New service function
 
-A new function is needed to perform a single player's early settlement — e.g. `payCourtShareEarly({ courtBookingId, playerId })` in a new `services/court-payments.ts` (mirroring the existing `shuttle.ts` / `shuttle-payments.ts` split: the "item" lives in `court.ts`, the "payment action" gets its own file). It computes `current_share` per the formula, inserts one `court_payments` row with `date_paid = NOW()`, inside a transaction (guard: reject if the player already has a row for this booking, or isn't in `known_participants`).
+A new function is needed to perform a single player's early settlement — e.g. `payCourtShareEarly({ courtBookingId, playerId })` in a new `services/court-payments.ts` (mirroring the existing `shuttle.ts` / `shuttle-payments.ts` split: the "item" lives in `court.ts`, the "payment action" gets its own file). It computes `current_share` per the formula, inserts one `court_payments` row with `amount_owed = current_share`, `amount_paid = current_share` (paid in full, immediately), `date_paid = NOW()`, inside a transaction (guard: reject if the player already has a row for this booking, or isn't in `known_participants`).
 
 ## Session lifecycle
 
@@ -143,7 +150,7 @@ A new function is needed to perform a single player's early settlement — e.g. 
   1. Reject if `status != 'open'`.
   2. Compute distinct participants (query above).
   3. Reject if participants is empty and `court_bookings` is non-empty (see edge case above). A session with zero court bookings can close with zero participants — there's nothing to split.
-  4. For each court booking, insert `court_payments` rows per the rule above, inside a transaction (mirror `createNewMatch`'s `BEGIN TRANSACTION` / `COMMIT` pattern in `services/match.ts:41-71`). **Under Phase D:** skip any participant who already has a row (paid early); compute `current_share` for the rest per the Pay Early formula, not a flat re-split of the full total.
+  4. For each court booking, insert `court_payments` rows per the rule above, inside a transaction (mirror `createNewMatch`'s `BEGIN TRANSACTION` / `COMMIT` pattern in `services/match.ts:41-71`). **Under Phase D:** skip any participant who already has a row (paid early); compute `current_share` for the rest per the Pay Early formula, inserting `amount_owed = current_share, amount_paid = 0` — not a flat re-split of the full total.
   5. Set `status = 'closed'`, `closed_date = now`.
 - **While closed:** "Add Match" and "Book a Court" actions are disabled in the UI. Existing debt (shuttle, now also court) still shows and can still be settled via the existing pay-by-player/pay-by-match flows.
 - **Reopening:** out of scope for the first build. If a mistake needs fixing, the workaround is Settings → Reset Database (existing, destructive, whole-app) until a scoped "reopen" is designed. Flagging this as a likely near-term ask, not solving it now to keep the first cut small.
@@ -182,7 +189,7 @@ Mirrors existing patterns in `app/session/[sessionId]/index.tsx` and `components
 | Zero-participant close (divide by zero) | Low | Explicit guard, see edge case above. |
 | Floating point drift on repeated `.toFixed(2)` splits | Low (pre-existing risk, not new) | Same rounding approach already accepted for shuttle splits; not solving broader currency-precision handling here. |
 | `bookCourt()`/`createNewMatch()` have no service-layer check against `sessions.status` — only the UI hides "Add Match"/"Book a Court" once closed | Low | Considered and accepted as-is: no current code path calls these outside the UI actions that already gate on status, so there's no realistic way to hit this today. Not adding a guard now; revisit if a second entry point (e.g. deep link, bulk import) is ever added. |
-| **(Phase D)** Removing the "zero `amount_paid` on payment" convention silently breaks `total_owed_amount` in `services/player.ts` if the aggregation queries aren't updated in the same change | High if missed | Must ship atomically with the aggregation fix: switch every `SUM(amount_paid)` "owed" calculation to `WHERE date_paid IS NULL`. Treat this as a single change, not two — a player's paid amount would otherwise silently double-count as still-owed. |
+| **(Phase D)** Splitting `amount_paid` into `amount_owed`/`amount_paid` silently breaks `total_owed_amount` in `services/player.ts` if the aggregation queries aren't updated in the same change | High if missed | Must ship atomically with the aggregation fix: switch every "owed" calculation from `SUM(amount_paid)` to `SUM(amount_owed - amount_paid)`. Treat this as a single change, not two — a player's collected amount would otherwise silently be reported as still-owed. |
 | **(Phase D)** A player pays early, then more people join later and the remaining players' share drops below what the early payer paid — early payers may feel they "overpaid" relative to the final group | Low (accepted trade-off, not a bug) | This is the intentional cost of leaving early, confirmed with the user via the worked example. Not something to fix; worth surfacing in the Pay Early confirmation copy ("this amount is based on who's played so far and won't be adjusted later") so it's not a surprise. |
 
 ## Phase 2 (not built now) — shuttle settlement rework
@@ -196,23 +203,23 @@ Fully designed in its own spec: **`specs/shuttle-instance-settlement.md`**. Summ
 
 ## Phase E (not built now) — partial payments
 
-Documented so the intent isn't lost, not part of this build. Once `amount_paid` stops being zeroed on payment (Phase D) and instead always holds the true locked-in share with `date_paid` as the sole paid/unpaid flag, the natural next step is letting a player pay down a balance across **multiple partial payments** instead of only in one lump sum — e.g. settling an older session's debt over time from their player profile page, rather than being forced to pay the whole thing at once.
+Documented so the intent isn't lost, not part of this build. The `amount_owed`/`amount_paid` split introduced by Phase D already gives partial payments almost everything they need — "remaining balance" is just `amount_owed - amount_paid`, no separate ledger table required for that part.
 
-- Requires a real ledger, not a single `amount_paid`/`date_paid` pair per `(entity, player)` row — e.g. a `payment_transactions` table (one row per partial payment: entity type, entity id, player_id, amount, paid_at). Outstanding balance becomes `locked_share - SUM(transactions for this row)`.
-- "Paid" becomes `SUM(transactions) >= locked_share`, not a single timestamp check.
+- A partial payment action becomes `UPDATE ... SET amount_paid = amount_paid + ?, date_paid = ?` (add the paid-down amount, don't overwrite), capped so `amount_paid` never exceeds `amount_owed`.
+- "Paid" stays `amount_paid = amount_owed`, unchanged from Phase D — no separate boolean or timestamp check needed.
 - UI: player profile page gets a "pay $X toward this balance" action, alongside/instead of "mark fully paid."
-- Applies equally to `court_payments` and `shuttle_payments` (and their shuttle-instance successor — see `specs/shuttle-instance-settlement.md`) once both share the same locked-share-on-insert convention.
+- Applies equally to `court_payments` and `shuttle_payments` (and their shuttle-instance successor — see `specs/shuttle-instance-settlement.md`) once both adopt the Phase D column split.
+- **Not covered by the two-column model alone**: a per-transaction history/audit trail of individual partial payments (e.g. "player paid $3 on Monday, $2 on Friday"). If that's ever wanted, it would need a separate `payment_transactions` log table alongside `amount_owed`/`amount_paid` — not required just to track the current remaining balance, only if individual payment history needs to be displayed or audited later.
 
 **Allocation policy (decided): oldest-first.** The existing "Pay Shuttles" flow (`app/player/[playerId]/index.tsx`) already lets a player select outstanding rows spanning multiple sessions and pay them in one action — a partial payment amount needs a rule for which selected rows it applies to:
 
 1. Sort the outstanding rows being paid **oldest → newest** (by `date_created`, or the owning session's date).
-2. Walk the list in that order, applying the payment amount to each row's remaining balance (`locked_share - SUM(existing transactions for that row)`) in turn:
-   - If the payment covers a row's full remaining balance, that row is fully paid off (insert a transaction for the remaining balance), subtract it from the payment amount, and move to the next (newer) row.
-   - Once the remaining payment amount is smaller than a row's remaining balance, that row absorbs whatever's left as a single transaction — a plain deduction, balance reduced but the row stays unpaid — and allocation stops.
+2. Walk the list in that order, applying the payment amount to each row's remaining balance (`amount_owed - amount_paid`) in turn:
+   - If the payment covers a row's full remaining balance, `amount_paid` is set to `amount_owed` (fully paid), subtract the remaining balance from the payment amount, and move to the next (newer) row.
+   - Once the remaining payment amount is smaller than a row's remaining balance, `amount_paid` increases by whatever's left — a plain deduction, balance reduced but the row stays not-fully-paid — and allocation stops.
 3. Any rows newer than that one are left completely untouched.
 
-So a single payment fully clears zero or more of the oldest rows, then at most one row takes a partial deduction, and everything newer than that is unaffected.
-- Not scoped now — flagging only so Phase D's design doesn't accidentally foreclose it. A single `amount_paid` column that's overwritten in place (as Phase D designs it) would need to become additive/transactional if this is ever built; worth keeping in mind but not worth solving ahead of an actual requirement.
+So a single payment fully clears zero or more of the oldest rows, then at most one row takes a partial deduction, and everything newer than that is unaffected. Not scoped now, but the Phase D column split already accommodates this without further schema changes.
 
 ## Phase 3 (not built now) — flat-rate court split
 
@@ -245,10 +252,11 @@ Documented so the intent isn't lost, not part of this build. An alternative to e
 **Phases A-C are complete and shipped as of this writing.**
 
 ### Phase D: Progressive "Pay Early" settlement (not yet built)
-- Stop zeroing `amount_paid` on payment in `payShuttleByPlayers` (`services/shuttle-payments.ts`) for the court-payment branch; `date_paid` becomes the sole paid/unpaid signal.
-- Update `services/player.ts`'s owed-amount aggregations (`fetchAllPlayerPaymentsBySession`, `fetchAllPlayerPayments`) to filter `WHERE date_paid IS NULL` when summing — must ship in the same change as the line above, not separately.
-- New `services/court-payments.ts`: `payCourtShareEarly({ courtBookingId, playerId })` implementing the live formula.
-- Rework `closeSession`'s court step to skip already-settled participants and compute `current_share` for the rest, per the Pay Early section above.
+- Add `amount_owed` to `court_payments` (baked into the `CREATE TABLE`, per this repo's no-migrations convention — requires Reset Database); `amount_paid` changes meaning from "the locked share" to "how much has been collected," defaulting to `0`.
+- Change full-payment call sites (`payShuttleByPlayers`'s court branch, `payCourtBySessionId`, `paySessionInFull`) from `SET amount_paid = 0, date_paid = ?` to `SET amount_paid = amount_owed, date_paid = ?`.
+- Update `services/player.ts`'s owed-amount aggregations (`fetchAllPlayerPaymentsBySession`, `fetchAllPlayerPayments`) to sum `amount_owed - amount_paid` instead of `amount_paid` — must ship in the same change as the line above, not separately.
+- New `services/court-payments.ts`: `payCourtShareEarly({ courtBookingId, playerId })` implementing the live formula, writing both `amount_owed` and `amount_paid` (paid in full, immediately).
+- Rework `closeSession`'s court step to skip already-settled participants (those with an existing row) and insert `amount_owed = current_share, amount_paid = 0` for the rest, per the Pay Early section above.
 - UI: "Pay Early" action per row in "Courts Booked" on the session page, with a player picker and a live-computed confirmation amount.
 - Validate: worked example from the Pay Early section above (4 players, $20 court, one pays early at $5, two more join, remaining 5 settle at $3 each; total collected sums to exactly $20).
 
@@ -260,7 +268,7 @@ Documented so the intent isn't lost, not part of this build. An alternative to e
 - [x] Closing with court bookings but zero participants is rejected with a clear message. *(shipped)*
 - [x] Session UI reflects open/closed state and disables further match/court additions once closed. *(shipped)*
 - [x] Player debt views include court cost alongside shuttle cost. *(shipped)*
-- [ ] Phase 2 (shuttle settlement rework) is *not* implemented as part of this — confirmed still isolated/documented only.
+- [x] Phase 2 (shuttle settlement rework) is implemented — see `specs/shuttle-instance-settlement.md`.
 - [ ] **(Phase D)** A player can lock in their current fair share of a court booking before session close, and it never changes afterward.
 - [ ] **(Phase D)** Session close settles only the remaining not-yet-paid participants, using the same live formula as Pay Early.
-- [ ] **(Phase D)** `amount_paid` is preserved (not zeroed) after payment; all "total owed" aggregations correctly exclude paid rows via `date_paid IS NULL` instead.
+- [ ] **(Phase D)** `court_payments` splits into `amount_owed`/`amount_paid` columns; all "total owed" aggregations correctly compute `amount_owed - amount_paid` instead of relying on a zeroed `amount_paid`.
