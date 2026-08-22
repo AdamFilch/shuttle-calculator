@@ -15,6 +15,7 @@ export async function dropDatabase() {
   DROP TABLE IF EXISTS matches;
   DROP TABLE IF EXISTS match_players;
   DROP TABLE IF EXISTS shuttles;
+  DROP TABLE IF EXISTS shuttle_purchases;
   DROP TABLE IF EXISTS shuttle_instances;
   DROP TABLE IF EXISTS match_shuttle_instances;
   DROP TABLE IF EXISTS shuttle_payments;
@@ -73,6 +74,16 @@ export async function setupDatabase() {
         name TEXT NOT NULL,
         total_price REAL NOT NULL,
         num_of_shuttles INTEGER NOT NULL
+      );
+    `);
+
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS shuttle_purchases (
+        shuttle_purchase_id INTEGER PRIMARY KEY NOT NULL,
+        shuttle_id INTEGER NOT NULL,
+        num_of_shuttles INTEGER NOT NULL,
+        date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (shuttle_id) REFERENCES shuttles(shuttle_id)
       );
     `);
 
@@ -138,6 +149,7 @@ export async function setupDatabase() {
     db.execSync(`
       CREATE INDEX IF NOT EXISTS idx_match_players_player ON match_players(player_id);
       CREATE INDEX IF NOT EXISTS idx_match_players_match ON match_players(match_id);
+      CREATE INDEX IF NOT EXISTS idx_shuttle_purchases_shuttle ON shuttle_purchases(shuttle_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_instances_session ON shuttle_instances(session_id);
       CREATE INDEX IF NOT EXISTS idx_match_shuttle_instances_match ON match_shuttle_instances(match_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_payments_players ON shuttle_payments(player_id);

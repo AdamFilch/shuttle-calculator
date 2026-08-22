@@ -1,7 +1,7 @@
 # Shuttle Inventory Tracking (Purchases & Stock)
 
 ## Status
-Proposed, not yet built.
+Phases A-C implemented (schema, services, UI). Phase D (manual verification) not yet run — this environment has no working simulator/web target for this app (web target hits a pre-existing, unrelated expo-sqlite/wasm bundling gap; no iOS/Android simulator available here). Needs a manual pass on a real device or working simulator before calling this done.
 
 ## Motivation
 
@@ -24,6 +24,12 @@ The manager wants the Shuttles tab to work like real inventory: each time a shut
    ```
 5. **Running out doesn't block match creation.** If a match uses more than currently remains for a type, it's still allowed — remaining just goes negative, a visual "you're out, go buy more" signal rather than a hard stop.
 6. **Reused/Free selections are unaffected.** Reusing an existing instance in a later match doesn't touch stock (no new physical shuttle consumed). A Free selection never touches stock or `shuttle_purchases` at all, same as today.
+7. **Low-stock status uses fixed absolute thresholds, not a percentage.** A percentage against lifetime total purchased was considered and rejected — it never resets, so a type with enough purchase history stays permanently in the warning/red zone even right after restocking. Absolute counts on `remaining` avoid that entirely:
+   - `remaining <= 1` → **red** (out of stock, or exactly one left) — `bg-error-100` / `border-error-300` / `text-error-700`
+   - `remaining == 2` → **yellow/warning** — `bg-warning-100` / `border-warning-300` / `text-warning-700`
+   - `remaining >= 3` → normal row styling, unchanged
+
+   Colors reuse the existing tinted-badge convention from `DebtChip` (`components/shared/DebtChip.tsx`) and the theme's existing `error-*`/`warning-*`/`success-*` tokens (`tailwind.config.js`) — no new design tokens needed.
 
 ## Scope
 
@@ -83,7 +89,7 @@ times_purchased(shuttle_id) = COUNT(shuttle_purchases WHERE shuttle_id = X)   --
 
 | File | Change |
 |---|---|
-| `app/(tabs)/shuttles/index.tsx` | Use `fetchAllShuttlesWithInventory()`; each `ListRow` title becomes `"{name} ×{times_purchased}"`, subtitle becomes `"${price}/shuttle · {remaining} remaining"`; add a "Buy Again" button in the row's existing `trailing` slot, opening the new purchase modal for that `shuttle_id`. |
+| `app/(tabs)/shuttles/index.tsx` | Use `fetchAllShuttlesWithInventory()`; each `ListRow` title becomes `"{name} ×{times_purchased}"`, subtitle becomes `"${price}/shuttle · {remaining} remaining"`; add a "Buy Again" button in the row's existing `trailing` slot, opening the new purchase modal for that `shuttle_id`. Row border/background reflects low-stock status per Decision 7 (red at `remaining <= 1`, yellow at `remaining == 2`, normal otherwise) — same conditional-className mechanism `ListRow` already uses for its `selected` state. |
 | `components/shuttle/buyAgainModal.tsx` (new) | Small modal mirroring `AddShuttleModal`'s form, but quantity-only (no price field, per Decision 1), scoped to one existing `shuttle_id`; calls `addShuttlePurchase`. |
 | `components/shuttle/modal.tsx` | No change — still calls `createShuttle({name, total_price, num_of_shuttles})`, which now also seeds the first purchase underneath. |
 
@@ -112,7 +118,7 @@ times_purchased(shuttle_id) = COUNT(shuttle_purchases WHERE shuttle_id = X)   --
 - `services/shuttle.ts`: rewrite `createShuttle` to also seed the first purchase, add `addShuttlePurchase`, add `fetchAllShuttlesWithInventory`.
 
 ### Phase C: UI
-- Shuttles tab inventory display (×N purchased, remaining stock) + "Buy Again" action + new `buyAgainModal.tsx`.
+- Shuttles tab inventory display (×N purchased, remaining stock) + low-stock status coloring (Decision 7) + "Buy Again" action + new `buyAgainModal.tsx`.
 
 ### Phase D: Manual verification
 No test framework exists in this repo (per `CLAUDE.md`) — verification is manual, via `npx expo start`:
@@ -120,12 +126,14 @@ No test framework exists in this repo (per `CLAUDE.md`) — verification is manu
 2. Add a shuttle type with an initial quantity (e.g. 12 @ $12 total). Confirm the Shuttles tab shows "×1" and "12 remaining".
 3. Create a match using several units of it; confirm remaining drops by that amount, "×1" unchanged.
 4. Buy again (a second container, e.g. +12); confirm "×2" and remaining increases by 12.
-5. Deliberately over-request beyond total remaining; confirm it's allowed and remaining goes negative rather than blocking match creation.
-6. Close the session; confirm per-player amounts owed are unchanged from today's behavior (price didn't change, so this is a regression check, not new behavior).
+5. Deliberately over-request beyond total remaining; confirm it's allowed and remaining goes negative rather than blocking match creation, and the row shows red (per Decision 7, `remaining <= 1` covers zero and negative).
+6. Use down to exactly 2 remaining; confirm the row shows yellow. Use one more down to 1 remaining; confirm it switches to red.
+7. Close the session; confirm per-player amounts owed are unchanged from today's behavior (price didn't change, so this is a regression check, not new behavior).
 
 ## Acceptance
 - [ ] `shuttle_purchases` table real and wired; `shuttles`/`shuttle_instances` unchanged.
 - [ ] Remaining stock and purchase count (`×N`) are derived (not stored) and correct after use + repurchase.
 - [ ] Shuttles tab shows one row per type (never duplicates on repurchase) with remaining stock and "Buy Again".
+- [ ] Row styling reflects low-stock status per Decision 7's thresholds (red ≤1, yellow ==2, normal ≥3).
 - [ ] `createNewMatch`/`closeSession` behavior is unchanged (regression-checked, not just untouched in code).
 - [ ] Manual verification flow above passes.

@@ -15,20 +15,28 @@ export function ListRow({
     trailing,
     onPress,
     onLongPress,
-    selected
+    selected,
+    status
 }: {
     title: string,
     subtitle?: string,
     trailing?: React.ReactNode,
     onPress?: () => void,
     onLongPress?: () => void,
-    selected?: boolean
+    selected?: boolean,
+    status?: 'error' | 'warning'
 }) {
+    const statusClassName =
+        status === 'error' ? "border-error-300 bg-error-100" :
+        status === 'warning' ? "border-warning-300 bg-warning-100" :
+        selected ? "border-primary-500 bg-primary-50" :
+        "border-outline-100 bg-background-0"
+
     return (
         <Pressable onPress={onPress} onLongPress={onLongPress} disabled={!onPress && !onLongPress}>
             {({ pressed }) => (
                 <HStack
-                    className={`items-center justify-between rounded-xl border px-4 py-3.5 shadow-soft-1 ${selected ? "border-primary-500 bg-primary-50" : "border-outline-100 bg-background-0"} ${pressed ? "bg-background-50" : ""}`}
+                    className={`items-center justify-between rounded-xl border px-4 py-3.5 shadow-soft-1 ${statusClassName} ${pressed ? "bg-background-50" : ""}`}
                 >
                     <VStack className="flex-1 pr-3" space="xs">
                         <Text size="md" bold className="text-typography-900">

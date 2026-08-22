@@ -19,12 +19,73 @@ export async function createShuttle({
     total_price: number,
     num_of_shuttles: number
 }) {
+    await db.execAsync("BEGIN TRANSACTION")
+
     const res = await db.runAsync(
         `INSERT into shuttles (name, total_price, num_of_shuttles) VALUES (?, ?, ?)`,
         [name, total_price, num_of_shuttles]
     )
+    const shuttleId = res.lastInsertRowId
+
+    await db.runAsync(
+        `INSERT INTO shuttle_purchases (shuttle_id, num_of_shuttles) VALUES (?, ?)`,
+        [shuttleId, num_of_shuttles]
+    )
+
+    await db.execAsync("COMMIT")
+
+    return shuttleId
+}
+
+export async function addShuttlePurchase({
+    shuttle_id,
+    num_of_shuttles
+}: {
+    shuttle_id: number,
+    num_of_shuttles: number
+}) {
+    const res = await db.runAsync(
+        `INSERT INTO shuttle_purchases (shuttle_id, num_of_shuttles) VALUES (?, ?)`,
+        [shuttle_id, num_of_shuttles]
+    )
 
     return res.lastInsertRowId
+}
+
+export type ShuttleWithInventory = {
+    shuttle_id: number,
+    name: string,
+    total_price: number,
+    num_of_shuttles: number,
+    remaining: number,
+    times_purchased: number
+}
+
+export async function fetchAllShuttlesWithInventory(): Promise<ShuttleWithInventory[]> {
+    const res: ShuttleWithInventory[] = await db.getAllAsync(`
+        SELECT
+        s.shuttle_id,
+        s.name,
+        s.total_price,
+        s.num_of_shuttles,
+        COALESCE(purchased.total_purchased, 0) - COALESCE(used.total_used, 0) AS remaining,
+        COALESCE(purchased.times_purchased, 0) AS times_purchased
+        FROM shuttles s
+        LEFT JOIN (
+            SELECT shuttle_id, SUM(num_of_shuttles) AS total_purchased, COUNT(*) AS times_purchased
+            FROM shuttle_purchases
+            GROUP BY shuttle_id
+        ) purchased ON purchased.shuttle_id = s.shuttle_id
+        LEFT JOIN (
+            SELECT shuttle_id, COUNT(*) AS total_used
+            FROM shuttle_instances
+            WHERE shuttle_id IS NOT NULL
+            GROUP BY shuttle_id
+        ) used ON used.shuttle_id = s.shuttle_id
+        ORDER BY s.shuttle_id ASC
+        `)
+
+    return res
 }
 
 export async function fetchAllShuttles(): Promise<Shuttle[]> {

@@ -1,17 +1,26 @@
 import { ListRow } from "@/components/layout/ListRow";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BuyAgainModal } from '@/components/shuttle/buyAgainModal';
 import { AddShuttleModal } from '@/components/shuttle/modal';
+import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-import { fetchAllShuttles, Shuttle } from '@/services/shuttle';
+import { fetchAllShuttlesWithInventory, ShuttleWithInventory } from '@/services/shuttle';
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from 'react';
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+function stockStatus(remaining: number): 'error' | 'warning' | undefined {
+    if (remaining <= 1) return 'error'
+    if (remaining === 2) return 'warning'
+    return undefined
+}
+
 export default function ShuttlesScreen() {
     const [addShuttleIsOpen, setIsShuttleOpen] = useState(false)
-    const [shuttlesList, setShuttlesList] = useState<Shuttle[]>([])
+    const [buyAgainShuttle, setBuyAgainShuttle] = useState<ShuttleWithInventory | null>(null)
+    const [shuttlesList, setShuttlesList] = useState<ShuttleWithInventory[]>([])
 
     useFocusEffect(
         useCallback(() => {
@@ -20,7 +29,7 @@ export default function ShuttlesScreen() {
     )
 
     const fetchShuttles = async () => {
-        fetchAllShuttles().then((res) => {
+        fetchAllShuttlesWithInventory().then((res) => {
             setShuttlesList(res)
         })
     }
@@ -44,8 +53,18 @@ export default function ShuttlesScreen() {
                         {shuttlesList.map((shuttle) => (
                             <ListRow
                                 key={shuttle.shuttle_id}
-                                title={shuttle.name}
-                                subtitle={`$${Number(shuttle.total_price).toFixed(2)} total · ${shuttle.num_of_shuttles} shuttles`}
+                                title={`${shuttle.name} ×${shuttle.times_purchased}`}
+                                subtitle={`$${(Number(shuttle.total_price) / Number(shuttle.num_of_shuttles)).toFixed(2)}/shuttle · ${shuttle.remaining} remaining`}
+                                status={stockStatus(shuttle.remaining)}
+                                trailing={
+                                    <Button
+                                        size="xs"
+                                        variant="outline"
+                                        onPress={() => setBuyAgainShuttle(shuttle)}
+                                    >
+                                        <ButtonText>Buy Again</ButtonText>
+                                    </Button>
+                                }
                             />
                         ))}
                     </VStack>
@@ -56,6 +75,16 @@ export default function ShuttlesScreen() {
                 setIsShuttleOpen(false)
                 fetchShuttles()
             }} />
+
+            <BuyAgainModal
+                open={buyAgainShuttle !== null}
+                shuttleId={buyAgainShuttle?.shuttle_id ?? null}
+                shuttleName={buyAgainShuttle?.name ?? ''}
+                onClose={() => {
+                    setBuyAgainShuttle(null)
+                    fetchShuttles()
+                }}
+            />
         </SafeAreaView>
     )
 }
