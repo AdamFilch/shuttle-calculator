@@ -109,14 +109,14 @@ export default function SelectedSessionPage() {
           </Text>
         </View>
 
-        <Button
+        {/* <Button
           variant="outline"
           action="secondary"
           className="mt-2"
           onPress={() => setOpenPPPModal(true)}
         >
           <ButtonText>Pay Early</ButtonText>
-        </Button>
+        </Button> */}
 
         {!isClosed && (
           <Button
