@@ -11,7 +11,7 @@ import { ShuttleSelection } from "@/services/match";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
 import { fetchShuttleInstancesBySessionId, ShuttleInstance } from "@/services/shuttle_instances";
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 type ShuttleMode = 'new' | 'reused' | 'free'
 
@@ -25,27 +25,55 @@ export function SelectShuttleButton({
     onSelect: (selected: ShuttleSelection) => void
 }) {
     const [isOpen, setIsOpen] = useState(false)
+    const [shuttleList, setShuttleList] = useState<Shuttle[]>([])
+    const [instanceList, setInstanceList] = useState<ShuttleInstance[]>([])
+
+    useEffect(() => {
+        fetchAllShuttles().then(setShuttleList)
+        fetchShuttleInstancesBySessionId(sessionId).then(setInstanceList)
+    }, [sessionId])
+
     const handleClose = useCallback(() => setIsOpen(false), []);
     const handleSelect = useCallback((selected: ShuttleSelection) => {
         setIsOpen(false);
         onSelect(selected);
     }, [onSelect]);
 
+    const labelFor = (selection: ShuttleSelection): string => {
+        if (selection.mode === 'new') {
+            const shuttle = shuttleList.find((s) => s.shuttle_id === selection.shuttleId)
+            return shuttle ? `${shuttle.name} x${selection.quantity}` : `Shuttle x${selection.quantity}`
+        }
+        if (selection.mode === 'reused') {
+            const instance = instanceList.find((i) => i.shuttle_instance_id === selection.shuttleInstanceId)
+            return instance?.label ?? 'Reused shuttle'
+        }
+        return 'Free shuttle'
+    }
 
     return (
         <Fragment>
-            <Button
-                onPress={() => {
-                    setIsOpen(true)
-                }}
-                style={{
-                    width: 150,
-                    height: 100,
-                    backgroundColor: 'white'
-                }}>
-
-                <AddIcon />
-            </Button>
+            <View className="flex-row flex-wrap gap-2">
+                {selectedShuttles.map((selection, i) => (
+                    <View
+                        key={i}
+                        className="items-center justify-center rounded-xl border border-primary-500 bg-primary-50 px-3 py-3"
+                    >
+                        <Text numberOfLines={1} className="text-sm font-bold text-primary-700">
+                            {labelFor(selection)}
+                        </Text>
+                    </View>
+                ))}
+                <Pressable
+                    onPress={() => setIsOpen(true)}
+                    className="flex-row items-center justify-center gap-1.5 rounded-xl border border-outline-100 bg-background-0 px-3 py-3"
+                >
+                    <Icon as={AddIcon} size="sm" className="text-typography-700" />
+                    <Text className="text-sm font-bold text-typography-900">
+                        {selectedShuttles.length > 0 ? "Add Another" : "Add Shuttle"}
+                    </Text>
+                </Pressable>
+            </View>
             <SelectShuttleModal
                 sessionId={sessionId}
                 selectedShuttles={selectedShuttles}

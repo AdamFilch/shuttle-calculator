@@ -21,6 +21,11 @@ export type Match = {
 
 export async function createNewMatch(payload: newMatchPayload) {
 
+    const shuttleSelections: ShuttleSelection[] =
+        payload.shuttleSelections.length > 0
+            ? payload.shuttleSelections
+            : [{ mode: 'free' }]
+
     const numberOfMatches = await fetchNumberOfMatchesBySessionId(payload.sessionId.toString())
 
     const matchRes = await db.runAsync(
@@ -39,7 +44,7 @@ export async function createNewMatch(payload: newMatchPayload) {
         );
     }));
 
-    for (const selection of payload.shuttleSelections) {
+    for (const selection of shuttleSelections) {
         if (selection.mode === 'new') {
             for (let i = 0; i < selection.quantity; i++) {
                 const instanceRes = await db.runAsync(
