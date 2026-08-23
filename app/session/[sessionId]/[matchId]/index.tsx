@@ -45,7 +45,7 @@ export default function MatchPage() {
     return (
         <SafeAreaView className="flex-1 bg-background-50">
             <PageHeader
-                title={`Match ${match.match_id}`}
+                title={`Match ${match.match_number}`}
                 subtitle={DisplayTimeDDDASHMMDASHYYYY(match.date)}
             />
 

@@ -1,8 +1,6 @@
 import { SelectShuttleButton } from "@/components/session/match/selectShuttleModal";
-import { SelectPlayerButton } from "@/components/session/match/selectUserModal";
+import { TeamSlot } from "@/components/session/match/teamSlot";
 import { Button, ButtonText } from "@/components/ui/button";
-import { Divider } from "@/components/ui/divider";
-import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
 import { createNewMatch, ShuttleSelection } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
@@ -81,7 +79,8 @@ export default function CreateNewMatchPage() {
               setUsedShuttles((prev) => {
                 if (selected.mode === "new") {
                   const indexOfShuttleUsedBefore = prev.findIndex(
-                    (el) => el.mode === "new" && el.shuttleId === selected.shuttleId,
+                    (el) =>
+                      el.mode === "new" && el.shuttleId === selected.shuttleId,
                   );
                   if (indexOfShuttleUsedBefore !== -1) {
                     const updated = [...prev];
@@ -99,7 +98,9 @@ export default function CreateNewMatchPage() {
 
                 if (selected.mode === "reused") {
                   const alreadySelected = prev.some(
-                    (el) => el.mode === "reused" && el.shuttleInstanceId === selected.shuttleInstanceId,
+                    (el) =>
+                      el.mode === "reused" &&
+                      el.shuttleInstanceId === selected.shuttleInstanceId,
                   );
                   if (alreadySelected) return prev;
                   return [...prev, selected];
@@ -128,77 +129,32 @@ export default function CreateNewMatchPage() {
           Fill Players
         </Text>
         <VStack space={"lg"}>
-          <HStack
-            space={"lg"}
-            style={{
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <SelectPlayerButton
-              selectedPlayer={selectedPlayers[0]}
-              players={playerList}
-              placeholder="Player 1"
-              onSelect={(player) => {
-                setSelectedPlayers((prev) => {
-                  const updated = [...prev];
-                  updated[0] = player;
-                  return updated;
-                });
-              }}
-            />
-            <SelectPlayerButton
-              selectedPlayer={selectedPlayers[2]}
-              players={playerList}
-              placeholder="Player 3"
-              onSelect={(player) => {
-                setSelectedPlayers((prev) => {
-                  const updated = [...prev];
-                  updated[2] = player;
-                  return updated;
-                });
-              }}
-            />
-          </HStack>
-          <Divider
-            orientation={"horizontal"}
-            style={{
-              width: "auto",
-              height: 10,
+          <TeamSlot
+            label="Team 1"
+            positions={[0, 2]}
+            selectedPlayers={selectedPlayers}
+            playerList={playerList}
+            onSelectPlayer={(position, playerId) => {
+              setSelectedPlayers((prev) => {
+                const updated = [...prev];
+                updated[position] = playerId;
+                return updated;
+              });
             }}
           />
-          <HStack
-            space={"lg"}
-            style={{
-              display: "flex",
-              justifyContent: "center",
+          <TeamSlot
+            label="Team 2"
+            positions={[1, 3]}
+            selectedPlayers={selectedPlayers}
+            playerList={playerList}
+            onSelectPlayer={(position, playerId) => {
+              setSelectedPlayers((prev) => {
+                const updated = [...prev];
+                updated[position] = playerId;
+                return updated;
+              });
             }}
-          >
-            <SelectPlayerButton
-              selectedPlayer={selectedPlayers[1]}
-              players={playerList}
-              placeholder="Player 2"
-              onSelect={(player) => {
-                setSelectedPlayers((prev) => {
-                  const updated = [...prev];
-                  updated[1] = player;
-                  return updated;
-                });
-              }}
-            />
-            <SelectPlayerButton
-              selectedPlayer={selectedPlayers[3]}
-              players={playerList}
-              placeholder="Player 4"
-              onSelect={(player) => {
-                setSelectedPlayers((prev) => {
-                  const updated = [...prev];
-                  updated[3] = player;
-                  return updated;
-                });
-              }}
-            />
-          </HStack>
+          />
         </VStack>
         <Button
           onPress={() => {

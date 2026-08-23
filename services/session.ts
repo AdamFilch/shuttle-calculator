@@ -52,6 +52,7 @@ export async function fetchAllSessions(): Promise<Session[]> {
 export type SessionMatches = Session & {
     matches: {
         match_id: string,
+        match_number: number,
         match_date: string,
         shuttles: Shuttle[],
         players: {
@@ -73,6 +74,7 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
     const matchRows: any = await db.getAllAsync(`
         SELECT
         m.match_id,
+        m.match_number,
         m.date as match_date,
         si.shuttle_instance_id,
         si.shuttle_id,
@@ -97,6 +99,7 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         if (!match) {
             match = {
                 match_id: row.match_id,
+                match_number: row.match_number,
                 match_date: row.match_date,
                 shuttlesMap: {},
                 seenInstances: new Set<number>(),
@@ -134,6 +137,7 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
 
     const matches = Object.values(matchesMap).map(m => ({
         match_id: m.match_id,
+        match_number: m.match_number,
         match_date: m.match_date,
         shuttles: Object.values(m.shuttlesMap),
         players: Object.values(m.playersMap).sort((player1: { position }, player2: { position }) => player1.position - player2.position)

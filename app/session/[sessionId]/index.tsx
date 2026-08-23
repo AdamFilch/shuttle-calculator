@@ -8,13 +8,13 @@ import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import {
-    closeSession,
-    fetchSessionById,
-    SessionMatches,
+  closeSession,
+  fetchSessionById,
+  SessionMatches,
 } from "@/services/session";
 import {
-    fetchAllShuttlesBySessionId,
-    ShuttlesBySession,
+  fetchAllShuttlesBySessionId,
+  ShuttlesBySession,
 } from "@/services/shuttle";
 import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
 import { useFocusEffect } from "@react-navigation/native";
@@ -147,7 +147,7 @@ export default function SelectedSessionPage() {
             {sessionMatches.matches.map((match) => (
               <ListRow
                 key={match.match_id}
-                title={`Match ${match.match_id}`}
+                title={`Match ${match.match_number + 1}`}
                 subtitle={[
                   DisplayTimeDDDASHMMDASHYYYY(match.match_date) ?? "",
                   match.players.map((p) => p.name).join(", "),

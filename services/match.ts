@@ -76,6 +76,7 @@ export async function createNewMatch(payload: newMatchPayload) {
 export type MatchFull = {
     session_id: number,
     match_id: number,
+    match_number: number,
     date: string
     players: 
         Record<number, {
@@ -96,6 +97,7 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
         SELECT
         m.session_id,
         m.match_id,
+        m.match_number,
         m.date,
         si.shuttle_instance_id,
         si.shuttle_id,
@@ -144,6 +146,7 @@ export async function fetchMatchById(id: string): Promise<MatchFull> {
     return {
         session_id: matchRows[0].session_id,
         match_id: matchRows[0].match_id,
+        match_number: matchRows[0].match_number,
         date: matchRows[0].date,
         players: playersMap,
         shuttles: Object.values(shuttlesMap)
