@@ -112,7 +112,7 @@ export default function SelectedSessionPage() {
         {/* <Button
           variant="outline"
           action="secondary"
-          className="mt-2"x`
+          className="mt-2"
           onPress={() => setOpenPPPModal(true)}
         >
           <ButtonText>Pay Early</ButtonText>
