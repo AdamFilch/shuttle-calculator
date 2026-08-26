@@ -88,6 +88,33 @@ export async function fetchAllShuttlesWithInventory(): Promise<ShuttleWithInvent
     return res
 }
 
+export type ShuttleUsageSummary = {
+    totalUsed: number,
+    totalRemaining: number
+}
+
+export async function fetchShuttleUsageSummary(): Promise<ShuttleUsageSummary> {
+    const res: ShuttleUsageSummary[] = await db.getAllAsync(`
+        SELECT
+        COALESCE(SUM(used.total_used), 0) AS totalUsed,
+        COALESCE(SUM(purchased.total_purchased), 0) - COALESCE(SUM(used.total_used), 0) AS totalRemaining
+        FROM shuttles s
+        LEFT JOIN (
+            SELECT shuttle_id, SUM(num_of_shuttles) AS total_purchased
+            FROM shuttle_purchases
+            GROUP BY shuttle_id
+        ) purchased ON purchased.shuttle_id = s.shuttle_id
+        LEFT JOIN (
+            SELECT shuttle_id, COUNT(*) AS total_used
+            FROM shuttle_instances
+            WHERE shuttle_id IS NOT NULL
+            GROUP BY shuttle_id
+        ) used ON used.shuttle_id = s.shuttle_id
+        `)
+
+    return res[0] ?? { totalUsed: 0, totalRemaining: 0 }
+}
+
 export async function fetchAllShuttles(): Promise<Shuttle[]> {
     const res: Shuttle[] = await db.getAllAsync(`SELECT * FROM shuttles`)
 
