@@ -161,7 +161,7 @@ export default function CreateNewMatchPage() {
             onClickSave();
           }}
         >
-          <ButtonText>Create New Match</ButtonText>
+          <ButtonText>Start Match!</ButtonText>
         </Button>
       </View>
     </ScrollView>
