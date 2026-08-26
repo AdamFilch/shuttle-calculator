@@ -8,8 +8,7 @@ import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { fetchAllPlayerPayments, PlayersShuttlePayments } from "@/services/player";
-import { fetchAllSessions, Session } from "@/services/session";
-import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
+import { fetchAllSessions, formatSessionTitle, Session } from "@/services/session";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -60,7 +59,7 @@ export default function HomeScreen() {
                         {recentSessions.map((session) => (
                             <ListRow
                                 key={session.session_id}
-                                title={session.name === '' || !session.name ? DisplayTimeDDDASHMMDASHYYYY(session.date) ?? '' : session.name}
+                                title={formatSessionTitle(session)}
                                 onPress={() => router.navigate(`/session/${session.session_id}`)}
                             />
                         ))}

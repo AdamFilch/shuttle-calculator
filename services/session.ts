@@ -8,22 +8,11 @@ export type Session = {
     name: string,
     date: string,
     status: 'open' | 'closed',
-    closed_date: string | null
+    closed_date: string | null,
+    player_count: number
 }
 
 const db = openDatabaseSync('db.db')
-
-async function generateDefaultSessionName(date: string): Promise<string> {
-    const base = DisplayTimeDDDASHMMDASHYYYY(date) ?? date
-    let candidate = base
-    let suffix = 2
-    while (true) {
-        const existing = await db.getFirstAsync(`SELECT 1 FROM sessions WHERE name = ?`, [candidate])
-        if (!existing) return candidate
-        candidate = `${base} #${suffix}`
-        suffix++
-    }
-}
 
 export async function createNewSession({
     name,
@@ -32,7 +21,7 @@ export async function createNewSession({
     name?: string,
     date: string
 }) {
-    const finalName = name && name.trim() !== '' ? name : await generateDefaultSessionName(date)
+    const finalName = name?.trim() ?? ''
 
     const res = await db.runAsync(
         `INSERT into sessions (name, date) VALUES (?, ?)`,
@@ -42,9 +31,20 @@ export async function createNewSession({
     return res.lastInsertRowId
 }
 
+export function formatSessionTitle(session: { name: string | null | undefined, date: string }): string {
+    const dateLabel = DisplayTimeDDDASHMMDASHYYYY(session.date) ?? ''
+    return session.name ? `${session.name} - ${dateLabel}` : dateLabel
+}
+
 
 export async function fetchAllSessions(): Promise<Session[]> {
-    const res: Session[] = await db.getAllAsync(`SELECT * FROM sessions`)
+    const res: Session[] = await db.getAllAsync(`
+        SELECT s.*, COUNT(DISTINCT mp.player_id) as player_count
+        FROM sessions s
+        LEFT JOIN matches m ON m.session_id = s.session_id
+        LEFT JOIN match_players mp ON mp.match_id = m.match_id AND mp.player_id IS NOT NULL
+        GROUP BY s.session_id
+    `)
 
     return res
 }

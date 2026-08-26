@@ -3,26 +3,29 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AddSessionModal } from "@/components/session/modal";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-import { fetchAllSessions, Session } from "@/services/session";
-import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
+import { fetchAllSessions, formatSessionTitle, Session } from "@/services/session";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-function SessionStatusPill({ status }: { status: "open" | "closed" }) {
-  const isClosed = status === "closed";
+function SessionStatusIndicator({ status }: { status: "open" | "closed" }) {
+  if (status === "open") {
+    return (
+      <Image
+        source={require("@/assets/images/shuttlecock.png")}
+        className="h-8 w-8 mr-4"
+        style={{ transform: [{ rotate: "-90deg" }] }}
+        resizeMode="contain"
+      />
+    );
+  }
+
   return (
-    <View
-      className={`rounded-full px-3 py-1 ${isClosed ? "bg-background-200" : "bg-primary-100"}`}
-    >
-      <Text
-        size="xs"
-        bold
-        className={isClosed ? "text-typography-500" : "text-primary-700"}
-      >
-        {isClosed ? "Closed" : "Open"}
+    <View className="rounded-full px-3 py-1 bg-background-200">
+      <Text size="xs" bold className="text-typography-500">
+        Closed
       </Text>
     </View>
   );
@@ -51,12 +54,9 @@ export default function SessionPage() {
   const renderSessionRow = (session: Session) => (
     <ListRow
       key={session.session_id}
-      title={
-        session.name == "" || !session.name
-          ? (DisplayTimeDDDASHMMDASHYYYY(session.date) ?? "")
-          : session.name
-      }
-      trailing={<SessionStatusPill status={session.status} />}
+      title={formatSessionTitle(session)}
+      subtitle={`${session.player_count} Player${session.player_count === 1 ? "" : "s"}`}
+      trailing={<SessionStatusIndicator status={session.status} />}
       onPress={() => {
         router.navigate(`/session/${session.session_id}`);
       }}
