@@ -1,5 +1,4 @@
 import { ListRow } from "@/components/layout/ListRow";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import { AddShuttleModal } from "@/components/shuttle/modal";
 import { Button, ButtonText } from "@/components/ui/button";
@@ -42,7 +41,9 @@ export default function HomeScreen() {
         setPlayers(res);
       });
       fetchAllSessions().then((res) => {
-        setRecentSessions(res.slice(-5).reverse());
+        const byNewestFirst = (a: Session, b: Session) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime();
+        setRecentSessions([...res].sort(byNewestFirst).slice(0, 5));
       });
       fetchShuttleUsageSummary().then((res) => {
         setShuttleUsage(res);
@@ -57,7 +58,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-50">
-      <PageHeader title="Home" />
+      {/* <PageHeader title="Home" /> */}
       <ScrollView className="flex-1 px-4">
         <StatCard
           size="lg"
