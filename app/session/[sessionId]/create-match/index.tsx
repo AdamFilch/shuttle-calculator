@@ -35,7 +35,11 @@ export default function CreateNewMatchPage() {
       setPlayerList(res);
     });
   };
+  const hasAnyPlayer = selectedPlayers.some((playerId) => playerId !== null);
+
   async function onClickSave() {
+    if (!hasAnyPlayer) return;
+
     await createNewMatch({
       sessionId: parseInt(sessionId.toString()),
       playersId: selectedPlayers, // [P1, P2, P3, P4] // TL BL TR BR
@@ -156,7 +160,13 @@ export default function CreateNewMatchPage() {
             }}
           />
         </VStack>
+        {/* {!hasAnyPlayer && (
+          <Text style={{ backgroundColor: "white" }}>
+            Add at least one player to the court to start a match.
+          </Text>
+        )} */}
         <Button
+          isDisabled={!hasAnyPlayer}
           onPress={() => {
             onClickSave();
           }}
