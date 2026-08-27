@@ -1,5 +1,5 @@
-import { createPlayer } from "@/services/player";
-import { useState } from "react";
+import { createPlayer, fetchAllPlayers } from "@/services/player";
+import { useEffect, useState } from "react";
 import { Button, ButtonText } from "../ui/button";
 import { Heading } from "../ui/heading";
 import { CloseIcon, Icon } from "../ui/icon";
@@ -24,9 +24,30 @@ export function AddPlayerModal({
   onClose: () => void;
 }) {
   const [playername, setPlayername] = useState("");
+  const [existingNames, setExistingNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      fetchAllPlayers().then((players) => {
+        setExistingNames(players.map((p) => p.name));
+      });
+    } else {
+      setPlayername("");
+    }
+  }, [open]);
+
+  const trimmedName = playername.trim();
+  const isDuplicate = existingNames.some(
+    (name) => name.toLowerCase() === trimmedName.toLowerCase()
+  );
+  const isSaveDisabled = trimmedName.length === 0 || isDuplicate;
 
   async function onClickSave() {
-    const res = await createPlayer(playername);
+    if (isSaveDisabled) {
+      return;
+    }
+
+    const res = await createPlayer(trimmedName);
 
     if (res) {
       setPlayername("");
@@ -62,7 +83,7 @@ export function AddPlayerModal({
               variant="outline"
               size="md"
               isDisabled={false}
-              isInvalid={false}
+              isInvalid={isDuplicate}
               isReadOnly={false}
             >
               <InputField
@@ -75,6 +96,11 @@ export function AddPlayerModal({
                 placeholder="Enter a Player Name"
               />
             </Input>
+            {isDuplicate && (
+              <Text size="sm" className="text-error-600">
+                A player with this name already exists
+              </Text>
+            )}
           </VStack>
         </ModalBody>
         <ModalFooter>
@@ -88,6 +114,7 @@ export function AddPlayerModal({
             <ButtonText>Cancel</ButtonText>
           </Button>
           <Button
+            isDisabled={isSaveDisabled}
             onPress={() => {
               onClickSave();
             }}
