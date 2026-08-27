@@ -59,6 +59,10 @@ export default function PlayersPage() {
                         ))}
                     </VStack>
                 )}
+                <ListRow
+                    title="Recently Deleted"
+                    onPress={() => router.navigate('/player/deleted')}
+                />
             </ScrollView>
 
             <AddPlayerModal open={addPlayerIsOpen} onClose={() => {

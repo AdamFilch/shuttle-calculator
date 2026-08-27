@@ -80,7 +80,7 @@ export default function SelectedSessionPage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background-50">
+    <View className="flex-1 bg-background-50 ">
       <PageHeader
         title={sessionTitle}
         subtitle={DisplayTimeDDDASHMMDASHYYYY(sessionMatches.date)}
@@ -234,6 +234,6 @@ export default function SelectedSessionPage() {
         description="Closing this session locks in each player's share of the courts booked. This can't be undone."
         confirmLabel="Close Session"
       />
-    </SafeAreaView>
+    </View>
   );
 }

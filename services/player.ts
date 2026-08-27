@@ -4,7 +4,9 @@ import { Session } from "./session";
 
 export type Player = {
   player_id: number,
-  name: string
+  name: string,
+  status: 'active' | 'deleted',
+  deleted_date: string | null
 }
 
 const db = openDatabaseSync('db.db');
@@ -12,7 +14,7 @@ const db = openDatabaseSync('db.db');
 export async function createPlayer(name: string) {
 
   const result = await db.runAsync(`
-        INSERT into players (name) VALUES (?) 
+        INSERT into players (name) VALUES (?)
         `,
     [name]
   )
@@ -21,13 +23,40 @@ export async function createPlayer(name: string) {
 }
 
 export async function fetchAllPlayers(): Promise<Player[]> {
-  const res: Player[] = await db.getAllAsync('SELECT * FROM players')
+  const res: Player[] = await db.getAllAsync(`SELECT * FROM players WHERE status = 'active'`)
   return res
 }
 
 export async function fetchPlayerById(id: string): Promise<Player[]> {
   const res: Player[] = await db.getAllAsync(`SELECT * FROM players WHERE player_id = (?)`, [id])
   return res
+}
+
+export async function fetchDeletedPlayers(): Promise<Player[]> {
+  const res: Player[] = await db.getAllAsync(`SELECT * FROM players WHERE status = 'deleted' ORDER BY deleted_date DESC`)
+  return res
+}
+
+export async function deletePlayer(playerId: number) {
+  const owed: any = await db.getFirstAsync(`
+    SELECT
+      COALESCE((SELECT SUM(amount_paid) FROM shuttle_payments WHERE player_id = ?), 0) +
+      COALESCE((SELECT SUM(amount_paid) FROM court_payments WHERE player_id = ?), 0) AS total_owed
+    `, [playerId, playerId])
+
+  if (owed.total_owed > 0) {
+    throw new Error('This player has unpaid charges. Settle their balance before deleting.')
+  }
+
+  await db.runAsync(`
+    UPDATE players SET status = 'deleted', deleted_date = datetime('now') WHERE player_id = ?
+    `, [playerId])
+}
+
+export async function restorePlayer(playerId: number) {
+  await db.runAsync(`
+    UPDATE players SET status = 'active', deleted_date = NULL WHERE player_id = ?
+    `, [playerId])
 }
 
 
@@ -321,6 +350,7 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
       LEFT JOIN shuttle_payments sp ON sp.player_id = p.player_id
       LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = sp.shuttle_instance_id
       LEFT JOIN shuttles sh ON sh.shuttle_id = si.shuttle_id
+      WHERE p.status = 'active'
       `)
 
   const courtPaymentsByPlayerRows: any = await db.getAllAsync(`

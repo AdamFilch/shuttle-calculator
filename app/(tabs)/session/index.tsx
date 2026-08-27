@@ -3,7 +3,11 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AddSessionModal } from "@/components/session/modal";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-import { fetchAllSessions, formatSessionTitle, Session } from "@/services/session";
+import {
+  fetchAllSessions,
+  formatSessionTitle,
+  Session,
+} from "@/services/session";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";

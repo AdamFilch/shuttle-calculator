@@ -33,7 +33,9 @@ export async function setupDatabase() {
       CREATE TABLE IF NOT EXISTS players (
         player_id INTEGER PRIMARY KEY NOT NULL,
         date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
-        name TEXT NOT NULL
+        name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        deleted_date TIMESTAMP
       );
     `);
 
