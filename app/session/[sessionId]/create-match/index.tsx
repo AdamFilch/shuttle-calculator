@@ -1,7 +1,6 @@
 import { SelectShuttleButton } from "@/components/session/match/selectShuttleModal";
 import { TeamSlot } from "@/components/session/match/teamSlot";
 import { Button, ButtonText } from "@/components/ui/button";
-import { VStack } from "@/components/ui/vstack";
 import { createNewMatch, ShuttleSelection } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
@@ -49,7 +48,7 @@ export default function CreateNewMatchPage() {
   }
 
   return (
-    <ScrollView>
+    <ScrollView className=" p-5">
       <View
         style={{
           backgroundColor: "white",
@@ -125,41 +124,59 @@ export default function CreateNewMatchPage() {
           gap: 30,
         }}
       >
-        <Text
-          style={{
-            backgroundColor: "white",
-          }}
-        >
-          Fill Players
+        <Text className="text-base font-bold text-typography-900">
+          Select Players
         </Text>
-        <VStack space={"lg"}>
-          <TeamSlot
-            label="Team 1"
-            positions={[0, 2]}
-            selectedPlayers={selectedPlayers}
-            playerList={playerList}
-            onSelectPlayer={(position, playerId) => {
-              setSelectedPlayers((prev) => {
-                const updated = [...prev];
-                updated[position] = playerId;
-                return updated;
-              });
-            }}
+        <View className="relative">
+          <View className="border-2 border-primary-500 p-4">
+            <View className="border-2 border-primary-500 p-4 gap-6">
+              <TeamSlot
+                positions={[0, 2]}
+                selectedPlayers={selectedPlayers}
+                playerList={playerList}
+                onSelectPlayer={(position, playerId) => {
+                  setSelectedPlayers((prev) => {
+                    const updated = [...prev];
+                    updated[position] = playerId;
+                    return updated;
+                  });
+                }}
+              />
+              <TeamSlot
+                positions={[1, 3]}
+                selectedPlayers={selectedPlayers}
+                playerList={playerList}
+                onSelectPlayer={(position, playerId) => {
+                  setSelectedPlayers((prev) => {
+                    const updated = [...prev];
+                    updated[position] = playerId;
+                    return updated;
+                  });
+                }}
+              />
+            </View>
+          </View>
+          <View
+            pointerEvents="none"
+            className="absolute -left-3 -right-3 top-1/2  border-b-[3px] border-dashed border-primary-500"
           />
-          <TeamSlot
-            label="Team 2"
-            positions={[1, 3]}
-            selectedPlayers={selectedPlayers}
-            playerList={playerList}
-            onSelectPlayer={(position, playerId) => {
-              setSelectedPlayers((prev) => {
-                const updated = [...prev];
-                updated[position] = playerId;
-                return updated;
-              });
-            }}
+          <View
+            pointerEvents="none"
+            className="absolute border-t-2 -left-3 -right-3 top-[16px] border border-primary-500 mx-3"
           />
-        </VStack>
+          <View
+            pointerEvents="none"
+            className="absolute border-t-2 -left-3 -right-3 bottom-[16px] border border-primary-500 mx-3"
+          />
+          <View
+            pointerEvents="none"
+            className="absolute border-t-2 left-[16px] top-0 bottom-0 border border-primary-500"
+          />
+          <View
+            pointerEvents="none"
+            className="absolute border-t-2 right-[16px] top-0 bottom-0 border border-primary-500"
+          />
+        </View>
         {/* {!hasAnyPlayer && (
           <Text style={{ backgroundColor: "white" }}>
             Add at least one player to the court to start a match.
