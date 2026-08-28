@@ -52,6 +52,37 @@ export async function addShuttlePurchase({
     return res.lastInsertRowId
 }
 
+export async function updateShuttle({
+    shuttle_id,
+    name,
+    price_per_shuttle
+}: {
+    shuttle_id: number,
+    name: string,
+    price_per_shuttle: number
+}) {
+    await db.runAsync(
+        `UPDATE shuttles SET name = ?, total_price = ? * num_of_shuttles WHERE shuttle_id = ?`,
+        [name, price_per_shuttle, shuttle_id]
+    )
+}
+
+export type ShuttlePurchase = {
+    shuttle_purchase_id: number,
+    shuttle_id: number,
+    num_of_shuttles: number,
+    date: string
+}
+
+export async function fetchShuttlePurchaseHistory(shuttle_id: number): Promise<ShuttlePurchase[]> {
+    const res: ShuttlePurchase[] = await db.getAllAsync(
+        `SELECT * FROM shuttle_purchases WHERE shuttle_id = ? ORDER BY date DESC`,
+        [shuttle_id]
+    )
+
+    return res
+}
+
 export type ShuttleWithInventory = {
     shuttle_id: number,
     name: string,
