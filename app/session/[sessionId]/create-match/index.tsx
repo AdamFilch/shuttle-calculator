@@ -176,6 +176,10 @@ export default function CreateNewMatchPage() {
             pointerEvents="none"
             className="absolute border-t-2 right-[16px] top-0 bottom-0 border border-primary-500"
           />
+          <View
+            pointerEvents="none"
+            className="absolute border-r-1 right-1/2 top-0 bottom-0 border border-primary-500"
+          />
         </View>
         {/* {!hasAnyPlayer && (
           <Text style={{ backgroundColor: "white" }}>
