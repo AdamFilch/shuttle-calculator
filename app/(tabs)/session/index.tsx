@@ -59,7 +59,7 @@ export default function SessionPage() {
     <ListRow
       key={session.session_id}
       title={formatSessionTitle(session)}
-      subtitle={`${session.player_count} Player${session.player_count === 1 ? "" : "s"}`}
+      subtitle={`${session.player_count} Player${session.player_count === 1 ? "" : "s"} · ${session.match_count} Match${session.match_count === 1 ? "" : "es"}`}
       trailing={<SessionStatusIndicator status={session.status} />}
       onPress={() => {
         router.navigate(`/session/${session.session_id}`);

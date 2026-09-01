@@ -9,7 +9,8 @@ export type Session = {
     date: string,
     status: 'open' | 'closed',
     closed_date: string | null,
-    player_count: number
+    player_count: number,
+    match_count: number
 }
 
 const db = openDatabaseSync('db.db')
@@ -39,7 +40,7 @@ export function formatSessionTitle(session: { name: string | null | undefined, d
 
 export async function fetchAllSessions(): Promise<Session[]> {
     const res: Session[] = await db.getAllAsync(`
-        SELECT s.*, COUNT(DISTINCT mp.player_id) as player_count
+        SELECT s.*, COUNT(DISTINCT mp.player_id) as player_count, COUNT(DISTINCT m.match_id) as match_count
         FROM sessions s
         LEFT JOIN matches m ON m.session_id = s.session_id
         LEFT JOIN match_players mp ON mp.match_id = m.match_id AND mp.player_id IS NOT NULL

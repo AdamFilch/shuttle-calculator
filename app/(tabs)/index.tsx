@@ -100,6 +100,7 @@ export default function HomeScreen() {
               <ListRow
                 key={session.session_id}
                 title={formatSessionTitle(session)}
+                subtitle={`${session.player_count} Player${session.player_count === 1 ? "" : "s"} · ${session.match_count} Match${session.match_count === 1 ? "" : "es"}`}
                 onPress={() =>
                   router.navigate(`/session/${session.session_id}`)
                 }

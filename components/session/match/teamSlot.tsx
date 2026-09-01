@@ -39,7 +39,7 @@ export function TeamSlot({
 
   return (
     <>
-      <View className="flex-row gap-4">
+      <View className="flex-row gap-6">
         <Pressable
           onPress={() => openModalFor(firstPos)}
           style={{ flex: 1, height: 120 }}

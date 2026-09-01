@@ -1,13 +1,13 @@
 import { DebtChip } from "@/components/shared/DebtChip";
 import { PaymentConfirmationDialog } from "@/components/shared/PaymentConfirmationDialog";
 import {
-    Checkbox,
-    CheckboxIcon,
-    CheckboxIndicator,
+  Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
 } from "@/components/ui/checkbox";
 import {
-    fetchAllPlayerPaymentsBySession,
-    PlayersShuttlePayments,
+  fetchAllPlayerPaymentsBySession,
+  PlayersShuttlePayments,
 } from "@/services/player";
 import { createNewSession } from "@/services/session";
 import { payShuttleByPlayers } from "@/services/shuttle-payments";
@@ -20,13 +20,13 @@ import { Heading } from "../ui/heading";
 import { CheckIcon, CloseIcon, Icon } from "../ui/icon";
 import { Input, InputField } from "../ui/input";
 import {
-    Modal,
-    ModalBackdrop,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
 } from "../ui/modal";
 import { Text } from "../ui/text";
 import { VStack } from "../ui/vstack";
@@ -102,6 +102,15 @@ export function AddSessionModal({
                 setDate(val);
               }}
             />
+            <Text>Time session starts</Text>
+            <Text>How long per session</Text>
+            <Text>Court price per session</Text>
+            <Text>How many courts</Text>
+            {/* 20RM 
+              4 people joined
+              20 / 4 = 5 RM per person
+              if person A leaves early, they 
+              still pay for 5 RM because they joined that session */}
           </VStack>
         </ModalBody>
         <ModalFooter>
