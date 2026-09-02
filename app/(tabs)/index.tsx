@@ -1,24 +1,23 @@
-import { ListRow } from "@/components/layout/ListRow";
 import { InsightsSection } from "@/components/insights/InsightsSection";
+import { ListRow } from "@/components/layout/ListRow";
 import { StatCard } from "@/components/shared/StatCard";
 import { AddShuttleModal } from "@/components/shuttle/modal";
-import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import {
-    fetchAllPlayerPayments,
-    PlayersShuttlePayments,
+  fetchAllPlayerPayments,
+  PlayersShuttlePayments,
 } from "@/services/player";
 import {
-    fetchAllSessions,
-    formatSessionTitle,
-    Session,
+  fetchAllSessions,
+  formatSessionTitle,
+  Session,
 } from "@/services/session";
 import {
-    fetchShuttleUsageSummary,
-    ShuttleUsageSummary,
+  fetchShuttleUsageSummary,
+  ShuttleUsageSummary,
 } from "@/services/shuttle";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -111,10 +110,6 @@ export default function HomeScreen() {
         )}
 
         <InsightsSection />
-
-        <Button className="mt-6 mb-8" onPress={() => setIsShuttleOpen(true)}>
-          <ButtonText>Add Shuttles</ButtonText>
-        </Button>
       </ScrollView>
       <AddShuttleModal
         open={addShuttleIsOpen}
