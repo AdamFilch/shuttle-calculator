@@ -43,7 +43,7 @@ export default function HomeScreen() {
       fetchAllSessions().then((res) => {
         const byNewestFirst = (a: Session, b: Session) =>
           new Date(b.date).getTime() - new Date(a.date).getTime();
-        setRecentSessions([...res].sort(byNewestFirst).slice(0, 5));
+        setRecentSessions([...res].sort(byNewestFirst).slice(0, 2));
       });
       fetchShuttleUsageSummary().then((res) => {
         setShuttleUsage(res);
