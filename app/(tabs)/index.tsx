@@ -1,4 +1,5 @@
 import { ListRow } from "@/components/layout/ListRow";
+import { InsightsSection } from "@/components/insights/InsightsSection";
 import { StatCard } from "@/components/shared/StatCard";
 import { AddShuttleModal } from "@/components/shuttle/modal";
 import { Button, ButtonText } from "@/components/ui/button";
@@ -108,6 +109,8 @@ export default function HomeScreen() {
             ))}
           </VStack>
         )}
+
+        <InsightsSection />
 
         <Button className="mt-6 mb-8" onPress={() => setIsShuttleOpen(true)}>
           <ButtonText>Add Shuttles</ButtonText>

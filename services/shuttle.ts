@@ -1,5 +1,13 @@
 import { openDatabaseSync } from "expo-sqlite"
 import { Float } from "react-native/Libraries/Types/CodegenTypes"
+import {
+    eachDayOfInterval,
+    endOfMonth,
+    format,
+    startOfMonth,
+    subDays,
+    subMonths,
+} from "date-fns"
 
 const db = openDatabaseSync('db.db')
 
@@ -144,6 +152,92 @@ export async function fetchShuttleUsageSummary(): Promise<ShuttleUsageSummary> {
         `)
 
     return res[0] ?? { totalUsed: 0, totalRemaining: 0 }
+}
+
+export async function fetchEarliestShuttleUsageDate(): Promise<string | null> {
+    const res: any = await db.getFirstAsync(`
+        SELECT MIN(date) as earliest FROM shuttle_instances WHERE shuttle_id IS NOT NULL
+        `)
+
+    return res?.earliest ?? null
+}
+
+export type ShuttleUsageRange = '1w' | '1m' | '6m' | '12m'
+
+export type ShuttleUsagePoint = {
+    label: string,
+    value: number
+}
+
+function shuttleUsageRangeStart(range: ShuttleUsageRange, now: Date): Date {
+    switch (range) {
+        case '1w': return subDays(now, 6)
+        case '1m': return subDays(now, 29)
+        case '6m': return subDays(now, 181)
+        case '12m': return startOfMonth(subMonths(now, 11))
+    }
+}
+
+// Buckets are built in JS (not via SQLite's strftime) so week/month grouping
+// stays consistent with date-fns' own interval math rather than needing to
+// reconcile two different week/month numbering schemes.
+export async function fetchShuttleUsageTimeSeries(range: ShuttleUsageRange): Promise<ShuttleUsagePoint[]> {
+    const now = new Date()
+    const start = shuttleUsageRangeStart(range, now)
+
+    const rows: any = await db.getAllAsync(`
+        SELECT date(date) as day, COUNT(*) as count
+        FROM shuttle_instances
+        WHERE shuttle_id IS NOT NULL AND date(date) >= date(?)
+        GROUP BY day
+        `, [format(start, 'yyyy-MM-dd')])
+
+    const countsByDay: Record<string, number> = {}
+    for (const row of rows) countsByDay[row.day] = row.count
+
+    const countForDay = (day: Date) => countsByDay[format(day, 'yyyy-MM-dd')] ?? 0
+
+    if (range === '1w' || range === '1m') {
+        return eachDayOfInterval({ start, end: now }).map((day) => ({
+            label: format(day, range === '1w' ? 'EEE' : 'd MMM'),
+            value: countForDay(day)
+        }))
+    }
+
+    if (range === '6m') {
+        const weeks: { start: Date, end: Date }[] = []
+        let weekStart = start
+        while (weekStart <= now) {
+            const weekEnd = subDays(weekStart, -6) < now ? subDays(weekStart, -6) : now
+            weeks.push({ start: weekStart, end: weekEnd })
+            weekStart = subDays(weekStart, -7)
+        }
+
+        return weeks.map(({ start: weekStart, end: weekEnd }) => ({
+            label: format(weekStart, 'd MMM'),
+            value: eachDayOfInterval({ start: weekStart, end: weekEnd }).reduce(
+                (sum, day) => sum + countForDay(day), 0
+            )
+        }))
+    }
+
+    // 12m
+    const months = []
+    let monthStart = start
+    while (monthStart <= now) {
+        months.push(monthStart)
+        monthStart = startOfMonth(subMonths(monthStart, -1))
+    }
+
+    return months.map((monthStart) => {
+        const monthEnd = endOfMonth(monthStart) < now ? endOfMonth(monthStart) : now
+        return {
+            label: format(monthStart, 'MMM yyyy'),
+            value: eachDayOfInterval({ start: monthStart, end: monthEnd }).reduce(
+                (sum, day) => sum + countForDay(day), 0
+            )
+        }
+    })
 }
 
 export async function fetchAllShuttles(): Promise<Shuttle[]> {
