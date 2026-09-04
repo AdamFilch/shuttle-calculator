@@ -19,7 +19,7 @@ import {
   fetchShuttleUsageSummary,
   ShuttleUsageSummary,
 } from "@/services/shuttle";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ScrollView } from "react-native";

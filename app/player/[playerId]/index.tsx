@@ -3,35 +3,35 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PaymentConfirmationDialog } from "@/components/shared/PaymentConfirmationDialog";
 import { Button, ButtonText } from "@/components/ui/button";
 import {
-    Checkbox,
-    CheckboxIcon,
-    CheckboxIndicator,
+  Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
 } from "@/components/ui/checkbox";
 import { HStack } from "@/components/ui/hstack";
 import {
-    CheckIcon,
-    ChevronDownIcon,
-    ChevronRightIcon,
-    Icon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  Icon,
 } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { DeletePlayerDialog } from "@/components/user/deletePlayerDialog";
 import {
-    deletePlayer,
-    fetchPlayerById,
-    fetchShuttlePaymentsByPlayerSessions,
-    Player,
-    ShuttleInstanceCharge,
-    ShuttlePaymentsByPlayerSessions,
+  deletePlayer,
+  fetchPlayerById,
+  fetchShuttlePaymentsByPlayerSessions,
+  Player,
+  ShuttleInstanceCharge,
+  ShuttlePaymentsByPlayerSessions,
 } from "@/services/player";
 import {
-    payCourtBySessionId,
-    paySessionInFull,
-    payShuttleInstancesByIds,
+  payCourtBySessionId,
+  paySessionInFull,
+  payShuttleInstancesByIds,
 } from "@/services/shuttle-payments";
 import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
@@ -299,7 +299,7 @@ export default function SelectPlayerPage() {
                           return (
                             <VStack key={match.match_id} space="xs">
                               <ListRow
-                                title={`Match ${match.match_number}`}
+                                title={`Match ${match.match_number + 1}`}
                                 subtitle={`${DisplayTimeDDDASHMMDASHYYYY(match.date) ?? ""} · ${match.charges.length} shuttle${match.charges.length === 1 ? "" : "s"} · $${matchOwed.toFixed(2)}`}
                                 trailing={
                                   <Icon

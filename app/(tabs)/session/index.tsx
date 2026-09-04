@@ -8,7 +8,7 @@ import {
   formatSessionTitle,
   Session,
 } from "@/services/session";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { Image, ScrollView, View } from "react-native";

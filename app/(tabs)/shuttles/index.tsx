@@ -4,7 +4,7 @@ import { AddShuttleModal } from '@/components/shuttle/modal';
 import { ShuttleCard } from '@/components/shuttle/ShuttleCard';
 import { Text } from "@/components/ui/text";
 import { fetchAllShuttlesWithInventory, ShuttleWithInventory } from '@/services/shuttle';
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useCallback, useState } from 'react';
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

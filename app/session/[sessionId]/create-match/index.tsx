@@ -4,7 +4,7 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { createNewMatch, ShuttleSelection } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ScrollView, Text, View } from "react-native";

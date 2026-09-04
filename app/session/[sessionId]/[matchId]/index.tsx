@@ -6,7 +6,7 @@ import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
 import { fetchMatchById, MatchFull } from "@/services/match";
 import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, View } from "react-native";

@@ -20,7 +20,7 @@ import {
   ShuttleUsagePoint,
   ShuttleUsageRange,
 } from "@/services/shuttle";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { differenceInCalendarDays } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";

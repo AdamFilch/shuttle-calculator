@@ -7,7 +7,7 @@ import { SearchIcon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { fetchAllPlayerPayments, PlayersShuttlePayments } from "@/services/player";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useRouter } from "expo-router";
 import Fuse from "fuse.js";
 import { useCallback, useMemo, useState } from "react";

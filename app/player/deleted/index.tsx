@@ -5,7 +5,7 @@ import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { fetchDeletedPlayers, Player, restorePlayer } from "@/services/player";
 import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useCallback, useState } from "react";
 import { ScrollView, View } from "react-native";
 

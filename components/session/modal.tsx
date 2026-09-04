@@ -12,7 +12,7 @@ import {
 import { createNewSession } from "@/services/session";
 import { payShuttleByPlayers } from "@/services/shuttle-payments";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Button, ButtonText } from "../ui/button";
