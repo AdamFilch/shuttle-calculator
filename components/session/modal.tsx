@@ -5,6 +5,7 @@ import {
   CheckboxIcon,
   CheckboxIndicator,
 } from "@/components/ui/checkbox";
+import { bookCourt } from "@/services/court";
 import {
   fetchAllPlayerPaymentsBySession,
   PlayersShuttlePayments,
@@ -17,6 +18,7 @@ import { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Button, ButtonText } from "../ui/button";
 import { Heading } from "../ui/heading";
+import { HStack } from "../ui/hstack";
 import { CheckIcon, CloseIcon, Icon } from "../ui/icon";
 import { Input, InputField } from "../ui/input";
 import {
@@ -40,18 +42,61 @@ export function AddSessionModal({
 }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(new Date());
+  const [startTime, setStartTime] = useState(new Date());
+  const [location, setLocation] = useState("");
+
+  const [isBookingCourts, setIsBookingCourts] = useState(false);
+  const [courtLabel, setCourtLabel] = useState("");
+  const [courtPrice, setCourtPrice] = useState("");
+  const [courtQuantity, setCourtQuantity] = useState("");
+  const [courtDurationHours, setCourtDurationHours] = useState("");
+
+  const courtFieldsValid =
+    (parseInt(courtQuantity) || 0) > 0 &&
+    (parseFloat(courtDurationHours) || 0) > 0 &&
+    courtPrice.trim() !== "" &&
+    (parseFloat(courtPrice) || -1) >= 0;
+  const canSave = !isBookingCourts || courtFieldsValid;
+
+  function resetForm() {
+    setDate(new Date());
+    setStartTime(new Date());
+    setTitle("");
+    setLocation("");
+    setIsBookingCourts(false);
+    setCourtLabel("");
+    setCourtPrice("");
+    setCourtDurationHours("");
+    setCourtQuantity("");
+  }
 
   async function onClickSave() {
-    const res = await createNewSession({
+    if (!canSave) return;
+
+    const hours = String(startTime.getHours()).padStart(2, "0");
+    const minutes = String(startTime.getMinutes()).padStart(2, "0");
+
+    const sessionId = await createNewSession({
       name: title,
       date: date.toISOString(),
+      startTime: `${hours}:${minutes}`,
+      location,
     });
 
-    if (res) {
-      setDate(new Date());
-      setTitle("");
-      onClose();
+    if (!sessionId) return;
+
+    if (isBookingCourts) {
+      await bookCourt({
+        sessionId,
+        label: courtLabel || undefined,
+        price: parseFloat(courtPrice),
+        quantity: parseInt(courtQuantity),
+        durationMinutes: parseFloat(courtDurationHours) * 60,
+      });
     }
+
+    resetForm();
+    onClose();
   }
 
   return (
@@ -75,6 +120,9 @@ export function AddSessionModal({
         </ModalHeader>
         <ModalBody>
           <VStack space="sm">
+            <Text size="sm" className="text-typography-500">
+              (Title will defaults to today's date)
+            </Text>
             <Input
               variant="outline"
               size="md"
@@ -89,41 +137,108 @@ export function AddSessionModal({
                   setTitle(val);
                 }}
                 maxLength={30}
-                placeholder="Enter a session title"
+                placeholder="Enter a session title (Optional)"
               />
             </Input>
             <Text size="sm" className="text-typography-500">
-              (Defaults to today's date)
+              (Title will defaults to today's date)
             </Text>
-            <DateTimePicker
-              mode="date"
-              value={date}
-              onChange={(e, val) => {
-                setDate(val);
-              }}
-            />
-            <Text>Time session starts</Text>
-            <Text>How long per session</Text>
-            <Text>Court price per session</Text>
-            <Text>How many courts</Text>
-            {/* 20RM 
-              4 people joined
-              20 / 4 = 5 RM per person
-              if person A leaves early, they 
-              still pay for 5 RM because they joined that session */}
+            <HStack space={"sm"} className="-ml-2">
+              <DateTimePicker
+                mode="date"
+                value={date}
+                onChange={(e, val) => {
+                  setDate(val);
+                }}
+              />
+              <DateTimePicker
+                mode="time"
+                is24Hour
+                value={startTime}
+                onChange={(e, val) => {
+                  if (val) setStartTime(val);
+                }}
+              />
+            </HStack>
+
+            <Input variant="outline" size="md">
+              <InputField
+                value={location}
+                onChangeText={setLocation}
+                maxLength={60}
+                placeholder="Location of the session (Optional)"
+              />
+            </Input>
+
+            <Button
+              variant={isBookingCourts ? "solid" : "outline"}
+              action={isBookingCourts ? "primary" : "secondary"}
+              onPress={() => setIsBookingCourts((prev) => !prev)}
+            >
+              <ButtonText>
+                {isBookingCourts ? "Booking Courts" : "Book Courts?"}
+              </ButtonText>
+            </Button>
+            {isBookingCourts && (
+              <VStack space="sm">
+                <Text size="sm" className="text-typography-500">
+                  Price is per court. The total (price x quantity) is split
+                  evenly among the session&apos;s players when the session is
+                  closed.
+                </Text>
+                <Input variant="outline" size="md">
+                  <InputField
+                    value={courtLabel}
+                    onChangeText={setCourtLabel}
+                    placeholder="Court label (optional)"
+                  />
+                </Input>
+                <Input
+                  variant="outline"
+                  size="md"
+                  isInvalid={(parseInt(courtQuantity) || 0) <= 0}
+                >
+                  <InputField
+                    value={courtQuantity}
+                    onChangeText={setCourtQuantity}
+                    placeholder="How many courts"
+                    keyboardType="number-pad"
+                  />
+                </Input>
+                <Input
+                  variant="outline"
+                  size="md"
+                  isInvalid={(parseFloat(courtDurationHours) || 0) <= 0}
+                >
+                  <InputField
+                    value={courtDurationHours}
+                    onChangeText={setCourtDurationHours}
+                    placeholder="Booking length in hours"
+                    keyboardType="decimal-pad"
+                  />
+                </Input>
+                <Input
+                  variant="outline"
+                  size="md"
+                  isInvalid={
+                    courtPrice.trim() === "" ||
+                    (parseFloat(courtPrice) || -1) < 0
+                  }
+                >
+                  <InputField
+                    value={courtPrice}
+                    onChangeText={setCourtPrice}
+                    placeholder="Court price per session"
+                    keyboardType="decimal-pad"
+                  />
+                </Input>
+              </VStack>
+            )}
           </VStack>
         </ModalBody>
         <ModalFooter>
           <Button
-            variant="outline"
-            action="secondary"
-            onPress={() => {
-              onClose();
-            }}
-          >
-            <ButtonText>Cancel</ButtonText>
-          </Button>
-          <Button
+            isDisabled={!canSave}
             onPress={() => {
               onClickSave();
             }}

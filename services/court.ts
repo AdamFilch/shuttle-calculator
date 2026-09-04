@@ -8,6 +8,7 @@ export type CourtBooking = {
     label: string | null,
     price: number,
     quantity: number,
+    duration_minutes: number | null,
     date: string
 }
 
@@ -15,16 +16,18 @@ export async function bookCourt({
     sessionId,
     label,
     price,
-    quantity
+    quantity,
+    durationMinutes
 }: {
     sessionId: number,
     label?: string,
     price: number,
-    quantity: number
+    quantity: number,
+    durationMinutes?: number
 }) {
     const res = await db.runAsync(
-        `INSERT INTO court_bookings (session_id, label, price, quantity) VALUES (?, ?, ?, ?)`,
-        [sessionId, label ?? null, price, quantity]
+        `INSERT INTO court_bookings (session_id, label, price, quantity, duration_minutes) VALUES (?, ?, ?, ?, ?)`,
+        [sessionId, label ?? null, price, quantity, durationMinutes ?? null]
     );
 
     return res.lastInsertRowId

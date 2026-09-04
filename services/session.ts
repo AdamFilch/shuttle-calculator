@@ -7,6 +7,8 @@ export type Session = {
     session_id: number,
     name: string,
     date: string,
+    start_time: string | null,
+    location: string | null,
     status: 'open' | 'closed',
     closed_date: string | null,
     player_count: number,
@@ -17,16 +19,21 @@ const db = openDatabaseSync('db.db')
 
 export async function createNewSession({
     name,
-    date
+    date,
+    startTime,
+    location
 }: {
     name?: string,
-    date: string
+    date: string,
+    startTime?: string,
+    location?: string
 }) {
     const finalName = name?.trim() ?? ''
+    const finalLocation = location?.trim() || null
 
     const res = await db.runAsync(
-        `INSERT into sessions (name, date) VALUES (?, ?)`,
-        [finalName, date]
+        `INSERT into sessions (name, date, start_time, location) VALUES (?, ?, ?, ?)`,
+        [finalName, date, startTime ?? null, finalLocation]
     );
 
     return res.lastInsertRowId

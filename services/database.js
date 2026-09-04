@@ -44,6 +44,8 @@ export async function setupDatabase() {
         session_id INTEGER PRIMARY KEY NOT NULL,
         name TEXT,
         date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
+        start_time TEXT,
+        location TEXT,
         status TEXT NOT NULL DEFAULT 'open',
         closed_date TIMESTAMP
       );
@@ -130,6 +132,7 @@ export async function setupDatabase() {
         label TEXT,
         price REAL NOT NULL,
         quantity INTEGER NOT NULL DEFAULT 1,
+        duration_minutes INTEGER,
         date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (session_id) REFERENCES sessions(session_id)
       );
