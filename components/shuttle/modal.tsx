@@ -5,13 +5,13 @@ import { Heading } from "../ui/heading";
 import { CloseIcon, Icon } from "../ui/icon";
 import { Input, InputField } from "../ui/input";
 import {
-    Modal,
-    ModalBackdrop,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
 } from "../ui/modal";
 import { VStack } from "../ui/vstack";
 
@@ -79,6 +79,7 @@ export function AddShuttleModal({
               <InputField
                 defaultValue={shuttleName}
                 value={shuttleName}
+                maxLength={20}
                 onChangeText={(val) => {
                   setShuttleName(val);
                 }}

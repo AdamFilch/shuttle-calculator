@@ -141,13 +141,13 @@ export function AddSessionModal({
               />
             </Input>
             <Text size="sm" className="text-typography-500">
-              (Title will defaults to today's date)
+              (Time and Date of the session)
             </Text>
             <HStack space={"sm"} className="-ml-2">
               <DateTimePicker
                 mode="date"
                 value={date}
-                onChange={(e, val) => {
+                onValueChange={(e, val) => {
                   setDate(val);
                 }}
               />
@@ -155,7 +155,7 @@ export function AddSessionModal({
                 mode="time"
                 is24Hour
                 value={startTime}
-                onChange={(e, val) => {
+                onValueChange={(e, val) => {
                   if (val) setStartTime(val);
                 }}
               />

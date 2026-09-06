@@ -4,8 +4,8 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { createNewMatch, ShuttleSelection } from "@/services/match";
 import { fetchAllPlayers, Player } from "@/services/player";
 import { fetchAllShuttles, Shuttle } from "@/services/shuttle";
-import { useFocusEffect } from "expo-router/react-navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useCallback, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
@@ -54,27 +54,11 @@ export default function CreateNewMatchPage() {
           backgroundColor: "white",
         }}
       >
-        <Text>Create Match Page</Text>
+        {/* <Text>Create Match Page</Text> */}
       </View>
 
       {shuttleList.length > 0 ? (
         <View>
-          {/* <View style={{
-                        backgroundColor: 'white'
-                    }}>
-                        <Text>Select Shuttle</Text>
-                        <Text>Number of shuttle used</Text>
-                    </View>
-                    <Picker
-                        ref={pickerRef}
-                        selectedValue={selectedShuttle}
-                        onValueChange={(itemValue, itemIndex) =>
-                            setSelectedShuttle(itemValue)
-                        }>
-                        {shuttleList.map((shuttle) => (
-                            <Picker.Item key={shuttle.shuttle_id} label={`${shuttle.name} (${shuttle.total_price} RM)`} value={shuttle.shuttle_id} />
-                        ))}
-                    </Picker> */}
           <SelectShuttleButton
             sessionId={parseInt(sessionId.toString())}
             selectedShuttles={usedShuttles}
@@ -112,6 +96,16 @@ export default function CreateNewMatchPage() {
                 return [...prev, selected];
               });
             }}
+            onUpdate={(index, next) => {
+              setUsedShuttles((prev) => {
+                if (next === null) {
+                  return prev.filter((_, i) => i !== index);
+                }
+                const updated = [...prev];
+                updated[index] = next;
+                return updated;
+              });
+            }}
           />
         </View>
       ) : (
@@ -122,11 +116,9 @@ export default function CreateNewMatchPage() {
       <View
         style={{
           gap: 30,
+          marginTop: 30,
         }}
       >
-        <Text className="text-base font-bold text-typography-900">
-          Select Players
-        </Text>
         <View className="relative">
           <View className="border-2 border-primary-500 p-4">
             <View className="border-2 border-primary-500 p-4 gap-6">

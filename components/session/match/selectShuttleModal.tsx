@@ -2,43 +2,45 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import {
-    AddIcon,
-    ChevronDownIcon,
-    CloseIcon,
-    Icon,
+  AddIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChevronDownIcon,
+  CloseIcon,
+  Icon,
 } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
 import {
-    Modal,
-    ModalBackdrop,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
 } from "@/components/ui/modal";
 import {
-    Select,
-    SelectBackdrop,
-    SelectContent,
-    SelectDragIndicator,
-    SelectDragIndicatorWrapper,
-    SelectIcon,
-    SelectInput,
-    SelectItem,
-    SelectPortal,
-    SelectTrigger,
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicator,
+  SelectDragIndicatorWrapper,
+  SelectIcon,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
 } from "@/components/ui/select";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { ShuttleSelection } from "@/services/match";
 import {
-    fetchAllShuttlesWithInventory,
-    ShuttleWithInventory,
+  fetchAllShuttlesWithInventory,
+  ShuttleWithInventory,
 } from "@/services/shuttle";
 import {
-    fetchShuttleInstancesBySessionId,
-    ShuttleInstance,
+  fetchShuttleInstancesBySessionId,
+  ShuttleInstance,
 } from "@/services/shuttle_instances";
 import React, { Fragment, useCallback, useEffect, useState } from "react";
 import { Image, Pressable, View } from "react-native";
@@ -49,12 +51,15 @@ export function SelectShuttleButton({
   sessionId,
   selectedShuttles,
   onSelect,
+  onUpdate,
 }: {
   sessionId: number;
   selectedShuttles: ShuttleSelection[];
   onSelect: (selected: ShuttleSelection) => void;
+  onUpdate: (index: number, next: ShuttleSelection | null) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [shuttleList, setShuttleList] = useState<ShuttleWithInventory[]>([]);
   const [instanceList, setInstanceList] = useState<ShuttleInstance[]>([]);
 
@@ -92,8 +97,9 @@ export function SelectShuttleButton({
     <Fragment>
       <View className="flex-row flex-wrap gap-2">
         {selectedShuttles.map((selection, i) => (
-          <View
+          <Pressable
             key={i}
+            onPress={() => setEditingIndex(i)}
             className="items-center justify-center rounded-xl border border-primary-500 bg-primary-50 px-3 py-3"
           >
             <Text
@@ -110,11 +116,11 @@ export function SelectShuttleButton({
                 x {selection.quantity}
               </Text>
             )}
-          </View>
+          </Pressable>
         ))}
         <Pressable
           onPress={() => setIsOpen(true)}
-          className="flex-row items-center justify-center gap-1.5 rounded-xl border border-outline-100 bg-background-0 px-3 py-3"
+          className="h-[65px] w-[65px] flex-row items-center justify-center gap-1.5 self-start rounded-xl border border-outline-100 bg-background-0"
         >
           <Icon as={AddIcon} size="sm" className="text-typography-700" />
           {/* <Text className="text-sm font-bold text-typography-900">
@@ -135,7 +141,102 @@ export function SelectShuttleButton({
         onClose={handleClose}
         onSelect={handleSelect}
       />
+      <EditShuttleModal
+        open={editingIndex !== null}
+        label={
+          editingIndex !== null ? labelFor(selectedShuttles[editingIndex]) : ""
+        }
+        selection={
+          editingIndex !== null ? selectedShuttles[editingIndex] : null
+        }
+        onClose={() => setEditingIndex(null)}
+        onChangeQuantity={(quantity) => {
+          if (editingIndex === null) return;
+          const selection = selectedShuttles[editingIndex];
+          if (selection.mode !== "new") return;
+          onUpdate(editingIndex, { ...selection, quantity });
+        }}
+        onRemove={() => {
+          if (editingIndex === null) return;
+          onUpdate(editingIndex, null);
+          setEditingIndex(null);
+        }}
+      />
     </Fragment>
+  );
+}
+
+function EditShuttleModal({
+  open,
+  label,
+  selection,
+  onClose,
+  onChangeQuantity,
+  onRemove,
+}: {
+  open: boolean;
+  label: string;
+  selection: ShuttleSelection | null;
+  onClose: () => void;
+  onChangeQuantity: (quantity: number) => void;
+  onRemove: () => void;
+}) {
+  const quantity = selection?.mode === "new" ? selection.quantity : null;
+
+  return (
+    <Modal size={"md"} isOpen={open} onClose={onClose}>
+      <ModalBackdrop />
+      <ModalContent>
+        <ModalHeader>
+          <Heading>{label}</Heading>
+          <ModalCloseButton>
+            <Icon
+              as={CloseIcon}
+              size="md"
+              className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
+            />
+          </ModalCloseButton>
+        </ModalHeader>
+        <ModalBody>
+          <VStack space="lg">
+            {quantity !== null && (
+              <HStack space="lg" className="items-center justify-center">
+                <Pressable
+                  disabled={quantity <= 1}
+                  onPress={() => onChangeQuantity(quantity - 1)}
+                  className="items-center justify-center rounded-full border border-outline-200 bg-background-0 p-3 disabled:opacity-40"
+                >
+                  <Icon
+                    as={ArrowDownIcon}
+                    size="md"
+                    className="text-typography-700"
+                  />
+                </Pressable>
+                <Text className="min-w-[3ch] text-center text-xl font-bold text-typography-900">
+                  {quantity}
+                </Text>
+                <Pressable
+                  onPress={() => onChangeQuantity(quantity + 1)}
+                  className="items-center justify-center rounded-full border border-outline-200 bg-background-0 p-3"
+                >
+                  <Icon
+                    as={ArrowUpIcon}
+                    size="md"
+                    className="text-typography-700"
+                  />
+                </Pressable>
+              </HStack>
+            )}
+            <Button action="secondary" onPress={onRemove}>
+              <ButtonText>Confirm</ButtonText>
+            </Button>
+            <Button action="negative" onPress={onRemove}>
+              <ButtonText>Remove Shuttle</ButtonText>
+            </Button>
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 }
 
