@@ -8,9 +8,7 @@ export default function InsightsSettings() {
     <SafeAreaView className="flex-1 bg-background-50">
       <PageHeader title="Insights" />
       <ScrollView className="flex-1 px-4">
-        <VStack space="sm" className="pb-8 pt-2">
-          <Text>Insights Page</Text>
-        </VStack>
+        <VStack space="sm" className="pb-8 pt-2"></VStack>
       </ScrollView>
     </SafeAreaView>
   );
