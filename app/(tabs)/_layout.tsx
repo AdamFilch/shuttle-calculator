@@ -13,6 +13,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: TAB_ACTIVE_TINT,
         tabBarInactiveTintColor: TAB_INACTIVE_TINT,
         tabBarShowLabel: false,
+        headerShown: false,
         tabBarButton: HapticTab,
         // tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
@@ -53,6 +54,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="insights/index"
         options={{
+          href: null,
           tabBarIcon: ({ color }) => (
             <MaterialIcons name={"leaderboard"} size={29} color={color} />
           ),
