@@ -27,9 +27,14 @@ export async function dropDatabase() {
 
 export async function setupDatabase() {
   const db = await SQLite.openDatabaseSync('db.db');
-  db.withTransactionSync(() => {
+  // Use the async transaction/exec API rather than the sync one: on web,
+  // expo-sqlite's sync API requires SharedArrayBuffer, which only exists on
+  // a cross-origin-isolated page. The async API works everywhere (native and
+  // web) without that requirement, and this runs once at startup so there's
+  // no UX reason to need the sync variant here.
+  await db.withTransactionAsync(async () => {
     console.log('Setting up DB')
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS players (
         player_id INTEGER PRIMARY KEY NOT NULL,
         date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
@@ -39,7 +44,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS sessions (
         session_id INTEGER PRIMARY KEY NOT NULL,
         name TEXT,
@@ -51,7 +56,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS matches (
         match_id INTEGER PRIMARY KEY NOT NULL,
         session_id INTEGER NOT NULL,
@@ -61,7 +66,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS match_players (
         match_id INTEGER NOT NULL,
         player_id INTEGER NOT NULL,
@@ -72,7 +77,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS shuttles (
         shuttle_id INTEGER PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
@@ -81,7 +86,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS shuttle_purchases (
         shuttle_purchase_id INTEGER PRIMARY KEY NOT NULL,
         shuttle_id INTEGER NOT NULL,
@@ -91,7 +96,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS shuttle_instances (
         shuttle_instance_id INTEGER PRIMARY KEY NOT NULL,
         session_id INTEGER NOT NULL,
@@ -102,7 +107,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS match_shuttle_instances (
         match_id INTEGER NOT NULL,
         shuttle_instance_id INTEGER NOT NULL,
@@ -112,7 +117,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS shuttle_payments (
         shuttle_instance_id INTEGER NOT NULL,
         player_id INTEGER NOT NULL,
@@ -125,7 +130,7 @@ export async function setupDatabase() {
       );
     `)
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS court_bookings (
         court_booking_id INTEGER PRIMARY KEY NOT NULL,
         session_id INTEGER NOT NULL,
@@ -138,7 +143,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS court_payments (
         court_booking_id INTEGER NOT NULL,
         player_id INTEGER NOT NULL,
@@ -151,7 +156,7 @@ export async function setupDatabase() {
       );
     `);
 
-    db.execSync(`
+    await db.execAsync(`
       CREATE INDEX IF NOT EXISTS idx_match_players_player ON match_players(player_id);
       CREATE INDEX IF NOT EXISTS idx_match_players_match ON match_players(match_id);
       CREATE INDEX IF NOT EXISTS idx_shuttle_purchases_shuttle ON shuttle_purchases(shuttle_id);
