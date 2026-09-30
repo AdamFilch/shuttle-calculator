@@ -15,10 +15,10 @@ function stockStatus(remaining: number): "error" | "warning" | undefined {
  */
 export function ShuttleCard({
   shuttle,
-  onLongPress,
+  onPress,
 }: {
   shuttle: ShuttleWithInventory;
-  onLongPress: () => void;
+  onPress: () => void;
 }) {
   const status = stockStatus(shuttle.remaining);
   const statusClassName =
@@ -31,7 +31,7 @@ export function ShuttleCard({
     Number(shuttle.total_price) / Number(shuttle.num_of_shuttles);
 
   return (
-    <Pressable onLongPress={onLongPress} className="w-[48%]">
+    <Pressable onPress={onPress} className="w-[48%]">
       {({ pressed }) => (
         <VStack
           space="xs"
