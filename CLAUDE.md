@@ -9,15 +9,52 @@ Shuttle Calculator: an Expo / React Native app for tracking badminton sessions, 
 ## Commands
 
 ```bash
-npm install          # install dependencies
-npx expo start        # start the dev server (or `npm run start`)
-npm run ios           # start with iOS simulator target
-npm run android        # start with Android emulator target
-npm run web            # start with web target
-npm run lint            # expo lint (eslint-config-expo flat config)
+npm install            # install dependencies
+npm run start          # start the dev server (`expo start`)
+npm run start:mcp      # start the dev server with the Expo MCP local tools enabled (see below)
+npm run ios            # start with iOS simulator target (DARK_MODE=media)
+npm run android        # start with Android emulator target (DARK_MODE=media)
+npm run web            # start with web target (DARK_MODE=media)
+npm run lint           # expo lint (eslint-config-expo flat config)
 ```
 
 There is no test framework configured in this repo (no test script, no Jest/Vitest dependency).
+
+`npm run reset-project` is the leftover `create-expo-app` script: it moves `app/` aside and scaffolds a blank app. Do not run it.
+
+### Running the project
+
+1. `npm install`
+2. `npm run start` (or `npm run start:mcp` when using Expo MCP)
+3. In the Expo CLI, press `i` for the iOS simulator, `a` for the Android emulator, or `w` for web, or scan the QR code with Expo Go / a development build.
+
+After any schema change in `services/database.js`, use Settings → "Reset Database" in the running app (see Architecture).
+
+## Tech stack
+
+- **Expo SDK 57** with **React Native 0.86** and **React 19.2**, written in **TypeScript 6**
+- **expo-router** for file-based routing
+- **expo-sqlite**: local SQLite database, raw SQL, no backend or ORM
+- **NativeWind 4** (Tailwind CSS 3 for React Native) for styling
+- **Gluestack UI** (`@gluestack-ui/core`) components, vendored under `components/ui/`
+- **ESLint** via `eslint-config-expo`
+- **expo-mcp** (dev only) for AI tooling against the running app
+
+## Expo MCP
+
+The Expo MCP server lets Claude Code inspect and drive the running app (screenshots, taps, logs) and query the Expo account. It works on the free Expo plan; only the `search_documentation` tool needs a paid EAS plan.
+
+One-time setup:
+
+1. `claude mcp add --transport http expo https://mcp.expo.dev/mcp`
+2. In Claude Code, run `/mcp`, select `expo`, and sign in with the Expo account in the browser.
+3. `npx expo whoami || npx expo login` with the same Expo account.
+
+Each time:
+
+1. `npm run start:mcp` (sets `EXPO_UNSTABLE_MCP_SERVER=1`; local tools need SDK 54+ and the `expo-mcp` dev dependency)
+2. Open the app in a simulator/emulator.
+3. Run `/mcp` and reconnect `expo` so the local tools appear. Reconnect again whenever the dev server is restarted.
 
 ## Architecture
 
