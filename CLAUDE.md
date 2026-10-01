@@ -20,6 +20,8 @@ npm run lint           # expo lint (eslint-config-expo flat config)
 
 There is no test framework configured in this repo (no test script, no Jest/Vitest dependency).
 
+**Test on mobile only.** All manual testing and visual verification happens on the iOS Simulator (or an Android emulator) via the Expo MCP local tools, never on the web target or in Chrome: `npm run web` is broken (expo-sqlite's web worker can't resolve `wa-sqlite.wasm`), so web results don't reflect the real app. Expo MCP can't drive physical devices or iPhone Mirroring, so use a simulator. If none is available, say so rather than falling back to web.
+
 `npm run reset-project` is the leftover `create-expo-app` script: it deletes or moves `app/`, `components/`, `hooks/`, `scripts/`, and `constants/` into `app-example/` and scaffolds a blank app. Do not run it.
 
 ### Running the project
