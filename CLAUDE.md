@@ -20,7 +20,7 @@ npm run lint           # expo lint (eslint-config-expo flat config)
 
 There is no test framework configured in this repo (no test script, no Jest/Vitest dependency).
 
-`npm run reset-project` is the leftover `create-expo-app` script: it moves `app/` aside and scaffolds a blank app. Do not run it.
+`npm run reset-project` is the leftover `create-expo-app` script: it deletes or moves `app/`, `components/`, `hooks/`, `scripts/`, and `constants/` into `app-example/` and scaffolds a blank app. Do not run it.
 
 ### Running the project
 
