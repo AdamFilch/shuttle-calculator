@@ -73,3 +73,9 @@ Core tables: `players`, `sessions`, `matches` (belongs to a session), `match_pla
 **UI**: styling via NativeWind (Tailwind for RN, `tailwind.config.js`) plus the Gluestack UI component library (`components/ui/`, generated/vendored — treat as a component library, not app code). App-specific components live under `components/` (e.g. `components/session/match/`, `components/shuttle/`, `components/user/`) as modals/forms that call into `services/`.
 
 **Path alias**: `@/*` maps to the repo root (configured in both `tsconfig.json` and `babel.config.js` via `module-resolver`).
+
+## Agents and context files
+
+- `.claude/agents/developer.md` and `.claude/agents/designer.md` are project subagents. They hold generic role instructions only, so they can be copied to `~/.claude/agents/` for reuse in other projects; keep project facts out of them.
+- `.claude/context/product.md` is the product brief (what, for whom, why, priorities, roadmap, non-goals). `.claude/context/design.md` is the design system and decision log. Both agents read these first; update them when product direction or design decisions change.
+- Tickets/PRDs live in `.claude/prds/`. The designer writes only to `.claude/design/specs/` (new designs) and `.claude/design/reviews/` (audits); the developer implements PRDs and any matching design spec.
