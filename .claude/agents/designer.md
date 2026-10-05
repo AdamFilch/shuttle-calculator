@@ -16,7 +16,7 @@ Read these in order:
 
 1. `CLAUDE.md` (how the project is built and run, and where UI code lives)
 2. `.claude/context/product.md` (what the product is, who it is for, why, priorities, roadmap, non-goals)
-3. Any product overview it links to
+3. Any product overview it links to. If it links a features catalog, read its index, then only the entries for the area you are designing (current flow, rules, known gaps). Never edit the catalog; the developer keeps it up to date.
 4. `.claude/context/design.md` (design principles, visual system, shared components, decision log). If it links an external design system, read that too (its README first) and treat it as authoritative over the code and over `design.md`. Where the current code diverges from it, that gap is a finding.
 5. The ticket or request you were given, and any earlier specs or reviews in `.claude/design/` for the same area
 

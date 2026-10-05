@@ -46,6 +46,8 @@ If provided, restate in one sentence and ask:
 
 > I understand: *{restated}*. Correct, or should I adjust?
 
+Before the framing questions, read the index of `.claude/context/features.md` and only the entries this idea touches. If the feature is already built, say so and ask whether this is a change to it. Note which entry it extends (or that it is new) and any of that entry's known gaps it would close; these go in the PRD's Features Catalog section.
+
 Then ask the framing questions in a single set:
 
 > 1. **Who** has this problem? (specific role or segment)
@@ -123,6 +125,11 @@ We'll know we're right when **{measurable outcome}**.
 ## Required Changes
 <!-- Screens, data, and behaviour that change. As detailed as the user provided. -->
 - {change}
+
+## Features Catalog
+<!-- From .claude/context/features.md. The developer agent updates these entries when the ticket ships. -->
+- **Extends**: {#N Feature name} | New feature
+- **Closes known gaps**: {gap, quoted from the entry} | none
 
 ## Open Questions
 - [ ] {question that could change scope or approach}
