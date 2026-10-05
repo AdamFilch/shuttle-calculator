@@ -18,17 +18,17 @@ export default function ShuttlesScreen() {
     useState<ShuttleWithInventory | null>(null);
   const [shuttlesList, setShuttlesList] = useState<ShuttleWithInventory[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchShuttles();
-    }, []),
-  );
-
   const fetchShuttles = async () => {
     fetchAllShuttlesWithInventory().then((res) => {
       setShuttlesList(res);
     });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchShuttles();
+    }, []),
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background-50">

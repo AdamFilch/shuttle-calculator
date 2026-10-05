@@ -12,17 +12,17 @@ import { ScrollView, View } from "react-native";
 export default function DeletedPlayersPage() {
   const [deletedPlayers, setDeletedPlayers] = useState<Player[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchDeleted();
-    }, []),
-  );
-
   const fetchDeleted = () => {
     fetchDeletedPlayers().then((res) => {
       setDeletedPlayers(res);
     });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchDeleted();
+    }, []),
+  );
 
   const handleRestore = async (playerId: number) => {
     await restorePlayer(playerId);

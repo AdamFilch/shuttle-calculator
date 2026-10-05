@@ -35,12 +35,6 @@ export default function SelectedSessionPage() {
   const [openBookCourtModal, setOpenBookCourtModal] = useState(false);
   const [openCloseConfirm, setOpenCloseConfirm] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchSession();
-    }, [sessionId]),
-  );
-
   const fetchSession = async () => {
     fetchSessionById(sessionId.toString()).then((res) => {
       setSessionMatches(res);
@@ -49,6 +43,12 @@ export default function SelectedSessionPage() {
       setShuttlesBySession(res);
     });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSession();
+    }, [sessionId]),
+  );
 
   if (!sessionMatches) {
     return (

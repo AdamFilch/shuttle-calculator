@@ -121,7 +121,7 @@ export function AddSessionModal({
         <ModalBody>
           <VStack space="sm">
             <Text size="sm" className="text-typography-500">
-              (Title will defaults to today's date)
+              (Title will defaults to today&apos;s date)
             </Text>
             <Input
               variant="outline"
@@ -270,17 +270,17 @@ export function PayByPlayerModal({
     PlayersShuttlePayments[]
   >([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchPlayerPayments();
-    }, [open]),
-  );
-
   const fetchPlayerPayments = async () => {
     fetchAllPlayerPaymentsBySession(sessionId).then((res) => {
       setPlayerPayments(res);
     });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPlayerPayments();
+    }, [open]),
+  );
 
   const handlePayment = async () => {
     if (selectedPlayers.length > 0) {

@@ -31,10 +31,13 @@ export function AddPlayerModal({
       fetchAllPlayers().then((players) => {
         setExistingNames(players.map((p) => p.name));
       });
-    } else {
-      setPlayername("");
     }
   }, [open]);
+
+  function handleClose() {
+    setPlayername("");
+    onClose();
+  }
 
   const trimmedName = playername.trim();
   const isDuplicate = existingNames.some(
@@ -59,7 +62,7 @@ export function AddPlayerModal({
     <Modal
       isOpen={open}
       onClose={() => {
-        onClose();
+        handleClose();
       }}
     >
       <ModalBackdrop />
@@ -108,7 +111,7 @@ export function AddPlayerModal({
             variant="outline"
             action="secondary"
             onPress={() => {
-              onClose();
+              handleClose();
             }}
           >
             <ButtonText>Cancel</ButtonText>

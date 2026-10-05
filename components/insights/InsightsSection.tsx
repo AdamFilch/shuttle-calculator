@@ -60,7 +60,9 @@ export function InsightsSection() {
   const [hasCheckedUsage, setHasCheckedUsage] = useState(false);
   const [selectedRange, setSelectedRange] = useState<ShuttleUsageRange>("1w");
   const [points, setPoints] = useState<ShuttleUsagePoint[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadedRange, setLoadedRange] = useState<ShuttleUsageRange | null>(
+    null,
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -82,13 +84,13 @@ export function InsightsSection() {
   useEffect(() => {
     if (!hasCheckedUsage) return;
 
-    setLoading(true);
     fetchShuttleUsageTimeSeries(selectedRange).then((res) => {
       setPoints(res);
-      setLoading(false);
+      setLoadedRange(selectedRange);
     });
   }, [selectedRange, hasCheckedUsage]);
 
+  const loading = hasCheckedUsage && loadedRange !== selectedRange;
   const unlocked = unlockedRangeOptions(earliestUsageDate);
   const hasUsage = hasCheckedUsage && earliestUsageDate !== null;
 

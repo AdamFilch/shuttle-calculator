@@ -20,12 +20,6 @@ export default function CreateNewMatchPage() {
   const [shuttleList, setShuttleList] = useState<Shuttle[] | null>([]);
   const [playerList, setPlayerList] = useState<Player[] | null>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, []),
-  );
-
   const fetchData = () => {
     fetchAllShuttles().then((res) => {
       setShuttleList(res);
@@ -34,6 +28,12 @@ export default function CreateNewMatchPage() {
       setPlayerList(res);
     });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, []),
+  );
   const hasAnyPlayer = selectedPlayers.some((playerId) => playerId !== null);
 
   async function onClickSave() {

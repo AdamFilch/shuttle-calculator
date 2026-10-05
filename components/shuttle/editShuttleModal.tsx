@@ -30,11 +30,19 @@ export function EditShuttleModal({
     const [purchaseHistory, setPurchaseHistory] = useState<ShuttlePurchase[]>([])
     const [buyAgainQty, setBuyAgainQty] = useState("")
 
+    const [syncedShuttle, setSyncedShuttle] = useState<ShuttleWithInventory | null>(null)
+    const activeShuttle = open ? shuttle : null
+    if (activeShuttle !== syncedShuttle) {
+        setSyncedShuttle(activeShuttle)
+        if (activeShuttle) {
+            setName(activeShuttle.name)
+            setPricePerShuttle((Number(activeShuttle.total_price) / Number(activeShuttle.num_of_shuttles)).toFixed(2))
+            setBuyAgainQty("")
+        }
+    }
+
     useEffect(() => {
         if (open && shuttle) {
-            setName(shuttle.name)
-            setPricePerShuttle((Number(shuttle.total_price) / Number(shuttle.num_of_shuttles)).toFixed(2))
-            setBuyAgainQty("")
             fetchShuttlePurchaseHistory(shuttle.shuttle_id).then(setPurchaseHistory)
         }
     }, [open, shuttle])

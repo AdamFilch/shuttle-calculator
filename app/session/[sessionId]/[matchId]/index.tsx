@@ -20,17 +20,17 @@ export default function MatchPage() {
 
     const [match, setMatch] = useState<MatchFull | null>(null)
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchSession()
-        }, [sessionId])
-    )
-
     const fetchSession = async () => {
         fetchMatchById(matchId.toString()).then(res => {
             setMatch(res)
         })
     }
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchSession()
+        }, [sessionId])
+    )
 
 
     if (match == null) {

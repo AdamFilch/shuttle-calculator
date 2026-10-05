@@ -63,12 +63,6 @@ export default function SelectPlayerPage() {
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchPlayerAndShuttles();
-    }, [playerId]),
-  );
-
   const fetchPlayerAndShuttles = async () => {
     fetchPlayerById(playerId.toString()).then((res) => {
       setPlayer(res[0]);
@@ -77,6 +71,12 @@ export default function SelectPlayerPage() {
       });
     });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPlayerAndShuttles();
+    }, [playerId]),
+  );
 
   const toggleSession = (sessionId: number) => {
     setExpandedSessions((prev) => {
