@@ -2,21 +2,28 @@ import { openDatabaseSync } from "expo-sqlite";
 import { Session } from "./session";
 
 
+export const AVATAR_COLOURS = ['primary', 'clay', 'sage', 'muted'] as const
+
+export type AvatarColour = typeof AVATAR_COLOURS[number]
+
 export type Player = {
   player_id: number,
   name: string,
   status: 'active' | 'deleted',
-  deleted_date: string | null
+  deleted_date: string | null,
+  avatar_colour: AvatarColour | null
 }
 
 const db = openDatabaseSync('db.db');
 
 export async function createPlayer(name: string) {
+  const existing = await db.getFirstAsync<{ count: number }>(`SELECT COUNT(*) AS count FROM players`)
+  const avatarColour = AVATAR_COLOURS[(existing?.count ?? 0) % AVATAR_COLOURS.length]
 
   const result = await db.runAsync(`
-        INSERT into players (name) VALUES (?)
+        INSERT into players (name, avatar_colour) VALUES (?, ?)
         `,
-    [name]
+    [name, avatarColour]
   )
 
   return result.lastInsertRowId
@@ -335,11 +342,17 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
   return Object.values(playersMap)
 }
 
-export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]> {
+export type PlayerSummary = PlayersShuttlePayments & {
+  avatar_colour: AvatarColour | null,
+  session_count: number
+}
+
+export async function fetchAllPlayerPayments(): Promise<PlayerSummary[]> {
   const shuttlePaymentsByPlayerRows: any = await db.getAllAsync(`
       SELECT
       p.name AS player_name,
       p.player_id,
+      p.avatar_colour,
       sp.shuttle_instance_id,
       sp.amount_paid,
       sp.date_paid,
@@ -366,6 +379,17 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
       LEFT JOIN court_bookings cb ON cb.court_booking_id = cp.court_booking_id
       `)
 
+  const sessionCountRows: { player_id: number, session_count: number }[] = await db.getAllAsync(`
+      SELECT mp.player_id, COUNT(DISTINCT m.session_id) AS session_count
+      FROM match_players mp
+      JOIN matches m ON m.match_id = mp.match_id
+      GROUP BY mp.player_id
+      `)
+  const sessionCountByPlayer: Record<number, number> = {}
+  for (const row of sessionCountRows) {
+    sessionCountByPlayer[row.player_id] = row.session_count
+  }
+
   const playersMap: Record<number, any> = {}
   for (let row of shuttlePaymentsByPlayerRows) {
 
@@ -374,6 +398,8 @@ export async function fetchAllPlayerPayments(): Promise<PlayersShuttlePayments[]
       let thisPlayer = {
         player_id: row.player_id,
         name: row.player_name,
+        avatar_colour: row.avatar_colour,
+        session_count: sessionCountByPlayer[row.player_id] ?? 0,
         total_owed_amount: 0,
         shuttle_payments: [],
         court_payments: []

@@ -45,9 +45,24 @@ export function formatSessionTitle(session: { name: string | null | undefined, d
 }
 
 
-export async function fetchAllSessions(): Promise<Session[]> {
-    const res: Session[] = await db.getAllAsync(`
-        SELECT s.*, COUNT(DISTINCT mp.player_id) as player_count, COUNT(DISTINCT m.match_id) as match_count
+export type SessionSummary = Session & {
+    shuttle_count: number,
+    outstanding_amount: number
+}
+
+export async function fetchAllSessions(): Promise<SessionSummary[]> {
+    const res: SessionSummary[] = await db.getAllAsync(`
+        SELECT s.*, COUNT(DISTINCT mp.player_id) as player_count, COUNT(DISTINCT m.match_id) as match_count,
+        (SELECT COUNT(*) FROM shuttle_instances si WHERE si.session_id = s.session_id) AS shuttle_count,
+        COALESCE((
+            SELECT SUM(sp.amount_paid) FROM shuttle_payments sp
+            JOIN shuttle_instances si ON si.shuttle_instance_id = sp.shuttle_instance_id
+            WHERE si.session_id = s.session_id
+        ), 0) + COALESCE((
+            SELECT SUM(cp.amount_paid) FROM court_payments cp
+            JOIN court_bookings cb ON cb.court_booking_id = cp.court_booking_id
+            WHERE cb.session_id = s.session_id
+        ), 0) AS outstanding_amount
         FROM sessions s
         LEFT JOIN matches m ON m.session_id = s.session_id
         LEFT JOIN match_players mp ON mp.match_id = m.match_id AND mp.player_id IS NOT NULL

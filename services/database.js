@@ -40,7 +40,8 @@ export async function setupDatabase() {
         date TIMESTAMP NOT NULL DEFAULT (datetime('now')),
         name TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'active',
-        deleted_date TIMESTAMP
+        deleted_date TIMESTAMP,
+        avatar_colour TEXT
       );
     `);
 
