@@ -48,7 +48,12 @@ If provided, restate in one sentence and ask:
 
 Before the framing questions, read the index of `.claude/context/features.md` and only the entries this idea touches. If the feature is already built, say so and ask whether this is a change to it. Note which entry it extends (or that it is new) and any of that entry's known gaps it would close; these go in the PRD's Features Catalog section.
 
-Then ask the framing questions in a single set:
+Decide the ticket type:
+
+- **Feature**: new capability or a problem to solve. Run every phase.
+- **Change**: a design change, restyle, or adjustment to something already built. Skip the framing questions below and Phase 2, and leave out the Hypothesis question in Phase 3. The PRD replaces Problem, Evidence, Hypothesis, and Success Metrics with a one-paragraph **Summary** of what changes and why.
+
+If the type is unclear, ask. For a feature ticket, ask the framing questions in a single set:
 
 > 1. **Who** has this problem? (specific role or segment)
 > 2. **What** is the observable pain? (describe behavior, not assumed needs)
@@ -87,6 +92,13 @@ mkdir -p .claude/prds
 **Output path**: `.claude/prds/{N}-{kebab-case-name}.prd.md`
 
 #### PRD Template
+
+For a change ticket, replace Problem, Evidence, Hypothesis, and Success Metrics with:
+
+```markdown
+## Summary
+{One paragraph: what changes, why, and what stays the same.}
+```
 
 ```markdown
 # [{N}]: {Product / Feature Name}
@@ -148,8 +160,8 @@ We'll know we're right when **{measurable outcome}**.
 PRD created: [{N}]: {Title}
 File:        .claude/prds/{N}-{name}.prd.md
 
-Problem:    {one line}
-Hypothesis: {one line}
+Problem:    {one line, or the Summary for a change ticket}
+Hypothesis: {one line, or "n/a (change ticket)"}
 MVP:        {one line}
 
 Acceptance criteria: {count}
@@ -161,7 +173,7 @@ Next step: use the developer agent on .claude/prds/{N}-{name}.prd.md
 ## Success criteria
 
 - **ID_UNIQUE**: the ticket ID is higher than every existing numbered PRD, and it appears in both the heading and the filename.
-- **PROBLEM_CLEAR**: the problem is specific and evidenced (or flagged as an assumption).
+- **PROBLEM_CLEAR**: the problem is specific and evidenced (or flagged as an assumption). For a change ticket, the Summary says what changes and what stays the same.
 - **USER_CONCRETE**: the primary user is a specific role, not "users".
 - **SCOPE_BOUNDED**: there is an explicit MVP and an explicit out-of-scope list.
 - **CRITERIA_TESTABLE**: every acceptance criterion can be verified by observation or by running something.
