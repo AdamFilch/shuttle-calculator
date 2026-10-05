@@ -14,7 +14,8 @@ Read these in order. They are the source of truth; never guess what they would s
 2. `.claude/context/product.md` (what the product is, who it is for, priorities, roadmap, non-goals)
 3. Any product overview it links to
 4. The ticket you were given (usually under `.claude/prds/`)
-5. A matching design spec in `.claude/design/specs/`, if one exists. When it does, implement the design as specified; if the code makes part of it impractical, flag it in your report instead of silently deviating.
+5. For UI work, `.claude/context/design.md` and any design system it links (README first). Use its tokens, components, and writing rules. Where the code's current theme differs, apply the design system only within the ticket's scope and flag the rest.
+6. A matching design spec in `.claude/design/specs/`, if one exists. When it does, implement the design as specified; if the code makes part of it impractical, flag it in your report instead of silently deviating.
 
 If `.claude/context/product.md` is missing, say so at the top of your report and offer to draft it from the codebase. Continue the task using `CLAUDE.md` and the ticket.
 
