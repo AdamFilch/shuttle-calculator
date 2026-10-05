@@ -14,9 +14,10 @@ Produces a **Product Requirements Document** that doubles as a numbered ticket. 
 | This command does | This command does NOT do |
 |---|---|
 | Frame the problem and users | Write or edit application code |
-| Capture success criteria, scope, and acceptance criteria | Create branches or PRs |
+| Capture success criteria, scope, and acceptance criteria | Commit, push, create branches or PRs |
 | Describe the required changes in as much detail as the user gives | Invent requirements the user did not state |
 | Assign a unique ticket ID and write `.claude/prds/{N}-{name}.prd.md` | Implement the ticket (that's the developer agent) |
+| Write the PRD on `main`, uncommitted, for the user to review | |
 
 **Anti-fluff rule**: When information is missing, write `TBD — needs validation via {method}`. Never invent plausible-sounding requirements.
 
@@ -78,7 +79,20 @@ Wait for responses. If the user gives no acceptance criteria, propose a list der
 
 ### Phase 4 — GENERATE
 
-Compute the next ticket ID, create the directory if needed, write the PRD, and report.
+Make sure you are on `main`, compute the next ticket ID, create the directory if needed, write the PRD, and report.
+
+**Branch preflight**: PRDs are written on `main` and left uncommitted so the user can review, commit, and push them.
+
+```bash
+git branch --show-current
+git status --porcelain
+```
+
+- On `main`: continue.
+- On another branch with a clean working tree: `git checkout main`, then continue.
+- On another branch with uncommitted changes: stop and tell the user to commit or move those changes first. Do not switch branches.
+
+Never commit, stash, or push. The PRD stays as an uncommitted change on `main`.
 
 ```bash
 mkdir -p .claude/prds
@@ -147,6 +161,7 @@ We'll know we're right when **{measurable outcome}**.
 ```
 PRD created: [{N}]: {Title}
 File:        .claude/prds/{N}-{name}.prd.md
+Branch:      main (uncommitted)
 
 Problem:    {one line}
 Hypothesis: {one line}
@@ -155,7 +170,12 @@ MVP:        {one line}
 Acceptance criteria: {count}
 Open questions:      {count}
 
-Next step: use the developer agent on .claude/prds/{N}-{name}.prd.md
+Next steps:
+  1. Review the PRD.
+  2. Commit and push it to main:
+     git add .claude/prds/{N}-{name}.prd.md && git commit -m "Add PRD [{N}]: {Title}" && git push
+  3. Use the developer agent on .claude/prds/{N}-{name}.prd.md
+     (it works on its own prd-{N}-{name} branch and opens a PR with gh)
 ```
 
 ## Success criteria

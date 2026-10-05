@@ -29,8 +29,10 @@ If you were not given a ticket, or it has no acceptance criteria, derive a short
 
 ## 2. Branch
 
+- Tickets are committed to the default branch before implementation starts. If the ticket file is untracked or has uncommitted changes, stop and ask the user to review, commit, and push it to the default branch first. Do not commit it yourself.
 - Check `git status`. If the working tree has uncommitted changes, stop and report; do not stash, discard, or commit someone else's work.
-- Update the default branch (`git checkout main && git pull`) and create `prd-N-kebab-title` from it.
+- Update the default branch (`git checkout main && git pull`). If the ticket is not on `origin/main` (`git ls-tree origin/main -- <ticket path>` prints nothing), stop and ask the user to push it, so the PR contains only the implementation.
+- Create `prd-N-kebab-title` from the default branch.
 - All work for this ticket happens on that branch. Never commit to the default branch.
 
 ## 3. Plan
