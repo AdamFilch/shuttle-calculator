@@ -80,4 +80,4 @@ This is a design change: behaviour stays the same, and only the look and the dat
 | Rotating by player count repeats colours after deletes | Medium | Low | Acceptable: colours only need to stay the same for each player, not be unique |
 
 ---
-*Status: READY — ticket [1]*
+*Status: COMPLETED — PR #TBD (PR not yet opened; replace with the PR number)*
