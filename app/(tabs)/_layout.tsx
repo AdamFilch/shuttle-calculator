@@ -1,10 +1,11 @@
 import { HapticTab } from "@/components/HapticTab";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { designTokens } from "@/components/ui/gluestack-ui-provider/config";
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
-export const TAB_ACTIVE_TINT = "#0C856E";
-const TAB_INACTIVE_TINT = "#8C8C8C";
+export const TAB_ACTIVE_TINT = designTokens.primary;
+const TAB_INACTIVE_TINT = designTokens.muted;
 
 export default function TabLayout() {
   return (
@@ -22,8 +23,15 @@ export default function TabLayout() {
             position: "absolute",
             height: 80,
             paddingTop: 5,
+            backgroundColor: designTokens["surface-raised"],
+            borderTopColor: designTokens["border-subtle"],
+            borderTopWidth: StyleSheet.hairlineWidth,
           },
-          default: {},
+          default: {
+            backgroundColor: designTokens["surface-raised"],
+            borderTopColor: designTokens["border-subtle"],
+            borderTopWidth: StyleSheet.hairlineWidth,
+          },
         }),
       }}
     >

@@ -1,8 +1,8 @@
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
+import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { HStack } from "@/components/ui/hstack";
-import { Text } from "@/components/ui/text";
+import { AddIcon } from "@/components/ui/icon";
 import { VStack } from "@/components/ui/vstack";
+import { Text } from "react-native";
 
 export type PageHeaderAction = {
   label: string;
@@ -26,14 +26,16 @@ export function PageHeader({
   subtitle?: string;
   action?: PageHeaderAction;
 }) {
+  const isNegative = action?.variant === "negative";
+
   return (
-    <HStack className="items-start justify-between px-4 pt-4 pb-3 bg-background-0">
+    <HStack className="items-center justify-between px-4 pt-4 pb-3 bg-surface">
       <VStack className="flex-1 pr-3" space="xs">
-        <Heading size="xl" className="text-typography-900">
+        <Text className="text-screen-title font-semibold text-ink">
           {title}
-        </Heading>
+        </Text>
         {subtitle && (
-          <Text size="sm" className="text-typography-500">
+          <Text className="text-body text-muted">
             {subtitle}
           </Text>
         )}
@@ -41,11 +43,15 @@ export function PageHeader({
       {action && (
         <Button
           size="sm"
-          action={action.variant === "negative" ? "negative" : undefined}
+          action={isNegative ? "negative" : undefined}
           isDisabled={action.isDisabled}
           onPress={action.onPress}
+          className={isNegative ? "rounded-lg" : "rounded-lg bg-primary data-[active=true]:opacity-85"}
         >
-          <ButtonText>{action.label}</ButtonText>
+          {!isNegative && <ButtonIcon as={AddIcon} className="text-surface" />}
+          <ButtonText className={isNegative ? undefined : "text-surface font-medium"}>
+            {action.label}
+          </ButtonText>
         </Button>
       )}
     </HStack>

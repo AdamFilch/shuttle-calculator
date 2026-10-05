@@ -19,7 +19,33 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        surface: {
+          DEFAULT: 'rgb(var(--color-surface)/<alpha-value>)',
+          raised: 'rgb(var(--color-surface-raised)/<alpha-value>)',
+        },
+        ink: 'rgb(var(--color-ink)/<alpha-value>)',
+        muted: 'rgb(var(--color-muted)/<alpha-value>)',
+        border: {
+          DEFAULT: 'rgb(var(--color-border)/<alpha-value>)',
+          subtle: 'rgb(var(--color-border-subtle)/<alpha-value>)',
+          dashed: 'rgb(var(--color-border-dashed)/<alpha-value>)',
+        },
+        sage: 'rgb(var(--color-sage)/<alpha-value>)',
+        'on-sage': 'rgb(var(--color-on-sage)/<alpha-value>)',
+        clay: {
+          DEFAULT: 'rgb(var(--color-clay)/<alpha-value>)',
+          tint: 'rgb(var(--color-clay-tint)/<alpha-value>)',
+          strong: 'rgb(var(--color-clay-strong)/<alpha-value>)',
+        },
+        settled: {
+          DEFAULT: 'rgb(var(--color-settled)/<alpha-value>)',
+          tint: 'rgb(var(--color-settled-tint)/<alpha-value>)',
+        },
+        'neutral-tint': 'rgb(var(--color-neutral-tint)/<alpha-value>)',
+        disabled: 'rgb(var(--color-disabled)/<alpha-value>)',
         primary: {
+          DEFAULT: 'rgb(var(--color-primary)/<alpha-value>)',
+          tint: 'rgb(var(--color-primary-tint)/<alpha-value>)',
           0: 'rgb(var(--color-primary-0)/<alpha-value>)',
           50: 'rgb(var(--color-primary-50)/<alpha-value>)',
           100: 'rgb(var(--color-primary-100)/<alpha-value>)',
@@ -189,6 +215,12 @@ module.exports = {
       },
       fontSize: {
         '2xs': '10px',
+        'screen-title': ['28px', '34px'],
+        'modal-title': ['20px', '26px'],
+        'card-title': ['16px', '22px'],
+        body: ['14px', '20px'],
+        badge: ['12px', '16px'],
+        caption: ['12px', '16px'],
       },
       boxShadow: {
         'hard-1': '-2px 2px 8px 0px rgba(38, 38, 38, 0.20)',
