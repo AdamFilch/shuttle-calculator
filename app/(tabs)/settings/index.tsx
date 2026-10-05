@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button, ButtonText } from "@/components/ui/button";
 import { VStack } from "@/components/ui/vstack";
 import { debugDatabase, dropDatabase, setupDatabase } from "@/services/database";
+import { seedDatabase } from "@/services/seed";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -30,6 +31,19 @@ export default function SettingsPage() {
                     >
                         <ButtonText>Reset Database</ButtonText>
                     </Button>
+                    {__DEV__ && (
+                        <Button
+                            variant="outline"
+                            action="secondary"
+                            onPress={async () => {
+                                await dropDatabase()
+                                await setupDatabase()
+                                await seedDatabase()
+                            }}
+                        >
+                            <ButtonText>Reset & Load Sample Data</ButtonText>
+                        </Button>
+                    )}
                 </VStack>
             </ScrollView>
         </SafeAreaView>

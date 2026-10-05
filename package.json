@@ -9,7 +9,10 @@
     "android": "DARK_MODE=media expo start --android",
     "ios": "DARK_MODE=media expo start --ios",
     "web": "DARK_MODE=media expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "db:reset": "node ./scripts/dev-db.js reset",
+    "db:seed": "node ./scripts/dev-db.js seed",
+    "db:fresh": "node ./scripts/dev-db.js fresh"
   },
   "dependencies": {
     "@expo/html-elements": "^0.10.1",

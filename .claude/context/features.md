@@ -254,9 +254,9 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 15. Settings
 
-**What it does**: developer tools only. "Check Tables" (inspects the schema; logs nothing at present) and "Reset Database" (drops and recreates all tables, wiping all data).
+**What it does**: developer tools only. "Check Tables" (inspects the schema; logs nothing at present) and "Reset Database" (drops and recreates all tables, wiping all data). In dev builds only, "Reset & Load Sample Data" resets and then fills the DB with the `default` seed scenario. The same reset/seed can be triggered without tapping via `npm run db:reset` / `db:seed` / `db:fresh` (dev-only deep link to `app/dev/db.tsx`).
 
-**Where**: `app/(tabs)/settings/index.tsx`, `services/database.js`.
+**Where**: `app/(tabs)/settings/index.tsx`, `services/database.js`, `services/seed.ts`, `app/dev/db.tsx`, `scripts/dev-db.js`.
 
 **Known gaps**
 - Reset Database has no confirmation and deletes everything. This conflicts with the rule that destructive actions must confirm.
