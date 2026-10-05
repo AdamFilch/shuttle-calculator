@@ -24,15 +24,15 @@ This is a design change: behaviour stays the same, and only the look and the dat
 - A dark theme (light only, per the design decision log).
 
 ## Acceptance Criteria
-- [ ] AC1: Every existing action on both tabs works as before: Add player (including empty and duplicate-name validation), fuzzy search, tap a player to open their detail, "Recently deleted" opening the deleted list, Add session, and tap a session to open its detail. Both empty states still appear.
-- [ ] AC2: Every value shown comes from a database query, not a placeholder: player name, session count and amount owed; session title, date, player count, shuttles used, and the status / amount due. Verified by adding data in the app and seeing both lists update.
-- [ ] AC3: Money on both tabs reads "RM", e.g. "Owes RM 12" and "RM 12 due". Whole amounts drop the cents ("RM 12"); other amounts keep 2 decimals ("RM 4.50"). Neither tab shows "$".
-- [ ] AC4: The design-system palette is applied through the theme tokens in `components/ui/gluestack-ui-provider/config.ts` (and exposed in `tailwind.config.js`), not hard-coded hex values in screens or components. The tab bar and PageHeader use these tokens.
-- [ ] AC5: Each player has an initials avatar: the first 2 letters of the name, uppercased (1 letter for a 1-character name). The colour is stored in the `players` table when the player is created, rotating primary → clay → sage → muted. A player shows the same colour on every render and after an app restart.
-- [ ] AC6: Avatar, StatusBadge, PlayerRow and SessionCard (plus a search TextInput if needed) are shared components under `components/`, used by both tabs where they apply. These replace the `ListRow` / `DebtChip` usages on these two tabs. The old components stay in place for other screens.
-- [ ] AC7: The SessionCard badge follows session status. Open sessions show "Open session" (`primary` on `primary-tint`). Closed sessions show "Settled" when nothing is owed, or "RM N due" (clay) for the outstanding shuttle and court charges. Sessions with no matches use the same normal card. There is no dashed "Not started" variant.
-- [ ] AC8: "N sessions" on PlayerRow counts every distinct session the player has played in, paid or not, and is pluralised ("1 session", "3 sessions").
-- [ ] AC9: `npm run lint` and `npx tsc --noEmit` pass. Both tabs are checked visually on the iOS Simulator via Expo MCP after `npm run db:fresh` (never on web).
+- [x] AC1: Every existing action on both tabs works as before: Add player (including empty and duplicate-name validation), fuzzy search, tap a player to open their detail, "Recently deleted" opening the deleted list, Add session, and tap a session to open its detail. Both empty states still appear.
+- [x] AC2: Every value shown comes from a database query, not a placeholder: player name, session count and amount owed; session title, date, player count, shuttles used, and the status / amount due. Verified by adding data in the app and seeing both lists update.
+- [x] AC3: Money on both tabs reads "RM", e.g. "Owes RM 12" and "RM 12 due". Whole amounts drop the cents ("RM 12"); other amounts keep 2 decimals ("RM 4.50"). Neither tab shows "$".
+- [x] AC4: The design-system palette is applied through the theme tokens in `components/ui/gluestack-ui-provider/config.ts` (and exposed in `tailwind.config.js`), not hard-coded hex values in screens or components. The tab bar and PageHeader use these tokens.
+- [x] AC5: Each player has an initials avatar: the first 2 letters of the name, uppercased (1 letter for a 1-character name). The colour is stored in the `players` table when the player is created, rotating primary → clay → sage → muted. A player shows the same colour on every render and after an app restart.
+- [x] AC6: Avatar, StatusBadge, PlayerRow and SessionCard (plus a search TextInput if needed) are shared components under `components/`, used by both tabs where they apply. These replace the `ListRow` / `DebtChip` usages on these two tabs. The old components stay in place for other screens.
+- [x] AC7: The SessionCard badge follows session status. Open sessions show "Open session" (`primary` on `primary-tint`). Closed sessions show "Settled" when nothing is owed, or "RM N due" (clay) for the outstanding shuttle and court charges. Sessions with no matches use the same normal card. There is no dashed "Not started" variant.
+- [x] AC8: "N sessions" on PlayerRow counts every distinct session the player has played in, paid or not, and is pluralised ("1 session", "3 sessions").
+- [x] AC9: `npm run lint` and `npx tsc --noEmit` pass. Both tabs are checked visually on the iOS Simulator via Expo MCP after `npm run db:fresh` (never on web).
 
 ## Required Changes
 - **Theme (root)**: in `components/ui/gluestack-ui-provider/config.ts`, apply the design system's token remap:

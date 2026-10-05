@@ -31,17 +31,19 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 ## 1. Players
 
 **What it does**
-- Players tab lists all active players, each with a debt chip showing their total outstanding balance.
+- Players tab lists all active players as PlayerRows: an initials Avatar, the name, "N sessions" (every distinct session the player has played in, paid or not, pluralised) and a StatusBadge: "Settled" when nothing is owed, otherwise "Owes RM N" (clay).
 - Fuzzy search by name (tolerant of typos).
-- "Add Player" opens a modal with a name field. Save is disabled when the name is empty or matches an existing active player (case-insensitive, trimmed).
+- "Add player" opens a modal with a name field. Save is disabled when the name is empty or matches an existing active player (case-insensitive, trimmed).
 - Tapping a player opens their detail screen (see [10](#10-player-balance-and-payments)).
 - Empty states: "no players yet" and "no search results".
-- A "Recently Deleted" row at the bottom links to deleted players (see [2](#2-deleting-and-restoring-players)).
+- A "Recently deleted" text link under the list opens deleted players (see [2](#2-deleting-and-restoring-players)).
 
-**Where**: `app/(tabs)/player/index.tsx`, `components/user/modal.tsx`, `services/player.ts` (`createPlayer`, `fetchAllPlayers`, `fetchAllPlayerPayments`).
+**Where**: `app/(tabs)/player/index.tsx`, `components/user/modal.tsx`, `components/shared/` (`PlayerRow`, `Avatar`, `StatusBadge`, `SearchInput`), `services/player.ts` (`createPlayer`, `fetchAllPlayers`, `fetchAllPlayerPayments`), `services/money-display.ts` (`formatRM`). Spec: `.claude/prds/completed/1-players-and-sessions-redesign.prd.md`.
 
 **Rules**
 - Players are never hard-deleted, so past matches and charges always keep their player.
+- Each player's avatar colour is stored in `players.avatar_colour` as a token name (`primary` / `clay` / `sage` / `muted`), assigned in rotation by the number of existing players (including deleted ones) when the player is created. Initials are the first 2 letters of the name, uppercased.
+- Money on this tab is "RM 12" for whole amounts and "RM 4.50" otherwise.
 
 **Known gaps**
 - Players cannot be renamed.
@@ -65,11 +67,11 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 ## 3. Sessions
 
 **What it does**
-- Sessions tab lists all sessions newest first. Each row shows the title (name and date, or just the date), player count and match count, and an Open (shuttlecock icon) or Closed indicator.
+- Sessions tab lists all sessions newest first as SessionCards: the title (the session name, or the date when unnamed), "D Mon YYYY · N players", a clay feather icon with "N shuttles used" (every shuttle instance in the session, including free ones), and a StatusBadge. Open sessions show "Open session"; closed sessions show "Settled" when nothing is owed, or "RM N due" for the outstanding shuttle and court charges. Sessions with no matches use the same card.
 - "Add Session" modal fields: title (optional), date, start time, location (optional), and an optional "book courts" section (label, price, quantity, duration in hours). When booking courts, price, quantity, and duration are required.
 - Session detail shows: Open/Closed status, Book Courts and Close Session buttons (open sessions only), an "Add Match" header action (open only), the match list (match number, date, player names), "Shuttles Used" (per type: count and number of matches), and "Courts Booked" (label, price, × quantity).
 
-**Where**: `app/(tabs)/session/index.tsx`, `app/session/[sessionId]/index.tsx`, `components/session/modal.tsx` (`AddSessionModal`), `services/session.ts` (`createNewSession`, `fetchAllSessions`, `fetchSessionById`, `formatSessionTitle`).
+**Where**: `app/(tabs)/session/index.tsx`, `app/session/[sessionId]/index.tsx`, `components/session/modal.tsx` (`AddSessionModal`), `components/shared/` (`SessionCard`, `StatusBadge`), `services/session.ts` (`createNewSession`, `fetchAllSessions`, `fetchSessionById`, `formatSessionTitle`). Spec: `.claude/prds/completed/1-players-and-sessions-redesign.prd.md`.
 
 **Rules**
 - A session is `open` until closed (see [9](#9-closing-a-session-settlement)). Closed sessions can't take new matches or courts.
@@ -264,7 +266,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 16. Currency
 
-**Status**: Gap. The club works in RM, but amounts are shown with `$` (Home, Players, player detail, shuttle cards). The shuttle picker already shows "RM". All money should be shown as RM.
+**Status**: Gap. The club works in RM, but amounts are shown with `$` (Home, player detail, shuttle cards). The Players and Sessions tabs and the shuttle picker already show "RM" (the two tabs via `formatRM` in `services/money-display.ts`: "RM 12", "RM 4.50"). All money should be shown as RM.
 
 ## 17. Web
 
