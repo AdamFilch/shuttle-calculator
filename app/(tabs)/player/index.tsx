@@ -1,38 +1,35 @@
-import { ListRow } from "@/components/layout/ListRow";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { DebtChip } from "@/components/shared/DebtChip";
+import { PlayerRow } from "@/components/shared/PlayerRow";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { AddPlayerModal } from "@/components/user/modal";
-import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
-import { SearchIcon } from "@/components/ui/icon";
-import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-import { fetchAllPlayerPayments, PlayersShuttlePayments } from "@/services/player";
+import { fetchAllPlayerPayments, PlayerSummary } from "@/services/player";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { useRouter } from "expo-router";
 import Fuse from "fuse.js";
 import { useCallback, useMemo, useState } from "react";
-import { ScrollView } from "react-native";
+import { Pressable, ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function PlayersPage() {
 
-    const [playersList, setPlayersList] = useState<PlayersShuttlePayments[]>([])
+    const [playersList, setPlayersList] = useState<PlayerSummary[]>([])
     const router = useRouter()
     const [addPlayerIsOpen, setAddPlayerIsOpen] = useState(false)
     const [query, setQuery] = useState("")
-
-    useFocusEffect(
-        useCallback(() => {
-            fetchPlayers()
-        }, [])
-    )
 
     const fetchPlayers = async () => {
         fetchAllPlayerPayments().then((res) => {
             setPlayersList(res)
         })
     }
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchPlayers()
+        }, [])
+    )
 
     const fuse = useMemo(
         () => new Fuse(playersList, { keys: ["name"], threshold: 0.4, ignoreLocation: true }),
@@ -46,42 +43,39 @@ export default function PlayersPage() {
 
 
     return (
-        <SafeAreaView className="flex-1 bg-background-50">
+        <SafeAreaView className="flex-1 bg-surface">
             <PageHeader
                 title="Players"
                 action={{
-                    label: "Add Player",
+                    label: "Add player",
                     onPress: () => setAddPlayerIsOpen(true)
                 }}
             />
-            <VStack className="px-4 pb-3 bg-background-0">
-                <Input variant="outline" size="md">
-                    <InputSlot className="pl-3">
-                        <InputIcon as={SearchIcon} />
-                    </InputSlot>
-                    <InputField
-                        value={query}
-                        onChangeText={setQuery}
-                        placeholder="Search players"
-                    />
-                </Input>
+            <VStack className="px-4 pb-3 bg-surface">
+                <SearchInput
+                    value={query}
+                    onChangeText={setQuery}
+                    placeholder="Search players"
+                />
             </VStack>
             <ScrollView className="flex-1 px-4">
                 {playersList.length == 0 ? (
-                    <Text size="sm" className="text-typography-500 py-4">
+                    <Text className="text-body text-muted py-4">
                         No players yet
                     </Text>
                 ) : filteredPlayers.length == 0 ? (
-                    <Text size="sm" className="text-typography-500 py-4">
+                    <Text className="text-body text-muted py-4">
                         No players match &quot;{query.trim()}&quot;
                     </Text>
                 ) : (
-                    <VStack space="sm" className="pb-8 pt-2">
+                    <VStack space="sm" className="pt-2">
                         {filteredPlayers.map((player) => (
-                            <ListRow
+                            <PlayerRow
                                 key={player.player_id}
-                                title={player.name}
-                                trailing={<DebtChip amount={player.total_owed_amount} />}
+                                name={player.name}
+                                avatarColour={player.avatar_colour}
+                                sessionCount={player.session_count}
+                                owedAmount={player.total_owed_amount}
                                 onPress={() => {
                                     router.navigate(`/player/${player.player_id}`)
                                 }}
@@ -89,10 +83,16 @@ export default function PlayersPage() {
                         ))}
                     </VStack>
                 )}
-                <ListRow
-                    title="Recently Deleted"
+                <Pressable
+                    className="self-start py-4 mb-24"
                     onPress={() => router.navigate('/player/deleted')}
-                />
+                >
+                    {({ pressed }) => (
+                        <Text className={`text-body font-medium text-primary ${pressed ? "opacity-60" : ""}`}>
+                            Recently deleted
+                        </Text>
+                    )}
+                </Pressable>
             </ScrollView>
 
             <AddPlayerModal open={addPlayerIsOpen} onClose={() => {

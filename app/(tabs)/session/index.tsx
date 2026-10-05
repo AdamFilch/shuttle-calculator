@@ -1,66 +1,43 @@
-import { ListRow } from "@/components/layout/ListRow";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { SessionCard } from "@/components/shared/SessionCard";
 import { AddSessionModal } from "@/components/session/modal";
-import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-import {
-  fetchAllSessions,
-  formatSessionTitle,
-  Session,
-} from "@/services/session";
+import { fetchAllSessions, SessionSummary } from "@/services/session";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { Image, ScrollView, View } from "react-native";
+import { ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-function SessionStatusIndicator({ status }: { status: "open" | "closed" }) {
-  if (status === "open") {
-    return (
-      <Image
-        source={require("@/assets/images/shuttlecock.png")}
-        className="h-8 w-8 mr-4"
-        style={{ transform: [{ rotate: "-90deg" }] }}
-        resizeMode="contain"
-      />
-    );
-  }
-
-  return (
-    <View className="rounded-full px-3 py-1 bg-background-200">
-      <Text size="xs" bold className="text-typography-500">
-        Closed
-      </Text>
-    </View>
-  );
-}
 
 export default function SessionPage() {
   const router = useRouter();
-  const [sessionsList, setSessionsList] = useState<Session[]>([]);
+  const [sessionsList, setSessionsList] = useState<SessionSummary[]>([]);
   const [addSessionIsOpen, setAddSessionIsOpen] = useState(false);
-  useFocusEffect(
-    useCallback(() => {
-      fetchSessions();
-    }, []),
-  );
-
   const fetchSessions = async () => {
     fetchAllSessions().then((res) => {
       setSessionsList(res);
     });
   };
 
-  const byNewestFirst = (a: Session, b: Session) =>
+  useFocusEffect(
+    useCallback(() => {
+      fetchSessions();
+    }, []),
+  );
+
+  const byNewestFirst = (a: SessionSummary, b: SessionSummary) =>
     new Date(b.date).getTime() - new Date(a.date).getTime();
   const sessionsListSorted = sessionsList.sort(byNewestFirst);
 
-  const renderSessionRow = (session: Session) => (
-    <ListRow
+  const renderSessionCard = (session: SessionSummary) => (
+    <SessionCard
       key={session.session_id}
-      title={formatSessionTitle(session)}
-      subtitle={`${session.player_count} Player${session.player_count === 1 ? "" : "s"} · ${session.match_count} Match${session.match_count === 1 ? "" : "es"}`}
-      trailing={<SessionStatusIndicator status={session.status} />}
+      name={session.name}
+      date={session.date}
+      status={session.status}
+      playerCount={session.player_count}
+      shuttleCount={session.shuttle_count}
+      outstandingAmount={session.outstanding_amount}
       onPress={() => {
         router.navigate(`/session/${session.session_id}`);
       }}
@@ -68,24 +45,22 @@ export default function SessionPage() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background-50">
+    <SafeAreaView className="flex-1 bg-surface">
       <PageHeader
         title="Sessions"
         action={{
-          label: "Add Session",
+          label: "Add session",
           onPress: () => setAddSessionIsOpen(true),
         }}
       />
       <ScrollView className="flex-1 px-4">
         {sessionsListSorted.length == 0 ? (
-          <Text size="sm" className="text-typography-500 py-4">
+          <Text className="text-body text-muted py-4">
             No sessions yet
           </Text>
         ) : (
-          <VStack space="md" className="pb-8 pt-2">
-            <VStack space="sm">
-              {sessionsListSorted.map(renderSessionRow)}
-            </VStack>
+          <VStack space="sm" className="pb-24 pt-2">
+            {sessionsListSorted.map(renderSessionCard)}
           </VStack>
         )}
       </ScrollView>
