@@ -53,7 +53,8 @@ export async function setupDatabase() {
         start_time TEXT,
         location TEXT,
         status TEXT NOT NULL DEFAULT 'open',
-        closed_date TIMESTAMP
+        closed_date TIMESTAMP,
+        amount_due REAL
       );
     `);
 
