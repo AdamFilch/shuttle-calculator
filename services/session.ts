@@ -80,10 +80,15 @@ export type SessionMatches = Session & {
         match_number: number,
         match_date: string,
         shuttles: Shuttle[],
+        shuttle_count: number,
+        free_count: number,
+        all_free: boolean,
+        reused_from: { match_number: number, count: number }[],
         players: {
             name: string,
             player_id: number,
             position: number,
+            avatar_colour: AvatarColour | null,
         }[]
     }[],
     courts: CourtBooking[]
@@ -108,7 +113,8 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         s.num_of_shuttles,
         mp.player_id,
         mp.position,
-        p.name as player_name
+        p.name as player_name,
+        p.avatar_colour
         FROM matches m
         LEFT JOIN match_shuttle_instances msi ON m.match_id = msi.match_id
         LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = msi.shuttle_instance_id
@@ -128,6 +134,7 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
                 match_date: row.match_date,
                 shuttlesMap: {},
                 seenInstances: new Set<number>(),
+                freeInstances: new Set<number>(),
                 playersMap: {},
             }
             matchesMap[row.match_id] = match
@@ -138,6 +145,7 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
         // before counting.
         if (row.shuttle_instance_id !== null && !match.seenInstances.has(row.shuttle_instance_id)) {
             match.seenInstances.add(row.shuttle_instance_id)
+            if (row.shuttle_id === null) match.freeInstances.add(row.shuttle_instance_id)
             const key = row.shuttle_id === null ? 'free' : String(row.shuttle_id)
             if (!match.shuttlesMap[key]) {
                 match.shuttlesMap[key] = {
@@ -155,18 +163,45 @@ export async function fetchSessionById(id: string): Promise<SessionMatches> {
             match.playersMap[row.player_id] = {
                 player_id: row.player_id,
                 name: row.player_name,
-                position: row.position
+                position: row.position,
+                avatar_colour: row.avatar_colour
             }
         }
     }
 
-    const matches = Object.values(matchesMap).map(m => ({
-        match_id: m.match_id,
-        match_number: m.match_number,
-        match_date: m.match_date,
-        shuttles: Object.values(m.shuttlesMap),
-        players: Object.values(m.playersMap).sort((player1: { position }, player2: { position }) => player1.position - player2.position)
-    }))
+    const firstMatchNumberByInstance: Record<number, number> = {}
+    for (const m of Object.values(matchesMap)) {
+        for (const instanceId of m.seenInstances) {
+            const first = firstMatchNumberByInstance[instanceId]
+            if (first === undefined || m.match_number < first) firstMatchNumberByInstance[instanceId] = m.match_number
+        }
+    }
+
+    const matches = Object.values(matchesMap).map(m => {
+        const reusedByMatch: Record<number, number> = {}
+        let freeCount = 0
+        for (const instanceId of m.seenInstances) {
+            const first = firstMatchNumberByInstance[instanceId]
+            if (first < m.match_number) {
+                reusedByMatch[first] = (reusedByMatch[first] ?? 0) + 1
+            } else if (m.freeInstances.has(instanceId)) {
+                freeCount += 1
+            }
+        }
+        return {
+            match_id: m.match_id,
+            match_number: m.match_number,
+            match_date: m.match_date,
+            shuttles: Object.values(m.shuttlesMap),
+            shuttle_count: m.seenInstances.size,
+            free_count: freeCount,
+            all_free: m.seenInstances.size > 0 && m.freeInstances.size === m.seenInstances.size,
+            reused_from: Object.entries(reusedByMatch)
+                .map(([matchNumber, count]) => ({ match_number: Number(matchNumber), count }))
+                .sort((a, b) => a.match_number - b.match_number),
+            players: Object.values(m.playersMap).sort((player1: { position }, player2: { position }) => player1.position - player2.position)
+        }
+    })
 
     const courts = await fetchCourtBookingsBySessionId(id)
 
