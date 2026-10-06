@@ -20,6 +20,8 @@ export const designTokens = {
   'settled-tint': '#e7f4ee',
   'neutral-tint': '#edeeef',
   disabled: '#e9ebed',
+  court: '#7ab698',
+  'court-line': '#ffffff',
 } as const;
 
 function channels(hex: string): number[] {
@@ -210,6 +212,8 @@ const lightTheme = {
   '--color-settled-tint': rgb(designTokens['settled-tint']),
   '--color-neutral-tint': rgb(designTokens['neutral-tint']),
   '--color-disabled': rgb(designTokens['disabled']),
+  '--color-court': rgb(designTokens['court']),
+  '--color-court-line': rgb(designTokens['court-line']),
 };
 
 export const config = {
