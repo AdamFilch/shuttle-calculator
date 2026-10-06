@@ -99,14 +99,16 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 ## 5. Creating a match
 
 **What it does**
-- From an open session, "Add Match" opens a court diagram with 4 slots (top-left, bottom-left, top-right, bottom-right) arranged as two teams.
-- Tapping a slot opens a player picker; a player already placed in another slot can't be picked again.
-- Shuttles are added with the shuttle selector (see [6](#6-shuttle-usage-in-a-match-new--reused--free)). If no shuttle types exist yet, the screen says "Add a shuttle first to proceed".
-- "Start Match!" is enabled once at least one player is placed. It saves the match and returns to the session.
+- From an open session, "Add Match" opens "New match": the screen title with the ShuttleChip top-right, a top-down Court with four CourtSlots (top-left, bottom-left, top-right, bottom-right; top pair and bottom pair are the two sides of the net), and a full-width "Start match" button.
+- An empty slot shows a dashed outline, a + icon and "Add player". A filled slot shows the player's Avatar and name on a fill of their stored avatar colour at 30% over the court.
+- Tapping a slot opens the player picker ("Top left player", etc.): Avatar + name rows. A player already placed in another slot isn't listed. On a filled slot, "Remove player" clears it.
+- Shuttles are added through the ShuttleChip (see [6](#6-shuttle-usage-in-a-match-new--reused--free)). If no shuttle types exist yet, the chip is hidden and the screen says "Add a shuttle first to proceed".
+- "Start match" is enabled once at least one player is on the top side and one on the bottom side. While disabled, a hint underneath says "Add a player to each side to start" (empty court) or "Add an opponent to start" (one side filled). It saves the match and returns to the session.
 
-**Where**: `app/session/[sessionId]/create-match/index.tsx`, `components/session/match/teamSlot.tsx`, `components/session/match/selectUserModal.tsx`, `services/match.ts` (`createNewMatch`).
+**Where**: `app/session/[sessionId]/create-match/index.tsx`, `components/session/match/Court.tsx` (`Court`, `CourtSlot`), `components/session/match/selectUserModal.tsx` (`SelectPlayerModal`), `components/shared/Avatar.tsx`, `services/match.ts` (`createNewMatch`). Spec: `.claude/prds/completed/2-create-match-court-and-shuttles-modal.prd.md`.
 
 **Rules**
+- Slot order TL, BL, TR, BR maps to `match_players.position` 0–3.
 - Matches are numbered in creation order within the session.
 - A match with no shuttles selected is saved with one Free shuttle.
 - No charges are created here; they are created at session close.
@@ -118,17 +120,17 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 ## 6. Shuttle usage in a match (New / Reused / Free)
 
 **What it does**
-- The shuttle selector has three modes:
-  - **New**: pick a shuttle type (only types with stock remaining are listed, showing their price) and a quantity. Picking the same type again adds to its quantity.
-  - **Reused**: pick a specific shuttle already used in this session, labelled like "Yonex AS-50 #2" or "Free shuttle #1". The same shuttle can't be added twice to one match.
-  - **Free**: adds one uncharged shuttle.
-- Selected shuttles appear as chips; tapping one lets you change a New quantity with a stepper or remove it.
+- The ShuttleChip shows how many shuttles are selected for this match (New quantities + Free + Reused), in clay, or grey at 0. Tapping it opens the "Shuttles used" modal, with the subtitle "N shuttles logged for this session" (distinct paid shuttle types used in this session's saved matches; Free not counted).
+- **New shuttle** tab: a Stepper row per shuttle type, in this order: the top 3 types by shuttle instances across all sessions among types with stock left (filled with the newest in-stock types if fewer than 3 have history); other types already used in this session; types added with "Add a different shuttle"; then "Free shuttle". A row with a count above 0 has a sage outline. A type with no stock left (e.g. a session type that ran out) stays visible with a red outline, "Out of stock" and a disabled stepper.
+- "Add a different shuttle" opens a bottom drawer of the in-stock types not already shown ("Name (N left)"); picking one adds its row with a count of 1. These rows are local to the page: leaving Create Match drops them, and once a match using the type is saved it appears with this session's types.
+- **Reuse shuttle** tab: this session's shuttles, labelled like "Yonex AS-50 #2" or "Free shuttle #1", each toggled on or off for this match. With none yet, it says "No shuttles used in this session yet."
+- The modal is a draft: "Done" commits it to the page, "Cancel" or × discards it, and reopening shows the committed selection.
 
-**Where**: `components/session/match/selectShuttleModal.tsx`, `services/shuttle_instances.ts` (`fetchShuttleInstancesBySessionId`), `services/match.ts` (`ShuttleSelection`, `createNewMatch`).
+**Where**: `components/session/match/selectShuttleModal.tsx` (`ShuttlesModal`), `components/session/match/ShuttleChip.tsx`, `components/session/match/Stepper.tsx`, `components/session/match/ShuttleGlyph.tsx`, `services/shuttle.ts` (`fetchTopShuttleTypes`, `fetchSessionShuttleTypes`, `fetchAllShuttlesWithInventory`), `services/shuttle_instances.ts` (`fetchShuttleInstancesBySessionId`), `services/match.ts` (`ShuttleSelection`, `createNewMatch`). Spec: `.claude/prds/completed/2-create-match-court-and-shuttles-modal.prd.md`.
 
 **Rules**
 - Each New shuttle creates one shuttle instance (one physical shuttlecock) and takes one off that type's stock.
-- Reused links an existing instance to this match, so its cost is shared with this match's players at close.
+- Reused links an existing instance to this match, so its cost is shared with this match's players at close. An instance can't be added twice to one match.
 - Free instances have no type and cost RM0.
 - Reuse is limited to shuttles from the same session.
 

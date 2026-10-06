@@ -32,9 +32,11 @@ Exist today (reuse until replaced):
 
 - `components/layout/PageHeader.tsx`, `components/layout/ListRow.tsx`
 - `components/shared/DebtChip.tsx`, `components/shared/StatCard.tsx`, `components/shared/PaymentConfirmationDialog.tsx`
+- `components/shared/Avatar.tsx`, `components/shared/StatusBadge.tsx`, `components/shared/PlayerRow.tsx`, `components/shared/SessionCard.tsx`, `components/shared/SearchInput.tsx` (PRD [1])
+- `components/session/match/Court.tsx` (`Court` + `CourtSlot`), `components/session/match/ShuttleChip.tsx`, `components/session/match/Stepper.tsx`, `components/session/match/selectShuttleModal.tsx` (`ShuttlesModal`), `components/session/match/ShuttleGlyph.tsx` (PRD [2])
 - `components/ui/*`: Gluestack primitives
 
-Target components named by the design system (not yet built): `StatusBadge` (replaces `DebtChip`), `PlayerRow`, `SessionCard`, `Court` + `CourtSlot`, `Stepper`, `ShuttlesModal`, `ShuttleChip`, `EmptyState`, `TextInput`, `Avatar`.
+Target components named by the design system (not yet built): `EmptyState`, `TextInput` (a search-only `SearchInput` exists).
 
 ## Decision log
 
@@ -46,3 +48,4 @@ Add an entry whenever a design decision is made or reversed. The designer agent 
 | 2026-08-18 | Light only, no dark mode or system toggle | Explicit scope decision; still stands |
 | 2026-08-18 | Shared PageHeader, ListRow, DebtChip, Checkbox, PaymentConfirmationDialog | Consistency across screens; being replaced by design-system components |
 | 2026-10-03 | Adopted the "Shuttle Calculator" design system (navy `primary`, sage for settling, clay for shuttles and money) as the source of truth | A calmer, sport-specific look where who owes and how many shuttles stand out |
+| 2026-10-06 | Create Match departs from the Court / ShuttlesModal specs in four places: Start match needs one player per side (not all four), the modal has New / Reuse tabs, its dashed row is "Add a different shuttle" (picks an existing type), and out-of-stock rows use Gluestack `error` red | Product owner decisions in PRD [2]: doubles and singles both valid, reuse kept, no destructive colour in the system yet |
