@@ -10,13 +10,13 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 |---|---|---|
 | 1 | [Players](#1-players) | Built |
 | 2 | [Deleting and restoring players](#2-deleting-and-restoring-players) | Built |
-| 3 | [Sessions](#3-sessions) | Built |
-| 4 | [Court bookings](#4-court-bookings) | Built |
+| 3 | [Sessions](#3-sessions) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified |
+| 4 | [Court bookings](#4-court-bookings) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified |
 | 5 | [Creating a match](#5-creating-a-match) | Built |
 | 6 | [Shuttle usage in a match (New / Reused / Free)](#6-shuttle-usage-in-a-match-new--reused--free) | Built |
 | 7 | [Match detail](#7-match-detail) | Built |
 | 8 | [Shuttle inventory](#8-shuttle-inventory) | Built (manual verification pending) |
-| 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built |
+| 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified |
 | 10 | [Player balance and payments](#10-player-balance-and-payments) | Built |
 | 11 | [Pay Early](#11-pay-early) | Planned |
 | 12 | [Home dashboard](#12-home-dashboard) | Built |
@@ -66,35 +66,45 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 3. Sessions
 
+**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified.
+
 **What it does**
 - Sessions tab lists all sessions newest first as SessionCards: the title (the session name, or the date when unnamed), "D Mon YYYY · N players", a clay feather icon with "N shuttles used" (every shuttle instance in the session, including free ones), and a StatusBadge. Open sessions show "Open session"; closed sessions show "Settled" when nothing is owed, or "RM N due" for the outstanding shuttle and court charges. Sessions with no matches use the same card.
 - "Add Session" modal fields: title (optional), date, start time, location (optional), and an optional "book courts" section (label, price, quantity, duration in hours). When booking courts, price, quantity, and duration are required.
-- Session detail shows: Open/Closed status, Book Courts and Close Session buttons (open sessions only), an "Add Match" header action (open only), the match list (match number, date, player names), "Shuttles Used" (per type: count and number of matches), and "Courts Booked" (label, price, × quantity).
+- Session detail (open), top to bottom: title, "D Mon YYYY · h:mm am · Location" (missing parts left out), "Open session" badge; an estimate card "≈ RM X" (court cost + paid shuttle cost, with a courts/shuttles split bar and legend); three stat tiles (Players "in N matches", Shuttles "N free", Courts with Σ price × quantity, which opens Book courts); Players with each player's estimated share (`≈ RM X`, highest first); Matches newest first (number, local start time, shuttle chip or "Free", teams per side, "N reused from match M · N free" note); a fixed bottom bar with Create match plus Close session (once a match exists) or a red Delete session (while there are no matches). The header ⋯ opens Session options: Book courts (count · RM total) and Delete session (disabled with "Sessions with matches can't be deleted" once a match exists).
+- Session detail (closed): "RM X due" or "Settled" badge; "Still owed RM X of RM {amount_due}" with a paid (sage) vs owed (clay) bar, "Paid RM Y · Owed RM X", "N of M players settled · closed D Mon YYYY"; players sorted by amount owed with Owes/Settled badges and settled players last; no bottom bar, no ⋯, and a closed note at the end.
+- Player rows open player detail; match cards open match detail. Loading shows skeleton cards. At large Dynamic Type sizes tiles, teams, player rows and the bar wrap or stack instead of clipping.
+- Deleting an empty session asks "Delete session?" naming the session and its court bookings (count + RM), then removes the session and its bookings, returns to the Sessions tab and shows a "Session deleted" toast.
 
-**Where**: `app/(tabs)/session/index.tsx`, `app/session/[sessionId]/index.tsx`, `components/session/modal.tsx` (`AddSessionModal`), `components/shared/` (`SessionCard`, `StatusBadge`), `services/session.ts` (`createNewSession`, `fetchAllSessions`, `fetchSessionById`, `formatSessionTitle`). Spec: `.claude/prds/completed/1-players-and-sessions-redesign.prd.md`.
+**Where**: `app/(tabs)/session/index.tsx`, `app/session/[sessionId]/index.tsx`, `components/session/modal.tsx` (`AddSessionModal`), `components/session/` (`EstimateCard`, `MatchCard`, `SessionOptionsSheet`, `BookCourtsSheet`, `CloseSessionDialog`, `DeleteSessionDialog`), `components/shared/` (`SessionCard`, `StatusBadge`, `PlayerRow`, `StatTile`, `EmptyState`, `ActionSheet`), `components/layout/BottomActionBar.tsx`, `components/ui/actionsheet/`, `services/session.ts` (`createNewSession`, `fetchAllSessions`, `fetchSessionById`, `previewSessionCharges`, `deleteEmptySession`, `formatSessionTitle`). Spec: `.claude/prds/completed/1-players-and-sessions-redesign.prd.md`, `.claude/prds/partial/3-session-detail-redesign.prd.md`, `.claude/design/specs/session-detail.md`.
 
 **Rules**
 - A session is `open` until closed (see [9](#9-closing-a-session-settlement)). Closed sessions can't take new matches or courts.
+- An open session with no matches can be deleted (with its court bookings) but never closed. Once it has a match it can be closed but not deleted.
+- The open estimate and per-player shares come from `previewSessionCharges`, the same calculation `closeSession` uses.
 
 **Known gaps**
-- No edit or delete for sessions.
-- Session detail doesn't show any money (total cost, per-player split, who has paid).
-- There is no per-session view of who still owes; balances are only visible per player.
+- No edit for sessions; delete only for open sessions with no matches.
+- No per-player "paid RM X" on closed sessions (only the session total is stored, in `sessions.amount_due`).
+- PRD [3] verification is partial: the tap flows (⋯ sheet, Book courts save, close/delete confirm and cancel, row and card taps, swipe-to-dismiss) and the iPhone SE / Pro Max layouts were not driven on the simulator (no Expo MCP / tap access). Rendering, data and the close/delete handlers were verified.
 
 ## 4. Court bookings
 
-**What it does**
-- Courts are booked when creating a session, or with "Book Courts" on an open session.
-- Fields: label (optional), price per court, number of courts. The create-session form also takes a duration (hours); the Book Courts modal does not.
+**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified.
 
-**Where**: `components/session/bookCourtModal.tsx`, `components/session/modal.tsx`, `services/court.ts` (`bookCourt`, `fetchCourtBookingsBySessionId`).
+**What it does**
+- Courts are booked when creating a session, or from the Book courts sheet on an open session (⋯ → Book courts, or the Courts tile).
+- The Book courts sheet lists what is booked (label or "Court booking N", "RM 25 × 1 · 90 min", total), then adds a booking: label (optional), price per court (RM prefix), courts stepper (min 1), and duration in hours (optional, stored as minutes), with a "This booking RM X" total.
+- Validation: Book court stays disabled until the price is a number above 0 ("Enter a price above RM 0" on blur); the duration must be empty or above 0 ("Enter hours above 0, or leave it empty"). After saving, the booking appears in the list and the estimate updates.
+
+**Where**: `components/session/BookCourtsSheet.tsx`, `components/session/modal.tsx`, `services/court.ts` (`bookCourt`, `fetchCourtBookingsBySessionId`). Spec: `.claude/prds/partial/3-session-detail-redesign.prd.md`.
 
 **Rules**
 - Booking cost = price × quantity, split at session close across all distinct session players (see `product.md`, "How charges work").
 
 **Known gaps**
-- The Book Courts modal has no validation (price defaults to 0 and isn't checked).
-- No edit or delete for a booking.
+- No edit or delete for a single booking (an empty session's bookings go when the session is deleted).
+- Saving from the sheet was not driven by a tap on the simulator for PRD [3] (verification partial).
 
 ## 5. Creating a match
 
@@ -170,21 +180,24 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 9. Closing a session (settlement)
 
-**What it does**
-- "Close Session" on an open session asks for confirmation, then computes all charges and marks the session closed with a closed date.
+**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified.
 
-**Where**: `app/session/[sessionId]/index.tsx`, `services/session.ts` (`closeSession`). Specs: `specs/court-rental-and-session-settlement.md`, `specs/shuttle-instance-settlement.md`.
+**What it does**
+- The sage Close session button (shown once the session has a match) opens "Close session?", which lists the exact shares that will be recorded, grouping players with the same amount ("Alice, Ben · RM 5.84 each"), and the share total. Confirming computes all charges, marks the session closed with a closed date, and stores the total charged in `sessions.amount_due`; the screen switches to the closed layout.
+
+**Where**: `app/session/[sessionId]/index.tsx`, `components/session/CloseSessionDialog.tsx`, `services/session.ts` (`previewSessionCharges`, `closeSession`). Specs: `specs/court-rental-and-session-settlement.md`, `specs/shuttle-instance-settlement.md`, `.claude/prds/partial/3-session-detail-redesign.prd.md`.
 
 **Rules**
 - Court: for each booking, (price × quantity) ÷ number of distinct players in the session, one charge per player.
 - Shuttle: for each charged (non-free) instance, (type total price ÷ type quantity) ÷ number of distinct players across all matches that used the instance, one charge per player.
 - Each share is rounded to 2 decimals.
-- Closing is blocked with an error if courts are booked but no match has been played.
+- `closeSession` inserts exactly the rows `previewSessionCharges` computes; `amount_due` is the sum of those rows and never changes afterwards (paid so far = `amount_due` − still owed).
+- A session with no matches can't be closed (the button isn't shown and `closeSession` throws); it is deleted instead (see [3](#3-sessions)).
 - Closing can't be undone.
 
 **Known gaps**
-- The confirmation text mentions only courts, even though closing also settles shuttles.
 - Rounding per share can leave totals a cent off (RM10 ÷ 3 = RM9.99 collected).
+- The confirm and cancel taps in the dialog were not driven on the simulator for PRD [3] (verification partial).
 
 ## 10. Player balance and payments
 

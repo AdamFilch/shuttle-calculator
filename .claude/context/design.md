@@ -34,9 +34,10 @@ Exist today (reuse until replaced):
 - `components/shared/DebtChip.tsx`, `components/shared/StatCard.tsx`, `components/shared/PaymentConfirmationDialog.tsx`
 - `components/shared/Avatar.tsx`, `components/shared/StatusBadge.tsx`, `components/shared/PlayerRow.tsx`, `components/shared/SessionCard.tsx`, `components/shared/SearchInput.tsx` (PRD [1])
 - `components/session/match/Court.tsx` (`Court` + `CourtSlot`), `components/session/match/ShuttleChip.tsx`, `components/session/match/Stepper.tsx`, `components/session/match/selectShuttleModal.tsx` (`ShuttlesModal`), `components/session/match/ShuttleGlyph.tsx` (PRD [2])
+- `components/shared/StatTile.tsx`, `components/shared/EmptyState.tsx`, `components/shared/ActionSheet.tsx` (bottom sheet on the vendored `components/ui/actionsheet`), `components/layout/BottomActionBar.tsx`, `components/session/EstimateCard.tsx`, `components/session/MatchCard.tsx`, `components/session/SessionOptionsSheet.tsx`, `components/session/BookCourtsSheet.tsx`, `components/session/CloseSessionDialog.tsx`, `components/session/DeleteSessionDialog.tsx` (PRD [3]). `StatusBadge` has an `estimate` variant (`≈ RM X`); `PlayerRow` takes an optional sub-line and right badge.
 - `components/ui/*`: Gluestack primitives
 
-Target components named by the design system (not yet built): `EmptyState`, `TextInput` (a search-only `SearchInput` exists).
+Target components named by the design system (not yet built): `TextInput` (a search-only `SearchInput` exists). `StatCard` on Home is still to be replaced by `StatTile`.
 
 ## Decision log
 
@@ -49,3 +50,9 @@ Add an entry whenever a design decision is made or reversed. The designer agent 
 | 2026-08-18 | Shared PageHeader, ListRow, DebtChip, Checkbox, PaymentConfirmationDialog | Consistency across screens; being replaced by design-system components |
 | 2026-10-03 | Adopted the "Shuttle Calculator" design system (navy `primary`, sage for settling, clay for shuttles and money) as the source of truth | A calmer, sport-specific look where who owes and how many shuttles stand out |
 | 2026-10-06 | Create Match departs from the Court / ShuttlesModal specs in four places: Start match needs one player per side (not all four), the modal has New / Reuse tabs, its dashed row is "Add a different shuttle" (picks an existing type), and out-of-stock rows use Gluestack `error` red | Product owner decisions in PRD [2]: doubles and singles both valid, reuse kept, no destructive colour in the system yet |
+| 2026-10-06 | Session detail leads with an estimate card ("≈ RM X so far") on open sessions and "Still owed RM X of RM {amount_due}" on closed ones | Money is the first question at the court; nothing is charged until close, so the estimate is the only way to show it. PRD [3] D3, D10 |
+| 2026-10-06 | Create match and Close session (or Delete session while there are no matches) sit in a fixed bottom bar; Book courts and Delete session live behind a ⋯ Session options sheet, and the Courts tile also opens Book courts | Thumb reach for the hot path; one primary action per screen; settings don't compete with play. PRD [3] D8, D25 |
+| 2026-10-06 | Close session uses `sage`, not `primary` or a destructive red, and confirms with the exact grouped shares | It settles money (the design system's sage role); money-changing actions confirm. PRD [3] D2 |
+| 2026-10-06 | Estimates come from a shared `previewSessionCharges` used by `closeSession` | The estimate and the settlement must never disagree. PRD [3] D4 |
+| 2026-10-06 | The open badge keeps "Open session" (not the spec's "In progress"); Delete session uses Gluestack `error` red | Product owner preference; no destructive colour in the system yet. PRD [3] D12, D30 |
+| 2026-10-06 | Bottom sheets are the vendored Gluestack Actionsheet with an `ink` 45% scrim, `radius-lg` top corners and `shadow-modal`; `section-label` and `shadow-modal` were added to the Tailwind config as tokens | Same library generation as `modal`; tokens instead of one-off values. PRD [3] D5 |
