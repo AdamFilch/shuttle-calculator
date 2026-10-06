@@ -1,6 +1,6 @@
 import { AvatarColour } from "@/services/player"
 import { ReactNode } from "react"
-import { Pressable, Text, View } from "react-native"
+import { Pressable, Text, useWindowDimensions, View } from "react-native"
 import { Avatar } from "./Avatar"
 import { isOwed, StatusBadge } from "./StatusBadge"
 
@@ -30,6 +30,9 @@ export function PlayerRow({
         <StatusBadge variant="settled" />
     )
 
+    const { fontScale } = useWindowDimensions()
+    const stacked = badge !== undefined && fontScale >= 1.5
+
     return (
         <Pressable
             onPress={onPress}
@@ -37,7 +40,18 @@ export function PlayerRow({
             accessibilityRole={onPress ? "button" : undefined}
             accessibilityLabel={accessibilityLabel}
         >
-            {({ pressed }) => (
+            {({ pressed }) => stacked ? (
+                <View
+                    className={`gap-2 rounded-xl border border-border-subtle px-4 py-3 ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
+                >
+                    <View className="flex-row items-center gap-3">
+                        <Avatar name={name} colour={avatarColour} />
+                        <Text className="flex-1 text-card-title font-medium text-ink">{name}</Text>
+                    </View>
+                    <Text className="text-body text-muted">{subLine ?? defaultSubLine}</Text>
+                    <View>{badge}</View>
+                </View>
+            ) : (
                 <View
                     className={`flex-row items-center rounded-xl border border-border-subtle px-4 py-3 ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
                 >

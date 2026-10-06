@@ -76,6 +76,18 @@ async function seedClosedToday() {
     await closeSession(String(today))
 }
 
+async function seedEmptySession() {
+    await seedDefault()
+    const empty = await createNewSession({
+        name: 'Saturday Social',
+        date: new Date().toISOString(),
+        startTime: '10:00',
+        location: 'Community Centre'
+    })
+    await bookCourt({ sessionId: empty, label: 'Court 4', price: 25, quantity: 2, durationMinutes: 120 })
+    await bookCourt({ sessionId: empty, label: 'Court 5', price: 20, quantity: 1 })
+}
+
 async function seedShuttlePicker() {
     const ids: number[] = []
     for (const name of ['Alice', 'Ben', 'Chloe', 'Daniel']) ids.push(await createPlayer(name))
@@ -147,6 +159,7 @@ export const scenarios: Record<string, () => Promise<void>> = {
     'shuttle-picker': seedShuttlePicker,
     'no-shuttles': seedNoShuttles,
     'closed-today': seedClosedToday,
+    'empty-session': seedEmptySession,
 }
 
 export async function seedDatabase(scenario = 'default') {

@@ -43,7 +43,7 @@ type SessionData = {
 
 function SectionHeader({ label, caption }: { label: string; caption?: string }) {
   return (
-    <View className="flex-row items-baseline justify-between gap-2">
+    <View className="flex-row flex-wrap items-baseline justify-between gap-x-2">
       <Text className="text-section-label font-medium uppercase text-muted" accessibilityRole="header">
         {label}
       </Text>

@@ -46,7 +46,7 @@ export function StatTile({
         </View>
     )
 
-    const containerStyle = { minWidth, flexGrow: 1, flexBasis: 0 }
+    const containerStyle = { minWidth, flexGrow: 1, flexBasis: minWidth }
 
     if (!onPress) {
         return (
