@@ -1,489 +1,301 @@
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
+import { designTokens } from "@/components/ui/gluestack-ui-provider/config"
+import { AddIcon, CheckIcon, CloseIcon, Icon } from "@/components/ui/icon"
+import { Modal, ModalBackdrop, ModalBody, ModalContent, ModalHeader } from "@/components/ui/modal"
 import {
-  AddIcon,
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChevronDownIcon,
-  CloseIcon,
-  Icon,
-} from "@/components/ui/icon";
-import { Input, InputField } from "@/components/ui/input";
+    Select,
+    SelectBackdrop,
+    SelectContent,
+    SelectDragIndicator,
+    SelectDragIndicatorWrapper,
+    SelectItem,
+    SelectPortal,
+    SelectTrigger,
+} from "@/components/ui/select"
+import { ShuttleSelection } from "@/services/match"
 import {
-  Modal,
-  ModalBackdrop,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-} from "@/components/ui/modal";
-import {
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { Text } from "@/components/ui/text";
-import { VStack } from "@/components/ui/vstack";
-import { ShuttleSelection } from "@/services/match";
-import {
-  fetchAllShuttlesWithInventory,
-  ShuttleWithInventory,
-} from "@/services/shuttle";
-import {
-  fetchShuttleInstancesBySessionId,
-  ShuttleInstance,
-} from "@/services/shuttle_instances";
-import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { Image, Pressable, View } from "react-native";
+    fetchAllShuttlesWithInventory,
+    fetchSessionShuttleTypes,
+    fetchTopShuttleTypes,
+    ShuttleTypeOption,
+} from "@/services/shuttle"
+import { fetchShuttleInstancesBySessionId, ShuttleInstance } from "@/services/shuttle_instances"
+import { useEffect, useMemo, useState } from "react"
+import { Pressable, Text, View } from "react-native"
+import { ShuttleGlyph } from "./ShuttleGlyph"
+import { Stepper } from "./Stepper"
 
-type ShuttleMode = "new" | "reused" | "free";
+type Tab = "new" | "reuse"
 
-export function SelectShuttleButton({
-  sessionId,
-  selectedShuttles,
-  onSelect,
-  onUpdate,
-}: {
-  sessionId: number;
-  selectedShuttles: ShuttleSelection[];
-  onSelect: (selected: ShuttleSelection) => void;
-  onUpdate: (index: number, next: ShuttleSelection | null) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [shuttleList, setShuttleList] = useState<ShuttleWithInventory[]>([]);
-  const [instanceList, setInstanceList] = useState<ShuttleInstance[]>([]);
-
-  useEffect(() => {
-    fetchAllShuttlesWithInventory().then(setShuttleList);
-    fetchShuttleInstancesBySessionId(sessionId).then(setInstanceList);
-  }, [sessionId]);
-
-  const handleClose = useCallback(() => setIsOpen(false), []);
-  const handleSelect = useCallback(
-    (selected: ShuttleSelection) => {
-      setIsOpen(false);
-      onSelect(selected);
-    },
-    [onSelect],
-  );
-
-  const labelFor = (selection: ShuttleSelection): string => {
-    if (selection.mode === "new") {
-      const shuttle = shuttleList.find(
-        (s) => s.shuttle_id === selection.shuttleId,
-      );
-      return shuttle ? `${shuttle.name}` : `Shuttle`;
-    }
-    if (selection.mode === "reused") {
-      const instance = instanceList.find(
-        (i) => i.shuttle_instance_id === selection.shuttleInstanceId,
-      );
-      return instance?.label ?? "Reused shuttle";
-    }
-    return "Free shuttle";
-  };
-
-  return (
-    <Fragment>
-      <View className="flex-row flex-wrap gap-2">
-        {selectedShuttles.map((selection, i) => (
-          <Pressable
-            key={i}
-            onPress={() => setEditingIndex(i)}
-            className="items-center justify-center rounded-xl border border-primary-500 bg-primary-50 px-3 py-3"
-          >
-            <Text
-              numberOfLines={2}
-              className="text-sm font-bold text-primary-700"
-            >
-              {labelFor(selection)}
-            </Text>
-            {selection.mode === "new" && (
-              <Text
-                numberOfLines={1}
-                className="text-sm font-bold text-primary-700"
-              >
-                x {selection.quantity}
-              </Text>
-            )}
-          </Pressable>
-        ))}
-        <Pressable
-          onPress={() => setIsOpen(true)}
-          className="h-[65px] w-[65px] flex-row items-center justify-center gap-1.5 self-start rounded-xl border border-outline-100 bg-background-0"
-        >
-          <Icon as={AddIcon} size="sm" className="text-typography-700" />
-          {/* <Text className="text-sm font-bold text-typography-900">
-            {selectedShuttles.length > 0 ? "Add Another" : "Add Shuttle"}
-          </Text> */}
-          <Image
-            source={require("@/assets/images/shuttlecock.png")}
-            className="h-6 w-6"
-            style={{ transform: [{ rotate: "45deg" }] }}
-            resizeMode="contain"
-          />
-        </Pressable>
-      </View>
-      <SelectShuttleModal
-        sessionId={sessionId}
-        selectedShuttles={selectedShuttles}
-        open={isOpen}
-        onClose={handleClose}
-        onSelect={handleSelect}
-      />
-      <EditShuttleModal
-        open={editingIndex !== null}
-        label={
-          editingIndex !== null ? labelFor(selectedShuttles[editingIndex]) : ""
-        }
-        selection={
-          editingIndex !== null ? selectedShuttles[editingIndex] : null
-        }
-        onClose={() => setEditingIndex(null)}
-        onChangeQuantity={(quantity) => {
-          if (editingIndex === null) return;
-          const selection = selectedShuttles[editingIndex];
-          if (selection.mode !== "new") return;
-          onUpdate(editingIndex, { ...selection, quantity });
-        }}
-        onRemove={() => {
-          if (editingIndex === null) return;
-          onUpdate(editingIndex, null);
-          setEditingIndex(null);
-        }}
-      />
-    </Fragment>
-  );
+type Draft = {
+    counts: Record<number, number>,
+    free: number,
+    reused: number[],
+    added: number[],
 }
 
-function EditShuttleModal({
-  open,
-  label,
-  selection,
-  onClose,
-  onChangeQuantity,
-  onRemove,
-}: {
-  open: boolean;
-  label: string;
-  selection: ShuttleSelection | null;
-  onClose: () => void;
-  onChangeQuantity: (quantity: number) => void;
-  onRemove: () => void;
-}) {
-  const quantity = selection?.mode === "new" ? selection.quantity : null;
-
-  return (
-    <Modal size={"md"} isOpen={open} onClose={onClose}>
-      <ModalBackdrop />
-      <ModalContent>
-        <ModalHeader>
-          <Heading>{label}</Heading>
-          <ModalCloseButton>
-            <Icon
-              as={CloseIcon}
-              size="md"
-              className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-            />
-          </ModalCloseButton>
-        </ModalHeader>
-        <ModalBody>
-          <VStack space="lg">
-            {quantity !== null && (
-              <HStack space="lg" className="items-center justify-center">
-                <Pressable
-                  disabled={quantity <= 1}
-                  onPress={() => onChangeQuantity(quantity - 1)}
-                  className="items-center justify-center rounded-full border border-outline-200 bg-background-0 p-3 disabled:opacity-40"
-                >
-                  <Icon
-                    as={ArrowDownIcon}
-                    size="md"
-                    className="text-typography-700"
-                  />
-                </Pressable>
-                <Text className="min-w-[3ch] text-center text-xl font-bold text-typography-900">
-                  {quantity}
-                </Text>
-                <Pressable
-                  onPress={() => onChangeQuantity(quantity + 1)}
-                  className="items-center justify-center rounded-full border border-outline-200 bg-background-0 p-3"
-                >
-                  <Icon
-                    as={ArrowUpIcon}
-                    size="md"
-                    className="text-typography-700"
-                  />
-                </Pressable>
-              </HStack>
-            )}
-            <Button action="secondary" onPress={onRemove}>
-              <ButtonText>Confirm</ButtonText>
-            </Button>
-            <Button action="negative" onPress={onRemove}>
-              <ButtonText>Remove Shuttle</ButtonText>
-            </Button>
-          </VStack>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
-  );
+export function countSelectedShuttles(selection: ShuttleSelection[]): number {
+    return selection.reduce((total, s) => total + (s.mode === "new" ? s.quantity : 1), 0)
 }
 
-export const SelectShuttleModal = React.memo(function SelectShuttleModal({
-  onClose,
-  onSelect,
-  open,
-  sessionId,
-  selectedShuttles,
+function draftFromSelection(selection: ShuttleSelection[], added: number[]): Draft {
+    const counts: Record<number, number> = {}
+    let free = 0
+    const reused: number[] = []
+    for (const s of selection) {
+        if (s.mode === "new") {
+            counts[s.shuttleId] = (counts[s.shuttleId] ?? 0) + s.quantity
+        } else if (s.mode === "reused") {
+            if (!reused.includes(s.shuttleInstanceId)) reused.push(s.shuttleInstanceId)
+        } else {
+            free += 1
+        }
+    }
+    return { counts, free, reused, added: [...added] }
+}
+
+function pluralShuttles(n: number): string {
+    return `${n} ${n === 1 ? "shuttle" : "shuttles"}`
+}
+
+export function ShuttlesModal({
+    open,
+    sessionId,
+    selection,
+    addedTypeIds,
+    onCancel,
+    onDone,
 }: {
-  onClose: () => void;
-  onSelect: (selected: ShuttleSelection) => void;
-  open: boolean;
-  sessionId: number;
-  selectedShuttles: ShuttleSelection[];
+    open: boolean,
+    sessionId: number,
+    selection: ShuttleSelection[],
+    addedTypeIds: number[],
+    onCancel: () => void,
+    onDone: (selection: ShuttleSelection[], addedTypeIds: number[]) => void
 }) {
-  const [mode, setMode] = useState<ShuttleMode>("new");
-  const [shuttleList, setShuttleList] = useState<ShuttleWithInventory[] | null>(
-    [],
-  );
-  const [instanceList, setInstanceList] = useState<ShuttleInstance[]>([]);
-  const [currentSelectedShuttle, setCurrentSelectedShuttle] = useState<
-    number | null
-  >(null);
-  const [currentSelectedInstance, setCurrentSelectedInstance] = useState<
-    number | null
-  >(null);
-  const [numberShuttles, setNumberShuttles] = useState("");
+    const [tab, setTab] = useState<Tab>("new")
+    const [draft, setDraft] = useState<Draft>(() => draftFromSelection(selection, addedTypeIds))
+    const [topTypes, setTopTypes] = useState<ShuttleTypeOption[]>([])
+    const [sessionTypes, setSessionTypes] = useState<ShuttleTypeOption[]>([])
+    const [allTypes, setAllTypes] = useState<ShuttleTypeOption[]>([])
+    const [instances, setInstances] = useState<ShuttleInstance[]>([])
 
-  // Already-selected 'reused' instances would otherwise silently no-op if picked
-  // again (dedup happens where selections are merged), so exclude them here.
-  const alreadyReusedIds = new Set(
-    selectedShuttles
-      .filter(
-        (s): s is Extract<ShuttleSelection, { mode: "reused" }> =>
-          s.mode === "reused",
-      )
-      .map((s) => s.shuttleInstanceId),
-  );
+    useEffect(() => {
+        fetchTopShuttleTypes(3).then(setTopTypes)
+        fetchSessionShuttleTypes(sessionId).then(setSessionTypes)
+        fetchAllShuttlesWithInventory().then((res) =>
+            setAllTypes(res.map((s) => ({ shuttle_id: s.shuttle_id, name: s.name, remaining: s.remaining })))
+        )
+        fetchShuttleInstancesBySessionId(sessionId).then(setInstances)
+    }, [sessionId])
 
-  useEffect(() => {
-    if (!open) return;
-    fetchAllShuttlesWithInventory().then((res) => {
-      const inStock = res.filter((shuttle) => shuttle.remaining > 0);
-      setShuttleList(inStock);
-      if (inStock.length > 0) {
-        // setCurrentSelectedShuttle(inStock[0].shuttle_id);
-      }
-    });
-    fetchShuttleInstancesBySessionId(sessionId).then((res) => {
-      const selectable = res.filter(
-        (instance) => !alreadyReusedIds.has(instance.shuttle_instance_id),
-      );
-      setInstanceList(selectable);
-      if (selectable.length > 0) {
-        setCurrentSelectedInstance(selectable[0].shuttle_instance_id);
-      } else {
-        setCurrentSelectedInstance(null);
-      }
-    });
-  }, [open]);
+    const rows = useMemo(() => {
+        const shown = new Set<number>()
+        const result: ShuttleTypeOption[] = []
+        const push = (option: ShuttleTypeOption | undefined) => {
+            if (!option || shown.has(option.shuttle_id)) return
+            shown.add(option.shuttle_id)
+            result.push(option)
+        }
+        topTypes.forEach(push)
+        sessionTypes.forEach(push)
+        const extraIds = [
+            ...draft.added,
+            ...Object.keys(draft.counts).map(Number).filter((id) => draft.counts[id] > 0),
+        ]
+        extraIds.forEach((id) => push(allTypes.find((t) => t.shuttle_id === id)))
+        return result
+    }, [topTypes, sessionTypes, allTypes, draft.added, draft.counts])
 
-  const canConfirm =
-    mode === "new"
-      ? currentSelectedShuttle !== null && parseInt(numberShuttles) > 0
-      : mode === "reused"
-        ? currentSelectedInstance !== null
-        : true;
+    const addableTypes = useMemo(() => {
+        const shownIds = new Set(rows.map((r) => r.shuttle_id))
+        return allTypes.filter((t) => t.remaining > 0 && !shownIds.has(t.shuttle_id))
+    }, [allTypes, rows])
 
-  return (
-    <Modal size={"lg"} isOpen={open} onClose={onClose}>
-      <ModalBackdrop />
-      <ModalContent>
-        <ModalHeader>
-          <Heading>Select a Shuttle</Heading>
-          <ModalCloseButton>
-            <Icon
-              as={CloseIcon}
-              size="md"
-              className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-            />
-          </ModalCloseButton>
-        </ModalHeader>
-        <ModalBody scrollEnabled={false}>
-          <VStack space="md">
-            <HStack space="sm">
-              <Button
-                className="flex-1"
-                variant={mode === "new" ? "solid" : "outline"}
-                action={mode === "new" ? "primary" : "secondary"}
-                onPress={() => setMode("new")}
-              >
-                <ButtonText>New</ButtonText>
-              </Button>
-              {alreadyReusedIds.size > 0 && (
-                <Button
-                  className="flex-1"
-                  variant={mode === "reused" ? "solid" : "outline"}
-                  action={mode === "reused" ? "primary" : "secondary"}
-                  onPress={() => setMode("reused")}
-                >
-                  <ButtonText>Reused</ButtonText>
-                </Button>
-              )}
-              <Button
-                className="flex-1"
-                variant={mode === "free" ? "solid" : "outline"}
-                action={mode === "free" ? "primary" : "secondary"}
-                onPress={() => setMode("free")}
-              >
-                <ButtonText>Free</ButtonText>
-              </Button>
-            </HStack>
+    const setCount = (shuttleId: number, value: number) => {
+        setDraft((prev) => ({ ...prev, counts: { ...prev.counts, [shuttleId]: Math.max(0, value) } }))
+    }
 
-            {mode === "new" &&
-              (shuttleList && shuttleList.length > 0 ? (
-                <VStack space="md">
-                  <Select
-                    selectedValue={
-                      currentSelectedShuttle !== null
-                        ? String(currentSelectedShuttle)
-                        : undefined
-                    }
-                    onValueChange={(val) =>
-                      setCurrentSelectedShuttle(parseInt(val))
-                    }
-                  >
-                    <SelectTrigger variant="outline" size="lg">
-                      <SelectInput
-                        className="flex-1"
-                        placeholder="Select a shuttle"
-                      />
-                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent>
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        {shuttleList.map((shuttle) => (
-                          <SelectItem
-                            key={shuttle.shuttle_id}
-                            label={`${shuttle.name} (${shuttle.total_price} RM)`}
-                            value={String(shuttle.shuttle_id)}
-                          />
-                        ))}
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
-                  <Text size="sm" className="text-typography-500">
-                    Number of this shuttle used
-                  </Text>
-                  <Input variant="outline" size="lg">
-                    <InputField
-                      keyboardType="number-pad"
-                      defaultValue={numberShuttles}
-                      value={numberShuttles}
-                      onChangeText={(val) => {
-                        setNumberShuttles(val);
-                      }}
-                      placeholder="Enter number of shuttles used"
-                    />
-                  </Input>
-                </VStack>
-              ) : (
-                <View>
-                  <Text>You have no Shuttles recorded.</Text>
+    const addType = (shuttleId: number) => {
+        setDraft((prev) => ({
+            ...prev,
+            added: prev.added.includes(shuttleId) ? prev.added : [...prev.added, shuttleId],
+            counts: { ...prev.counts, [shuttleId]: Math.max(1, prev.counts[shuttleId] ?? 0) },
+        }))
+    }
+
+    const toggleReused = (instanceId: number) => {
+        setDraft((prev) => ({
+            ...prev,
+            reused: prev.reused.includes(instanceId)
+                ? prev.reused.filter((id) => id !== instanceId)
+                : [...prev.reused, instanceId],
+        }))
+    }
+
+    const commit = () => {
+        const orderedIds = [
+            ...rows.map((r) => r.shuttle_id),
+            ...Object.keys(draft.counts).map(Number).filter((id) => !rows.some((r) => r.shuttle_id === id)),
+        ]
+        const next: ShuttleSelection[] = []
+        for (const id of orderedIds) {
+            const quantity = draft.counts[id] ?? 0
+            if (quantity > 0) next.push({ mode: "new", shuttleId: id, quantity })
+        }
+        for (let i = 0; i < draft.free; i++) next.push({ mode: "free" })
+        for (const id of draft.reused) next.push({ mode: "reused", shuttleInstanceId: id })
+        onDone(next, draft.added)
+    }
+
+    return (
+        <Modal size="md" isOpen={open} onClose={onCancel}>
+            <ModalBackdrop className="bg-ink" animate={{ opacity: 0.45 }} />
+            <ModalContent className="max-h-[85%] w-[92%] rounded-2xl border-0 bg-surface p-5 shadow-hard-2">
+                <ModalHeader className="items-start">
+                    <Text className="text-modal-title font-semibold text-ink">Shuttles used</Text>
+                    <Pressable
+                        onPress={onCancel}
+                        accessibilityRole="button"
+                        accessibilityLabel="Close"
+                        hitSlop={8}
+                        testID="shuttles-modal-close"
+                        className="p-0.5"
+                    >
+                        <Icon as={CloseIcon} size="lg" className="text-muted" />
+                    </Pressable>
+                </ModalHeader>
+                <View className="mb-3 mt-1 flex-row items-center gap-1.5">
+                    <View className="h-1.5 w-1.5 rounded-full bg-clay" />
+                    <Text className="text-[13px] font-medium leading-[18px] text-clay" testID="shuttles-modal-subtitle">
+                        {pluralShuttles(sessionTypes.length)} logged for this session
+                    </Text>
                 </View>
-              ))}
-
-            {mode === "reused" && (
-              <Select
-                selectedValue={
-                  currentSelectedInstance !== null
-                    ? String(currentSelectedInstance)
-                    : undefined
-                }
-                onValueChange={(val) =>
-                  setCurrentSelectedInstance(parseInt(val))
-                }
-              >
-                <SelectTrigger variant="outline" size="lg">
-                  <SelectInput
-                    className="flex-1"
-                    placeholder="Select a shuttle in play"
-                  />
-                  <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                </SelectTrigger>
-                <SelectPortal>
-                  <SelectBackdrop />
-                  <SelectContent>
-                    <SelectDragIndicatorWrapper>
-                      <SelectDragIndicator />
-                    </SelectDragIndicatorWrapper>
-                    {instanceList.map((instance) => (
-                      <SelectItem
-                        key={instance.shuttle_instance_id}
-                        label={instance.label}
-                        value={String(instance.shuttle_instance_id)}
-                      />
-                    ))}
-                  </SelectContent>
-                </SelectPortal>
-              </Select>
-            )}
-
-            {/* {mode === "free" && (
-              <Text size="sm" className="text-typography-500">
-                Attaches a free shuttle to this match — contributes $0 to the
-                split.
-              </Text>
-            )} */}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="outline" action="secondary" onPress={onClose}>
-            <ButtonText>Cancel</ButtonText>
-          </Button>
-          <Button
-            isDisabled={!canConfirm}
-            onPress={() => {
-              if (mode === "new" && currentSelectedShuttle !== null) {
-                onSelect({
-                  mode: "new",
-                  shuttleId: currentSelectedShuttle,
-                  quantity: parseInt(numberShuttles),
-                });
-              } else if (
-                mode === "reused" &&
-                currentSelectedInstance !== null
-              ) {
-                onSelect({
-                  mode: "reused",
-                  shuttleInstanceId: currentSelectedInstance,
-                });
-              } else if (mode === "free") {
-                onSelect({ mode: "free" });
-              }
-              setNumberShuttles("");
-              onClose();
-            }}
-          >
-            <ButtonText>Confirm</ButtonText>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
-  );
-});
+                <View className="mb-3 flex-row rounded-lg bg-neutral-tint p-0.5">
+                    {(["new", "reuse"] as Tab[]).map((value) => {
+                        const active = tab === value
+                        return (
+                            <Pressable
+                                key={value}
+                                onPress={() => setTab(value)}
+                                accessibilityRole="tab"
+                                accessibilityState={{ selected: active }}
+                                testID={`shuttles-tab-${value}`}
+                                className={`flex-1 items-center rounded-md py-2 ${active ? "bg-surface-raised" : ""}`}
+                            >
+                                <Text className={`text-body font-medium ${active ? "text-ink" : "text-muted"}`}>
+                                    {value === "new" ? "New shuttle" : "Reuse shuttle"}
+                                </Text>
+                            </Pressable>
+                        )
+                    })}
+                </View>
+                <ModalBody className="mb-0 mt-0">
+                    {tab === "new" ? (
+                        <View className="gap-2">
+                            {rows.map((row, index) => (
+                                <Stepper
+                                    key={row.shuttle_id}
+                                    shuttle={{ name: row.name, colourIndex: index }}
+                                    value={draft.counts[row.shuttle_id] ?? 0}
+                                    onChange={(value) => setCount(row.shuttle_id, value)}
+                                    disabled={row.remaining <= 0}
+                                />
+                            ))}
+                            <Select
+                                selectedValue={null}
+                                isDisabled={addableTypes.length === 0}
+                                onValueChange={(value) => addType(parseInt(value))}
+                            >
+                                <SelectTrigger
+                                    size="xl"
+                                    testID="add-different-shuttle"
+                                    className="h-auto justify-center gap-2 rounded-xl border-dashed border-border-dashed py-3"
+                                >
+                                    <Icon as={AddIcon} size="md" className="text-primary" />
+                                    <Text className="text-body font-medium text-primary">
+                                        Add a different shuttle
+                                    </Text>
+                                </SelectTrigger>
+                                <SelectPortal>
+                                    <SelectBackdrop />
+                                    <SelectContent>
+                                        <SelectDragIndicatorWrapper>
+                                            <SelectDragIndicator />
+                                        </SelectDragIndicatorWrapper>
+                                        {addableTypes.map((type) => (
+                                            <SelectItem
+                                                key={type.shuttle_id}
+                                                label={`${type.name} (${type.remaining} left)`}
+                                                value={String(type.shuttle_id)}
+                                            />
+                                        ))}
+                                    </SelectContent>
+                                </SelectPortal>
+                            </Select>
+                            <Stepper
+                                shuttle={{ name: "Free shuttle", colourIndex: 3 }}
+                                value={draft.free}
+                                onChange={(value) => setDraft((prev) => ({ ...prev, free: Math.max(0, value) }))}
+                            />
+                        </View>
+                    ) : instances.length === 0 ? (
+                        <Text className="py-2 text-body text-muted" testID="reuse-empty">
+                            No shuttles used in this session yet.
+                        </Text>
+                    ) : (
+                        <View className="gap-2">
+                            {instances.map((instance) => {
+                                const selected = draft.reused.includes(instance.shuttle_instance_id)
+                                return (
+                                    <Pressable
+                                        key={instance.shuttle_instance_id}
+                                        onPress={() => toggleReused(instance.shuttle_instance_id)}
+                                        accessibilityRole="checkbox"
+                                        accessibilityState={{ checked: selected }}
+                                        testID={`reuse-${instance.label}`}
+                                    >
+                                        {({ pressed }) => (
+                                            <View
+                                                className={`flex-row items-center gap-3 rounded-xl py-3 pl-3.5 pr-3 ${selected ? "border-[1.5px] border-sage" : "border border-border-subtle"} ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
+                                            >
+                                                <ShuttleGlyph colour={instance.shuttle_id === null ? designTokens.muted : designTokens.clay} />
+                                                <Text className="flex-1 text-card-title font-medium text-ink" numberOfLines={1}>
+                                                    {instance.label}
+                                                </Text>
+                                                <View
+                                                    className={`h-6 w-6 items-center justify-center rounded-md ${selected ? "bg-sage" : "border border-border bg-surface-raised"}`}
+                                                >
+                                                    {selected && <Icon as={CheckIcon} size="sm" className="text-on-sage" />}
+                                                </View>
+                                            </View>
+                                        )}
+                                    </Pressable>
+                                )
+                            })}
+                        </View>
+                    )}
+                </ModalBody>
+                <View className="mt-3 flex-row gap-3">
+                    <Pressable
+                        onPress={onCancel}
+                        accessibilityRole="button"
+                        testID="shuttles-cancel"
+                        className="items-center rounded-lg border border-border bg-surface-raised py-[11px] active:opacity-85"
+                        style={{ flex: 2 }}
+                    >
+                        <Text className="text-body font-medium text-ink">Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                        onPress={commit}
+                        accessibilityRole="button"
+                        testID="shuttles-done"
+                        className="items-center rounded-lg bg-primary py-[11px] active:opacity-85"
+                        style={{ flex: 3 }}
+                    >
+                        <Text className="text-body font-medium text-surface">Done</Text>
+                    </Pressable>
+                </View>
+            </ModalContent>
+        </Modal>
+    )
+}

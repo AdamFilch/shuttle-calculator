@@ -43,6 +43,11 @@ module.exports = {
         },
         'neutral-tint': 'rgb(var(--color-neutral-tint)/<alpha-value>)',
         disabled: 'rgb(var(--color-disabled)/<alpha-value>)',
+        court: {
+          DEFAULT: 'rgb(var(--color-court)/<alpha-value>)',
+          line: 'rgb(var(--color-court-line)/<alpha-value>)',
+          'slot-empty': 'rgb(var(--color-court-line)/0.18)',
+        },
         primary: {
           DEFAULT: 'rgb(var(--color-primary)/<alpha-value>)',
           tint: 'rgb(var(--color-primary-tint)/<alpha-value>)',

@@ -1,143 +1,91 @@
-'use client'
-
-import { Button, ButtonText } from "@/components/ui/button"
-import { Heading } from "@/components/ui/heading"
+import { Avatar } from "@/components/shared/Avatar"
 import { CloseIcon, Icon } from "@/components/ui/icon"
-import { Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal"
+import { Modal, ModalBackdrop, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal"
 import { Player } from "@/services/player"
-import { Fragment, useState } from "react"
-import { FlatList, Pressable, Text, View } from "react-native"
-
-
-export function SelectPlayerButton({
-    placeholder,
-    selectedPlayer,
-    players,
-    onSelect
-}: {
-    placeholder: string,
-    selectedPlayer?: string,
-    players: Player[],
-    onSelect: (player) => void
-}) {
-    const [isOpen, setIsOpen] = useState(false)
-    return (
-        <Fragment>
-            <Button
-                onPress={() => {
-                    setIsOpen(true)
-                }}
-                style={{
-                    width: 150,
-                    height: 100,
-                    backgroundColor: 'white'
-                }}>
-
-                <ButtonText>
-                    {selectedPlayer ? players.find((player) => player.player_id == parseInt(selectedPlayer)).name :placeholder}
-                </ButtonText>
-            </Button>
-            <SelectPlayerModal
-                players={players}
-                selectedPlayer={selectedPlayer}
-                open={isOpen}
-                onClose={() => {
-                    setIsOpen(false)
-                }}
-                onSelect={(player) => {
-                    setIsOpen(false)
-                    onSelect(player)
-                }}
-            />
-        </Fragment>
-    )
-}
-
+import { Pressable, Text, View } from "react-native"
 
 export function SelectPlayerModal({
     open,
+    title,
     onClose,
     onSelect,
+    onClear,
     players,
-    selectedPlayer
+    selectedPlayer,
 }: {
     open: boolean,
+    title: string,
     onClose: () => void,
-    onSelect: (player) => void,
+    onSelect: (playerId: number) => void,
+    onClear?: () => void,
     players: Player[],
-    selectedPlayer?: string,
+    selectedPlayer?: number | null,
 }) {
-
     return (
-        <Modal
-            size={'lg'}
-            isOpen={open}
-            onClose={() => {
-                onClose()
-            }}
-        >
-            <ModalBackdrop />
-            <ModalContent>
-                <ModalHeader>
-                    <Heading>
-                        Select a player here
-                    </Heading>
-                    <ModalCloseButton>
-                        <Icon
-                            as={CloseIcon}
-                            size="md"
-                            className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-                        />
-                    </ModalCloseButton>
+        <Modal size="md" isOpen={open} onClose={onClose}>
+            <ModalBackdrop className="bg-ink" animate={{ opacity: 0.45 }} />
+            <ModalContent className="max-h-[80%] rounded-2xl border-0 bg-surface p-5 shadow-hard-2">
+                <ModalHeader className="items-start">
+                    <Text className="text-modal-title font-semibold text-ink">{title}</Text>
+                    <Pressable
+                        onPress={onClose}
+                        accessibilityRole="button"
+                        accessibilityLabel="Close"
+                        hitSlop={8}
+                        className="p-0.5"
+                    >
+                        <Icon as={CloseIcon} size="lg" className="text-muted" />
+                    </Pressable>
                 </ModalHeader>
-                <ModalBody scrollEnabled={false}>
-                    {players ? (
-                        <FlatList
-                            data={players}
-                            numColumns={3}
-                            contentContainerStyle={{
-                                gap: 10
-                            }}
-                            columnWrapperStyle={{
-                                columnGap: 10
-                            }}
-                            renderItem={(player) => {
-                                const isSelected = selectedPlayer != null && player.item.player_id == parseInt(selectedPlayer)
+                <ModalBody className="mb-3 mt-3">
+                    {players.length > 0 ? (
+                        <View className="gap-2">
+                            {players.map((player) => {
+                                const isSelected = selectedPlayer != null && player.player_id === selectedPlayer
                                 return (
                                     <Pressable
-                                        onPress={() => {
-                                            onSelect(player.item.player_id)
-                                        }}
-                                        className={`flex-1 items-center justify-center rounded-xl border px-2 py-4 ${isSelected ? "border-primary-500 bg-primary-50" : "border-outline-100 bg-background-0"}`}
+                                        key={player.player_id}
+                                        onPress={() => onSelect(player.player_id)}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected: isSelected }}
+                                        testID={`player-option-${player.name}`}
                                     >
-                                        <Text
-                                            numberOfLines={1}
-                                            className={`text-base font-bold ${isSelected ? "text-primary-700" : "text-typography-900"}`}
-                                        >
-                                            {player.item.name}
-                                        </Text>
+                                        {({ pressed }) => (
+                                            <View
+                                                className={`flex-row items-center gap-3 rounded-xl px-4 py-3 ${isSelected ? "border-[1.5px] border-sage" : "border border-border-subtle"} ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
+                                            >
+                                                <Avatar name={player.name} colour={player.avatar_colour} />
+                                                <Text className="flex-1 text-card-title font-medium text-ink" numberOfLines={1}>
+                                                    {player.name}
+                                                </Text>
+                                            </View>
+                                        )}
                                     </Pressable>
                                 )
-                            }}
-                        />
-                    ) : (
-                        <View>
-                            <Text>
-                                You have no players recorded.
-                            </Text>
+                            })}
                         </View>
+                    ) : (
+                        <Text className="text-body text-muted">No players available.</Text>
                     )}
                 </ModalBody>
-                <ModalFooter>
-                    <Button
-                        variant="outline"
-                        action="secondary"
-                        onPress={() => {
-                            onClose()
-                        }}
+                <ModalFooter className="gap-3">
+                    <Pressable
+                        onPress={onClose}
+                        accessibilityRole="button"
+                        className="flex-1 items-center rounded-lg border border-border bg-surface-raised py-[11px] active:opacity-85"
                     >
-                        <ButtonText>Cancel</ButtonText>
-                    </Button>
+                        <Text className="text-body font-medium text-ink">Cancel</Text>
+                    </Pressable>
+                    {onClear && (
+                        <Pressable
+                            onPress={onClear}
+                            accessibilityRole="button"
+                            testID="player-clear-slot"
+                            className="flex-1 items-center rounded-lg border border-border bg-surface-raised py-[11px] active:opacity-85"
+                        >
+                            <Text className="text-body font-medium text-ink">Remove player</Text>
+                        </Pressable>
+                    )}
                 </ModalFooter>
             </ModalContent>
         </Modal>
