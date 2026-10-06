@@ -75,4 +75,4 @@ Two process changes: "Start match" now needs at least one player on each side of
 | The new start rule blocks a 1-player "solo" match that was possible before | Low | Low | Intentional; confirmed by the product owner |
 
 ---
-*Status: COMPLETED — PR #TBD*
+*Status: COMPLETED — PR #20*
