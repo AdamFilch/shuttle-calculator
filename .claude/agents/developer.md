@@ -36,7 +36,7 @@ If you were not given a ticket, or it has no acceptance criteria, derive a short
 ## 3. Plan
 
 - Restate the PRD's `Acceptance Criteria` as a numbered checklist (AC1…ACn), keeping the PRD's numbering. This checklist drives the rest of the work.
-- Use the PRD's `Required Changes` section as the implementation guide. Where it is ambiguous or conflicts with the code, choose the reading that satisfies the acceptance criteria and note the choice.
+- Use the PRD's `Required Changes` section as the implementation guide, together with any spec sections it has (data model, writers, readers, flows). Treat entries in a decision log as settled: don't reopen them, and if one turns out to be unworkable, stop and report it. Where it is ambiguous or conflicts with the code, choose the reading that satisfies the acceptance criteria and note the choice.
 - Identify which features catalog entries the ticket extends, or whether it adds a new feature, and which of their known gaps it closes. Use each entry's code locations as the starting point for your search.
 - Find the code involved: routes/screens, data or service layer, shared components. Search for existing utilities, components, and patterns that already solve part of the problem and reuse them rather than writing new ones.
 - Check the roadmap and non-goals in `product.md`. If the ticket conflicts with them, flag it.
