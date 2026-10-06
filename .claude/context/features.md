@@ -10,13 +10,13 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 |---|---|---|
 | 1 | [Players](#1-players) | Built |
 | 2 | [Deleting and restoring players](#2-deleting-and-restoring-players) | Built |
-| 3 | [Sessions](#3-sessions) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified |
-| 4 | [Court bookings](#4-court-bookings) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified |
+| 3 | [Sessions](#3-sessions) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) sheet swipe-to-dismiss unverified |
+| 4 | [Court bookings](#4-court-bookings) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) sheet swipe-to-dismiss unverified |
 | 5 | [Creating a match](#5-creating-a-match) | Built |
 | 6 | [Shuttle usage in a match (New / Reused / Free)](#6-shuttle-usage-in-a-match-new--reused--free) | Built |
 | 7 | [Match detail](#7-match-detail) | Built |
 | 8 | [Shuttle inventory](#8-shuttle-inventory) | Built (manual verification pending) |
-| 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified |
+| 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) sheet swipe-to-dismiss unverified |
 | 10 | [Player balance and payments](#10-player-balance-and-payments) | Built |
 | 11 | [Pay Early](#11-pay-early) | Planned |
 | 12 | [Home dashboard](#12-home-dashboard) | Built |
@@ -66,7 +66,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 3. Sessions
 
-**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified.
+**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) sheet swipe-to-dismiss unverified.
 
 **What it does**
 - Sessions tab lists all sessions newest first as SessionCards: the title (the session name, or the date when unnamed), "D Mon YYYY · N players", a clay feather icon with "N shuttles used" (every shuttle instance in the session, including free ones), and a StatusBadge. Open sessions show "Open session"; closed sessions show "Settled" when nothing is owed, or "RM N due" for the outstanding shuttle and court charges. Sessions with no matches use the same card.
@@ -86,11 +86,11 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 **Known gaps**
 - No edit for sessions; delete only for open sessions with no matches.
 - No per-player "paid RM X" on closed sessions (only the session total is stored, in `sessions.amount_due`).
-- PRD [3] verification is partial: the tap flows (⋯ sheet, Book courts save, close/delete confirm and cancel, row and card taps, swipe-to-dismiss) and the iPhone SE / Pro Max layouts were not driven on the simulator (no Expo MCP / tap access). Rendering, data and the close/delete handlers were verified.
+- PRD [3] verification is partial: everything was tap-verified on the iOS Simulator (17 Pro, 17 Pro Max, SE) except swipe-down to dismiss the Session options / Book courts sheets, which Expo MCP can't drive.
 
 ## 4. Court bookings
 
-**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified.
+**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) sheet swipe-to-dismiss unverified.
 
 **What it does**
 - Courts are booked when creating a session, or from the Book courts sheet on an open session (⋯ → Book courts, or the Courts tile).
@@ -104,7 +104,6 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 **Known gaps**
 - No edit or delete for a single booking (an empty session's bookings go when the session is deleted).
-- Saving from the sheet was not driven by a tap on the simulator for PRD [3] (verification partial).
 
 ## 5. Creating a match
 
@@ -180,7 +179,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 9. Closing a session (settlement)
 
-**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) taps and small/large devices unverified.
+**Status**: Built, partial: [PRD 3](../prds/partial/3-session-detail-redesign.prd.md) sheet swipe-to-dismiss unverified.
 
 **What it does**
 - The sage Close session button (shown once the session has a match) opens "Close session?", which lists the exact shares that will be recorded, grouping players with the same amount ("Alice, Ben · RM 5.84 each"), and the share total. Confirming computes all charges, marks the session closed with a closed date, and stores the total charged in `sessions.amount_due`; the screen switches to the closed layout.
@@ -197,7 +196,6 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 **Known gaps**
 - Rounding per share can leave totals a cent off (RM10 ÷ 3 = RM9.99 collected).
-- The confirm and cancel taps in the dialog were not driven on the simulator for PRD [3] (verification partial).
 
 ## 10. Player balance and payments
 
