@@ -2,7 +2,7 @@ import { ShuttleGlyph } from "@/components/session/match/ShuttleGlyph"
 import { designTokens } from "@/components/ui/gluestack-ui-provider/config"
 import { AvatarColour } from "@/services/player"
 import { SessionMatches } from "@/services/session"
-import { Pressable, Text, View } from "react-native"
+import { Pressable, Text, useWindowDimensions, View } from "react-native"
 
 type SessionMatch = SessionMatches["matches"][number]
 type MatchPlayer = SessionMatch["players"][number]
@@ -59,6 +59,8 @@ export function MatchCard({
         : `${match.shuttle_count} ${match.shuttle_count === 1 ? "shuttle" : "shuttles"}`
     const isNeutralChip = match.all_free || match.shuttle_count === 0
     const note = shuttleNote(match)
+    const { fontScale } = useWindowDimensions()
+    const wrapHeader = fontScale >= 1.5
 
     return (
         <Pressable
@@ -76,15 +78,15 @@ export function MatchCard({
                 <View
                     className={`gap-1.5 rounded-xl border border-border-subtle px-3.5 py-3 ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
                 >
-                    <View className="flex-row flex-wrap items-center justify-between gap-2">
-                        <View className="flex-row flex-wrap items-baseline gap-2">
+                    <View className={`flex-row items-center justify-between gap-2 ${wrapHeader ? "flex-wrap" : ""}`}>
+                        <View className={`flex-row flex-wrap items-baseline gap-x-2 ${wrapHeader ? "" : "flex-1"}`}>
                             <Text className="text-card-title font-medium text-ink">{title}</Text>
                             {startTime ? (
                                 <Text className="text-caption text-muted">{startTime}</Text>
                             ) : null}
                         </View>
                         <View
-                            className={`flex-row items-center gap-1 rounded-full py-1 pl-2 pr-2.5 ${isNeutralChip ? "bg-neutral-tint" : "bg-clay-tint"}`}
+                            className={`shrink-0 flex-row items-center gap-1 rounded-full py-1 pl-2 pr-2.5 ${isNeutralChip ? "bg-neutral-tint" : "bg-clay-tint"}`}
                         >
                             <ShuttleGlyph colour={isNeutralChip ? designTokens.muted : designTokens.clay} size={14} />
                             <Text
