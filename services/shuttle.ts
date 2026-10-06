@@ -383,3 +383,54 @@ export async function fetchAllShuttlesBySessionId<Invert extends boolean>(id: st
 }
 
 
+
+export type ShuttleTypeOption = {
+    shuttle_id: number,
+    name: string,
+    remaining: number
+}
+
+const SHUTTLE_TYPE_OPTION_SELECT = `
+        SELECT
+        s.shuttle_id,
+        s.name,
+        COALESCE(purchased.total_purchased, 0) - COALESCE(used.total_used, 0) AS remaining,
+        COALESCE(used.total_used, 0) AS total_used
+        FROM shuttles s
+        LEFT JOIN (
+            SELECT shuttle_id, SUM(num_of_shuttles) AS total_purchased
+            FROM shuttle_purchases
+            GROUP BY shuttle_id
+        ) purchased ON purchased.shuttle_id = s.shuttle_id
+        LEFT JOIN (
+            SELECT shuttle_id, COUNT(*) AS total_used
+            FROM shuttle_instances
+            WHERE shuttle_id IS NOT NULL
+            GROUP BY shuttle_id
+        ) used ON used.shuttle_id = s.shuttle_id
+`
+
+export async function fetchTopShuttleTypes(limit: number = 3): Promise<ShuttleTypeOption[]> {
+    const res: ShuttleTypeOption[] = await db.getAllAsync(`
+        SELECT shuttle_id, name, remaining FROM (${SHUTTLE_TYPE_OPTION_SELECT})
+        WHERE remaining > 0
+        ORDER BY total_used DESC, shuttle_id DESC
+        LIMIT ?
+        `, [limit])
+
+    return res
+}
+
+export async function fetchSessionShuttleTypes(sessionId: number): Promise<ShuttleTypeOption[]> {
+    const res: ShuttleTypeOption[] = await db.getAllAsync(`
+        SELECT shuttle_id, name, remaining FROM (${SHUTTLE_TYPE_OPTION_SELECT})
+        WHERE shuttle_id IN (
+            SELECT DISTINCT shuttle_id
+            FROM shuttle_instances
+            WHERE session_id = ? AND shuttle_id IS NOT NULL
+        )
+        ORDER BY shuttle_id ASC
+        `, [sessionId])
+
+    return res
+}
