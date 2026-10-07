@@ -178,6 +178,7 @@ export default function SelectedSessionPage() {
   const owedByPlayer: Record<number, number> = {};
   for (const payment of payments) owedByPlayer[payment.player_id] = payment.total_owed_amount;
   const stillOwed = Object.values(owedByPlayer).reduce((sum, amount) => sum + amount, 0);
+  const paidSoFar = payments.reduce((sum, payment) => sum + payment.total_paid_amount, 0);
   const settledCount = preview.players.filter(
     (player) => !isOwed(owedByPlayer[player.player_id] ?? 0),
   ).length;
@@ -260,6 +261,7 @@ export default function SelectedSessionPage() {
         {isClosed ? (
           <ClosedEstimateCard
             stillOwed={stillOwed}
+            paidSoFar={paidSoFar}
             amountDue={session.amount_due ?? null}
             settledCount={settledCount}
             playerCount={preview.players.length}

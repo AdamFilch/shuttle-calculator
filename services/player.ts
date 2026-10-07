@@ -44,15 +44,36 @@ export async function fetchDeletedPlayers(): Promise<Player[]> {
   return res
 }
 
-export async function deletePlayer(playerId: number) {
-  const owed: any = await db.getFirstAsync(`
+export type PlayerDeleteBlockers = {
+  owed: number,
+  inOpenSession: boolean
+}
+
+export async function fetchPlayerDeleteBlockers(playerId: number): Promise<PlayerDeleteBlockers> {
+  const row = await db.getFirstAsync<{ total_owed: number, open_count: number }>(`
     SELECT
       COALESCE((SELECT SUM(amount_paid) FROM shuttle_payments WHERE player_id = ?), 0) +
-      COALESCE((SELECT SUM(amount_paid) FROM court_payments WHERE player_id = ?), 0) AS total_owed
-    `, [playerId, playerId])
+      COALESCE((SELECT SUM(amount_paid) FROM court_payments WHERE player_id = ?), 0) AS total_owed,
+      (SELECT COUNT(*) FROM match_players mp
+        JOIN matches m ON m.match_id = mp.match_id
+        JOIN sessions s ON s.session_id = m.session_id
+        WHERE mp.player_id = ? AND s.status = 'open') AS open_count
+    `, [playerId, playerId, playerId])
 
-  if (owed.total_owed > 0) {
+  return {
+    owed: row?.total_owed ?? 0,
+    inOpenSession: (row?.open_count ?? 0) > 0
+  }
+}
+
+export async function deletePlayer(playerId: number) {
+  const blockers = await fetchPlayerDeleteBlockers(playerId)
+
+  if (blockers.owed > 0) {
     throw new Error('This player has unpaid charges. Settle their balance before deleting.')
+  }
+  if (blockers.inOpenSession) {
+    throw new Error('This player is in an open session. Close it before deleting.')
   }
 
   await db.runAsync(`
@@ -249,11 +270,14 @@ export type PlayersShuttlePayments = {
   player_id: string,
   name: string,
   total_owed_amount: number,
+  total_charged_amount: number,
+  total_paid_amount: number,
   shuttle_payments: {
     name: string,
     shuttle_id: number | null,
     shuttle_instance_id: number,
     owed_amount: number,
+    amount_charged: number,
     date_created: string,
     date_paid: string
   }[],
@@ -261,6 +285,7 @@ export type PlayersShuttlePayments = {
     court_booking_id: number,
     label: string | null,
     owed_amount: number,
+    amount_charged: number,
     date_created: string,
     date_paid: string
   }[]
@@ -273,6 +298,7 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
     p.name AS player_name,
     sp.shuttle_instance_id,
     sp.amount_paid,
+    sp.amount_charged,
     sp.date_paid,
     sp.date_created,
     si.shuttle_id,
@@ -290,6 +316,7 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
     p.name AS player_name,
     cp.court_booking_id,
     cp.amount_paid,
+    cp.amount_charged,
     cp.date_paid,
     cp.date_created,
     cb.label AS court_label
@@ -307,6 +334,8 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
         player_id: playerId,
         name: playerName,
         total_owed_amount: 0,
+        total_charged_amount: 0,
+        total_paid_amount: 0,
         shuttle_payments: [],
         court_payments: []
       }
@@ -317,11 +346,14 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
   for (const row of shuttlePaymentsByPlayerRows) {
     const player = ensurePlayer(row.player_id, row.player_name)
     player.total_owed_amount += row.amount_paid
+    player.total_charged_amount += row.amount_charged
+    if (row.date_paid) player.total_paid_amount += row.amount_charged
     player.shuttle_payments.push({
       shuttle_id: row.shuttle_id,
       shuttle_instance_id: row.shuttle_instance_id,
       name: row.shuttle_id === null ? 'Free shuttle' : row.shuttle_name,
       owed_amount: row.amount_paid,
+      amount_charged: row.amount_charged,
       date_created: row.date_created,
       date_paid: row.date_paid
     })
@@ -330,10 +362,13 @@ export async function fetchAllPlayerPaymentsBySession(id: string): Promise<Playe
   for (const row of courtPaymentsByPlayerRows) {
     const player = ensurePlayer(row.player_id, row.player_name)
     player.total_owed_amount += row.amount_paid
+    player.total_charged_amount += row.amount_charged
+    if (row.date_paid) player.total_paid_amount += row.amount_charged
     player.court_payments.push({
       court_booking_id: row.court_booking_id,
       label: row.court_label,
       owed_amount: row.amount_paid,
+      amount_charged: row.amount_charged,
       date_created: row.date_created,
       date_paid: row.date_paid
     })
@@ -355,6 +390,7 @@ export async function fetchAllPlayerPayments(): Promise<PlayerSummary[]> {
       p.avatar_colour,
       sp.shuttle_instance_id,
       sp.amount_paid,
+      sp.amount_charged,
       sp.date_paid,
       sp.date_created,
       si.shuttle_id,
@@ -371,6 +407,7 @@ export async function fetchAllPlayerPayments(): Promise<PlayerSummary[]> {
       p.player_id,
       cp.court_booking_id,
       cp.amount_paid,
+      cp.amount_charged,
       cp.date_paid,
       cp.date_created,
       cb.label AS court_label
@@ -401,6 +438,8 @@ export async function fetchAllPlayerPayments(): Promise<PlayerSummary[]> {
         avatar_colour: row.avatar_colour,
         session_count: sessionCountByPlayer[row.player_id] ?? 0,
         total_owed_amount: 0,
+        total_charged_amount: 0,
+        total_paid_amount: 0,
         shuttle_payments: [],
         court_payments: []
       }
@@ -409,11 +448,14 @@ export async function fetchAllPlayerPayments(): Promise<PlayerSummary[]> {
 
     if (playersMap[row.player_id] && row.shuttle_instance_id) {
       playersMap[row.player_id].total_owed_amount += row.amount_paid
+      playersMap[row.player_id].total_charged_amount += row.amount_charged
+      if (row.date_paid) playersMap[row.player_id].total_paid_amount += row.amount_charged
       playersMap[row.player_id].shuttle_payments.push({
         shuttle_id: row.shuttle_id,
         shuttle_instance_id: row.shuttle_instance_id,
         name: row.shuttle_id === null ? 'Free shuttle' : row.shuttle_name,
         owed_amount: row.amount_paid,
+        amount_charged: row.amount_charged,
         date_created: row.date_created,
         date_paid: row.date_paid
       })
@@ -423,10 +465,13 @@ export async function fetchAllPlayerPayments(): Promise<PlayerSummary[]> {
   for (let row of courtPaymentsByPlayerRows) {
     if (playersMap[row.player_id]) {
       playersMap[row.player_id].total_owed_amount += row.amount_paid
+      playersMap[row.player_id].total_charged_amount += row.amount_charged
+      if (row.date_paid) playersMap[row.player_id].total_paid_amount += row.amount_charged
       playersMap[row.player_id].court_payments.push({
         court_booking_id: row.court_booking_id,
         label: row.court_label,
         owed_amount: row.amount_paid,
+        amount_charged: row.amount_charged,
         date_created: row.date_created,
         date_paid: row.date_paid
       })
