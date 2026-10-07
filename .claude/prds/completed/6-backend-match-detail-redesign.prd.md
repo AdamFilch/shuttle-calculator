@@ -247,4 +247,4 @@ seedDefault
 | Seed reuse picks the wrong instance | Low | Low | Pick the instance used by today's match 2 explicitly; check its origin in the log |
 
 ---
-*Status: COMPLETED — PR #TBD*
+*Status: COMPLETED — PR #24*
