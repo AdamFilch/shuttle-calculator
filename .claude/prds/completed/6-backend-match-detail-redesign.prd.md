@@ -220,10 +220,10 @@ seedDefault
 ---
 
 ## Acceptance Criteria
-- [ ] AC1 (Reader shape): `fetchMatchById` returns `MatchFull | null`. It returns `null` for an unknown id without throwing. `players` is sorted by `position`, and each entry is a full `Player` (`player_id`, `name`, `status`, `deleted_date`, `avatar_colour`) plus `position`. Deleted players are included.
-- [ ] AC2 (Shuttle rows): `shuttles` has one row per (`shuttle_id`, `origin`, `from_match_number`) with `name` (`null` when free), `origin`, `from_match_number` (0-based, set only when `reused`), `quantity` and `unit_price` (`total_price / num_of_shuttles`, `0` when free). Rows are ordered new, then reused (oldest source first), then free. Quantities aren't multiplied by the number of players.
-- [ ] AC3 (Seed): after `npm run db:fresh`, the `default` scenario's open session has a singles match and a 2 vs 1 match as well as the existing two, so every format (doubles, singles, 2 vs 1) and every origin (new, reused, free) is present. Metro logs `[dev-db] fresh default done`.
-- [ ] AC4 (Old screen + checks): the old match screen compiles with only the D11 fix and shows players in their correct slots. `npm run lint` and `npx tsc --noEmit` pass. A throwaway Metro log of `fetchMatchById` for each of today's matches (run on the iOS Simulator after `npm run db:fresh`) is pasted in the PR description and shows AC1–AC2 hold. The log is removed before commit. Never checked on web.
+- [x] AC1 (Reader shape): `fetchMatchById` returns `MatchFull | null`. It returns `null` for an unknown id without throwing. `players` is sorted by `position`, and each entry is a full `Player` (`player_id`, `name`, `status`, `deleted_date`, `avatar_colour`) plus `position`. Deleted players are included.
+- [x] AC2 (Shuttle rows): `shuttles` has one row per (`shuttle_id`, `origin`, `from_match_number`) with `name` (`null` when free), `origin`, `from_match_number` (0-based, set only when `reused`), `quantity` and `unit_price` (`total_price / num_of_shuttles`, `0` when free). Rows are ordered new, then reused (oldest source first), then free. Quantities aren't multiplied by the number of players.
+- [x] AC3 (Seed): after `npm run db:fresh`, the `default` scenario's open session has a singles match and a 2 vs 1 match as well as the existing two, so every format (doubles, singles, 2 vs 1) and every origin (new, reused, free) is present. Metro logs `[dev-db] fresh default done`.
+- [x] AC4 (Old screen + checks): the old match screen compiles with only the D11 fix and shows players in their correct slots. `npm run lint` and `npx tsc --noEmit` pass. A throwaway Metro log of `fetchMatchById` for each of today's matches (run on the iOS Simulator after `npm run db:fresh`) is pasted in the PR description and shows AC1–AC2 hold. The log is removed before commit. Never checked on web.
 
 ## Required Changes
 - **Reader**: rewrite `fetchMatchById` and its types in `services/match.ts` (see [Readers](#readers), [Contract](#contract-for-frontend)).
@@ -247,4 +247,4 @@ seedDefault
 | Seed reuse picks the wrong instance | Low | Low | Pick the instance used by today's match 2 explicitly; check its origin in the log |
 
 ---
-*Status: READY — ticket [6] (backend)*
+*Status: COMPLETED — PR #TBD*

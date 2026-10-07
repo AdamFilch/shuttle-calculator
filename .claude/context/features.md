@@ -156,7 +156,10 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 **What it does**
 - Shows the match title and date, players laid out by court position (two rows, split by a net), and "Shuttles used this match" (per type with a count, Free shuttles grouped).
 
-**Where**: `app/session/[sessionId]/[matchId]/index.tsx`, `services/match.ts` (`fetchMatchById`).
+- `fetchMatchById` returns `null` for an unknown match, the players as full `Player` objects plus `position` (sorted by position, deleted players included), and the shuttles grouped by type and origin (`new`, `reused` with the 0-based `from_match_number` of its first use, `free`) with `quantity` and an unrounded `unit_price`, ordered new, reused (oldest source first), free. The screen itself is still the old layout until the frontend half ships.
+- The `default` seed's open session has a doubles, a doubles with a reused and a free shuttle, a singles and a 2 vs 1 match.
+
+**Where**: `app/session/[sessionId]/[matchId]/index.tsx`, `services/match.ts` (`fetchMatchById`). Spec: `.claude/prds/completed/6-backend-match-detail-redesign.prd.md`.
 
 **Known gaps**
 - The title shows the raw match number ("Match 0" for the first match) while the session list shows "Match 1": an off-by-one inconsistency.
