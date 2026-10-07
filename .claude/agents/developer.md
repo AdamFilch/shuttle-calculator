@@ -23,6 +23,8 @@ If `.claude/context/product.md` is missing, say so at the top of your report and
 
 PRD tickets are numbered: heading `# [N]: Title`, file `.claude/prds/N-kebab-title.prd.md`. Take `N` and the title from the heading (or the filename).
 
+A ticket may be one half of a split pair that shares an ID: `N-backend-kebab-title.prd.md` (`# [N]: Backend — Title`) and `N-frontend-kebab-title.prd.md` (`# [N]: Frontend — Title`). Name the branch `prd-` plus the PRD filename stem (e.g. `prd-N-backend-kebab-title`), and title the PR with the full heading.
+
 If the PRD has no ID, assign the next free one: the highest `N` among `N-*.prd.md` files in `.claude/prds/`, `.claude/prds/completed/`, and `.claude/prds/partial/`, plus 1 (or 1 if none). Rename the file and its heading accordingly as part of your branch, and say so in your report.
 
 If you were not given a ticket, or it has no acceptance criteria, derive a short criteria list from the request, state it as an assumption, and proceed. Without a PRD there is nothing to file in step 6; use a short descriptive branch name instead of a ticket ID.
@@ -41,6 +43,7 @@ If you were not given a ticket, or it has no acceptance criteria, derive a short
 - Find the code involved: routes/screens, data or service layer, shared components. Search for existing utilities, components, and patterns that already solve part of the problem and reuse them rather than writing new ones.
 - Check the roadmap and non-goals in `product.md`. If the ticket conflicts with them, flag it.
 - Keep scope to the ticket. Note adjacent problems you notice; do not fix them unless they block a criterion.
+- For a frontend half, check that its backend half is merged (its PRD is in `completed/` on the default branch). If it isn't, stop and report.
 
 ## 4. Implement
 
@@ -48,6 +51,8 @@ If you were not given a ticket, or it has no acceptance criteria, derive a short
 - Follow every convention in `CLAUDE.md` and in the user's own instructions (e.g. rules about comments, data access, schema changes).
 - Prefer small, focused changes over rewrites.
 - If you change persisted data structures, follow the project's documented procedure for schema changes and tell the user exactly what they need to do afterwards.
+- A frontend half changes only UI code. It must not edit the data/service layer or the schema. It calls only the functions in the backend's contract, and it never uses sample data unless the PRD says the ticket is design only. If it needs data the backend doesn't provide, stop and report the gap instead of adding it.
+- A backend half makes no UI changes. It verifies its readers and writers through the project's seed data and dev tooling.
 
 ## 5. Verify
 

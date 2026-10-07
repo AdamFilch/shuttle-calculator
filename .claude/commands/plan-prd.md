@@ -42,6 +42,30 @@ Every PRD gets a unique numeric ticket ID `N`.
 { ls .claude/prds .claude/prds/completed .claude/prds/partial 2>/dev/null; for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do git ls-tree -r --name-only "$b" -- .claude/prds 2>/dev/null | xargs -n1 basename; done; } | grep -Eo '^[0-9]+-' | tr -d '-' | sort -n | tail -1
 ```
 
+## Splitting backend and frontend
+
+A ticket that touches both the data layer and the UI is written as **two PRDs that share one ticket ID**. The backend is built first and kept simple. The frontend is built on top of it, never touches the data layer, and shows real data.
+
+| Half | Covers | Never touches |
+|---|---|---|
+| **Backend** | Anything under `services/`: the schema in `services/database.js`, readers, writers, deletes, SQL, and `services/seed.ts` | `app/`, `components/` |
+| **Frontend** | Screens under `app/` and components under `components/`. They only call service functions | `services/`, the schema, SQL |
+
+- **One side only**: if the ticket touches only one side, write one normal PRD (`{N}-{name}.prd.md`, `# [{N}]: {Title}`).
+- **Both sides**: compute `N` once. Write two files with the same `N`:
+  - `.claude/prds/{N}-backend-{name}.prd.md` with heading `# [{N}]: Backend — {Title}`
+  - `.claude/prds/{N}-frontend-{name}.prd.md` with heading `# [{N}]: Frontend — {Title}`
+- **Backend PRD**:
+  - Keep Data Model, State Machine, Writers and Readers. Drop UI-only content.
+  - Add a **Contract for frontend** section: the confirmed screen → data mapping (see Phase 3), plus the exact signature and return shape of every function the frontend will call. Build every reader and writer that mapping needs, and nothing it doesn't.
+  - Update the `default` seed scenario in `services/seed.ts`, or add a new scenario, so the frontend has realistic data to show.
+  - Its acceptance criteria are verified without screens: through the seed, `npm run db:fresh`, and the dev tools and Metro logs on the simulator, plus lint and type check.
+- **Frontend PRD**:
+  - Under the intro, add `**Depends on:** [{N}]: Backend — {Title} merged`.
+  - Use only the readers and writers in the backend's Contract for frontend.
+  - No schema or service changes, and no sample or placeholder data.
+- **Design-only exception**: only when the user explicitly says a feature is design only (it still needs more thinking), write a single frontend PRD. It may use clearly named sample constants kept in one file. Log this as a user decision.
+
 ## Workflow
 
 ### Phase 1 — FRAME
@@ -58,6 +82,8 @@ Decide the ticket type, and ask with the picker only if it's unclear:
 
 - **Feature**: a new capability, or a problem to solve. The drill covers problem, users, evidence and hypothesis too.
 - **Change**: a design change, restyle, or adjustment to something already built. Skip problem, evidence, hypothesis and success metrics. The **Summary** carries what changes and why.
+
+Decide which sides the ticket touches: **backend only**, **frontend only**, or **split** (both, see [Splitting backend and frontend](#splitting-backend-and-frontend)). Ask with the picker only if it's unclear, and ask whether it is design only only if the user hinted at it.
 
 ### Phase 2 — EXPLORE
 
@@ -83,6 +109,15 @@ Invoke the **`drill-me`** skill on the framed idea, with what Phase 1 and 2 foun
 8. **Money**: anything touching charges, settlement, splitting or rounding. Always ask the user about these, never decide them yourself.
 9. **Acceptance criteria**: propose a list derived from the decisions, then confirm it with a `multiSelect` picker question ("Keep these criteria") plus "Type something" for additions.
 
+**For a split ticket, drill the frontend first.** The user decides what the UI shows and does, and the backend is derived from those answers so the data lines up with the screens:
+
+1. Drill **Behaviour** (branch 3) screen by screen until settled: every value, list and action, and the empty, error and loading states.
+2. Map each value on screen to a reader field, and each action to a writer.
+3. Drill only the data-side decisions that remain (branches 4–8). Never decide a data shape that no screen needs.
+4. Before Acceptance criteria, show a **screen → data mapping** table (screen element → reader and field, or writer). Confirm it with a picker: **"Correct (Recommended)"** / **"Adjust"**. That table becomes the backend PRD's Contract for frontend.
+
+Draft acceptance criteria for each half separately.
+
 The drill ends when `drill-me` reports an empty frontier and the user confirms the Decision Log.
 
 ### Phase 4 — GENERATE
@@ -93,7 +128,13 @@ Compute the next ticket ID, then write the PRD from the template below.
 mkdir -p .claude/prds
 ```
 
-**Output path**: `.claude/prds/{N}-{kebab-case-name}.prd.md`
+**Output path**: `.claude/prds/{N}-{kebab-case-name}.prd.md`. For a split ticket, write both `.claude/prds/{N}-backend-{kebab-case-name}.prd.md` and `.claude/prds/{N}-frontend-{kebab-case-name}.prd.md`.
+
+**Split tickets**
+- Each PRD stands alone: copy the full Decision Log into both.
+- Link each PRD to the other one in its intro.
+- The backend PRD adds a `## Contract for frontend` section after Readers and lists it in the Table of Contents.
+- The frontend PRD's Required Changes name only files under `app/` and `components/`.
 
 **Writing rules**
 
@@ -298,6 +339,13 @@ Open questions:      {count}
 Next step: use the developer agent on .claude/prds/{N}-{name}.prd.md
 ```
 
+For a split ticket, list both files (backend first) and end with:
+
+```
+Next step: use the developer agent on .claude/prds/{N}-backend-{name}.prd.md,
+           then on .claude/prds/{N}-frontend-{name}.prd.md once the backend PR is merged
+```
+
 ## Success criteria
 
 - **ID_UNIQUE**: the ticket ID is higher than every existing numbered PRD, and it appears in both the heading and the filename.
@@ -309,3 +357,5 @@ Next step: use the developer agent on .claude/prds/{N}-{name}.prd.md
 - **SPEC_GROUNDED**: every file, table, column and function named exists today or is marked **new**.
 - **SECTIONS_PRUNED**: no empty or "N/A" sections.
 - **CRITERIA_TESTABLE**: every acceptance criterion can be verified by observation or by running something.
+- **SPLIT_CLEAN**: a ticket that touches both sides is two PRDs with the same `N`. The frontend PRD adds no table, column or service function. The backend PRD names no screen changes. The frontend uses no sample data unless the user marked it design only.
+- **CONTRACT_ALIGNED**: every value and action in the frontend PRD maps to a reader field or writer in the backend's Contract for frontend, and the contract has nothing that no screen uses.
