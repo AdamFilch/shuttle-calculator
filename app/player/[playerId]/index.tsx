@@ -26,9 +26,9 @@ import {
   ShuttlePaymentsByPlayerSessions,
 } from "@/services/player";
 import {
+  payChargesByKeys,
   payCourtBySessionId,
   paySessionInFull,
-  payShuttleInstancesByIds,
 } from "@/services/shuttle-payments";
 import { DisplayTimeDDDASHMMDASHYYYY } from "@/services/time-display";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -120,9 +120,9 @@ export default function SelectPlayerPage() {
         player_id: playerId.toString(),
       });
     } else {
-      await payShuttleInstancesByIds({
-        shuttleCharges: selectedCharges,
-        player_id: playerId.toString(),
+      await payChargesByKeys({
+        playerId: playerId.toString(),
+        keys: selectedCharges.map((charge) => `shuttle:${charge.shuttle_instance_id}`),
       });
       setSelectedCharges([]);
       toggleShuttleMode(false);

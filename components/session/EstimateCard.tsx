@@ -76,18 +76,20 @@ export function OpenEstimateCard({
 
 export function ClosedEstimateCard({
     stillOwed,
+    paidSoFar,
     amountDue,
     settledCount,
     playerCount,
     closedLabel,
 }: {
     stillOwed: number,
+    paidSoFar: number,
     amountDue: number | null,
     settledCount: number,
     playerCount: number,
     closedLabel?: string
 }) {
-    const paid = amountDue === null ? null : Math.max(0, amountDue - stillOwed)
+    const paid = amountDue === null ? null : paidSoFar
     const segments: Segment[] = paid === null
         ? [{ label: "Owed", amount: stillOwed, fillClass: "bg-clay" }]
         : [

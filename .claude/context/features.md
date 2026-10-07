@@ -9,7 +9,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | # | Feature | Status |
 |---|---|---|
 | 1 | [Players](#1-players) | Built |
-| 2 | [Deleting and restoring players](#2-deleting-and-restoring-players) | Built |
+| 2 | [Deleting and restoring players](#2-deleting-and-restoring-players) | Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md) |
 | 3 | [Sessions](#3-sessions) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 4 | [Court bookings](#4-court-bookings) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 5 | [Creating a match](#5-creating-a-match) | Built |
@@ -17,11 +17,11 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | 7 | [Match detail](#7-match-detail) | Built |
 | 8 | [Shuttle inventory](#8-shuttle-inventory) | Built (manual verification pending) |
 | 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
-| 10 | [Player balance and payments](#10-player-balance-and-payments) | Built |
+| 10 | [Player balance and payments](#10-player-balance-and-payments) | Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md) (partial: backend shipped, player-detail ledger UI waits on PRD 4) |
 | 11 | [Pay Early](#11-pay-early) | Planned |
 | 12 | [Home dashboard](#12-home-dashboard) | Built |
 | 13 | [Insights](#13-insights) | Planned (future improvement) |
-| 14 | [Player play history](#14-player-play-history) | Planned |
+| 14 | [Player play history](#14-player-play-history) | Planned (data read built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md); screen in PRD 4) |
 | 15 | [Settings](#15-settings) | Built (developer tools only) |
 | 16 | [Currency](#16-currency) | Gap |
 | 17 | [Web](#17-web) | Notice only |
@@ -51,18 +51,23 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 2. Deleting and restoring players
 
+**Status**: Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md).
+
 **What it does**
 - Delete from the player detail screen, behind a confirmation dialog.
 - Deleted players disappear from the Players list and match player pickers, and appear under "Recently Deleted" (newest first, with the deletion date) with a Restore button.
 
-**Where**: `app/player/[playerId]/index.tsx`, `app/player/deleted/index.tsx`, `components/user/deletePlayerDialog.tsx`, `services/player.ts` (`deletePlayer`, `restorePlayer`, `fetchDeletedPlayers`).
+**Where**: `app/player/[playerId]/index.tsx`, `app/player/deleted/index.tsx`, `components/user/deletePlayerDialog.tsx`, `services/player.ts` (`deletePlayer`, `fetchPlayerDeleteBlockers`, `restorePlayer`, `fetchDeletedPlayers`). Spec: `.claude/prds/partial/5-player-payments-backend.prd.md`.
 
 **Rules**
 - Soft delete only (`status = 'deleted'`, `deleted_date` set).
-- Blocked while the player has any unpaid court or shuttle charge: "This player has unpaid charges. Settle their balance before deleting."
+- `deletePlayer` checks `fetchPlayerDeleteBlockers(playerId)`, which returns `{ owed, inOpenSession }`, and throws before writing anything:
+  - owed > 0: "This player has unpaid charges. Settle their balance before deleting."
+  - the player is in a match of a session with `status = 'open'`: "This player is in an open session. Close it before deleting."
+- The guard holds even when `deletePlayer` is called directly. The current player screen shows the thrown message in an alert.
 
 **Known gaps**
-- The unpaid check only sees charges from closed sessions. A player who has played in a still-open session can be deleted before that session is settled.
+- The Delete button doesn't show these blockers up front; it only reports the error after the tap. PRD [4] reuses `fetchPlayerDeleteBlockers` to disable it.
 
 ## 3. Sessions
 
@@ -183,13 +188,14 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 **What it does**
 - The sage Close session button (shown once the session has a match) opens "Close session?", which lists the exact shares that will be recorded, grouping players with the same amount ("Alice, Ben · RM 5.84 each"), and the share total. Confirming computes all charges, marks the session closed with a closed date, and stores the total charged in `sessions.amount_due`; the screen switches to the closed layout.
 
-**Where**: `app/session/[sessionId]/index.tsx`, `components/session/CloseSessionDialog.tsx`, `services/session.ts` (`previewSessionCharges`, `closeSession`). Specs: `specs/court-rental-and-session-settlement.md`, `specs/shuttle-instance-settlement.md`, `.claude/prds/completed/3-session-detail-redesign.prd.md`.
+**Where**: `app/session/[sessionId]/index.tsx`, `components/session/CloseSessionDialog.tsx`, `services/session.ts` (`previewSessionCharges`, `closeSession`), `components/session/EstimateCard.tsx`. Specs: `specs/court-rental-and-session-settlement.md`, `specs/shuttle-instance-settlement.md`, `.claude/prds/completed/3-session-detail-redesign.prd.md`, `.claude/prds/partial/5-player-payments-backend.prd.md`.
 
 **Rules**
 - Court: for each booking, (price × quantity) ÷ number of distinct players in the session, one charge per player.
 - Shuttle: for each charged (non-free) instance, (type total price ÷ type quantity) ÷ number of distinct players across all matches that used the instance, one charge per player.
 - Each share is rounded to 2 decimals.
-- `closeSession` inserts exactly the rows `previewSessionCharges` computes; `amount_due` is the sum of those rows and never changes afterwards (paid so far = `amount_due` − still owed).
+- `closeSession` inserts exactly the rows `previewSessionCharges` computes, writing each share to both `amount_paid` (still owed) and `amount_charged` (the share, never changed afterwards). `amount_due` is the sum of those rows and never changes afterwards.
+- Session detail's "paid so far" is the sum of `amount_charged` over the session's paid rows (`total_paid_amount` from `fetchAllPlayerPaymentsBySession`), not `amount_due` − still owed.
 - A session with no matches can't be closed (the button isn't shown and `closeSession` throws); it is deleted instead (see [3](#3-sessions)).
 - Closing can't be undone.
 
@@ -198,21 +204,27 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 10. Player balance and payments
 
+**Status**: Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md) (partial: backend shipped, player-detail ledger UI waits on PRD 4).
+
 **What it does**
 - Player detail lists every session where the player still owes money, with the session total. Each session expands to its matches (date, number of shuttles, amount) and each match to its shuttle charges.
 - Per session: "Pay All (RM…)" and "Pay Court Only (RM…)".
-- "Pay Shuttles Individually" switches to a select mode with checkboxes on shuttle charges, then "Pay Selected (N)".
+- "Pay Shuttles Individually" switches to a select mode with checkboxes on shuttle charges, then "Pay Selected (N)", which pays the picks in one transaction through `payChargesByKeys`.
 - Every payment opens a confirmation dialog stating what is being paid and that it's irreversible.
 - When nothing is owed: "Nothing owed."
 
-**Where**: `app/player/[playerId]/index.tsx`, `components/shared/PaymentConfirmationDialog.tsx`, `components/shared/DebtChip.tsx`, `services/player.ts` (`fetchShuttlePaymentsByPlayerSessions`, `fetchAllPlayerPayments`), `services/shuttle-payments.ts` (`paySessionInFull`, `payCourtBySessionId`, `payShuttleInstancesByIds`).
+**Where**: `app/player/[playerId]/index.tsx`, `components/shared/PaymentConfirmationDialog.tsx`, `components/shared/DebtChip.tsx`, `services/player.ts` (`fetchShuttlePaymentsByPlayerSessions`, `fetchAllPlayerPayments`, `fetchAllPlayerPaymentsBySession`), `services/shuttle-payments.ts` (`paySessionInFull`, `payCourtBySessionId`, `payChargesByKeys`, `payShuttleInstancesByIds`). Spec: `.claude/prds/partial/5-player-payments-backend.prd.md`.
 
 **Rules**
 - Charges carry across sessions until paid.
-- Paying sets the charge's stored amount to 0 and records the date paid.
+- Each payment row stores `amount_charged` (the share at close, never changed), `amount_paid` (a legacy name for the amount still owed) and `date_paid`. Paying sets `amount_paid` to 0 and stamps `date_paid`; no writer touches `amount_charged`. A row's paid amount is its `amount_charged` once `date_paid` is set.
+- `payChargesByKeys({ playerId, keys })` takes `court:{sessionId}` (all of the player's unpaid court rows in that session) and `shuttle:{shuttleInstanceId}` keys. It throws on a malformed key before writing, runs in one `withTransactionAsync` with a single timestamp, and only updates rows where `date_paid IS NULL`, so a repeat tap keeps the original date.
+- `fetchAllPlayerPayments` and `fetchAllPlayerPaymentsBySession` return `amount_charged` on every shuttle and court item, plus `total_charged_amount` and `total_paid_amount` per player.
 
 **Known gaps**
-- The stored column is called `amount_paid` but holds the amount still owed, and paying zeroes it. So the amount a player paid is lost, and paid history can't be shown or analysed.
+- Player detail doesn't show paid history yet: PRD [4]'s ledger (`fetchPlayerLedger`) should read `amount_charged` directly.
+- `payShuttleInstancesByIds` and `payShuttleByPlayers` don't filter `date_paid IS NULL`, so they can overwrite an existing paid date (they still never touch `amount_charged`).
+- `date_paid` comes from `convertTimeToSQLTimeStamp` and doesn't line up with `date_created` (`datetime('now')`, UTC): on the simulator a payment made seconds after close was stamped 5 hours earlier. Not yet investigated.
 - No undo for a mistaken payment.
 - No "pay everything across all sessions" action.
 - No partial payment of an amount (only whole charges).
@@ -255,16 +267,24 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 - Inventory burn rate and when to restock.
 
 **Dependencies**
-- Paid amounts must be kept (see [10](#10-player-balance-and-payments), known gaps) for spend and collection insights.
+- Paid amounts are now kept: each payment row stores `amount_charged`, and a paid row's amount is its `amount_charged` (see [10](#10-player-balance-and-payments), PRD [5]).
 - Purchase cost isn't recorded (see [8](#8-shuttle-inventory)), so inventory spend can't be calculated yet.
 
 ## 14. Player play history
 
-**Status**: Planned.
+**Status**: Planned (data read built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md); screen in PRD 4).
 
 **What it would do**: on the player detail screen, show the sessions a player attended, the matches they played (with partners and opponents), the shuttles they used, and what they paid, including sessions that are fully settled. Today the screen shows only what's still owed.
 
-**Where**: `app/player/[playerId]/index.tsx`, `services/player.ts`.
+**Where**: `app/player/[playerId]/index.tsx`, `services/player.ts` (`fetchPlayerLedger`, `PlayerLedger`). Specs: `.claude/prds/partial/5-player-payments-backend.prd.md` (data), `.claude/prds/4-player-detail-redesign.prd.md` (screen).
+
+**Data side (built, not on screen yet)**: `fetchPlayerLedger(playerId)` returns every session the player joined, open and settled ones included:
+- counts, plus totals for owed, and for paid and charged from `amount_charged`
+- sessions sorted owing → open → settled, newest first within each group, each with its matches, rosters by position, and one court share keyed `court:{sessionId}`
+- each paid shuttle keyed `shuttle:{id}` and listed once, under the first of this player's matches that used it, with `reused` and `freeOnly` flags
+- an `estimate` from `previewSessionCharges` for open sessions
+
+PRD [4] renders it.
 
 ## 15. Settings
 

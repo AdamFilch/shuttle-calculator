@@ -231,7 +231,7 @@ export type SessionChargesPreview = {
     shuttleCharges: { shuttle_instance_id: number, player_id: number, amount: string }[]
 }
 
-function roundToCents(amount: number): number {
+export function roundToCents(amount: number): number {
     return Math.round(amount * 100) / 100
 }
 
@@ -367,13 +367,13 @@ export async function closeSession(sessionId: string) {
     await db.execAsync("BEGIN TRANSACTION")
 
     await Promise.all(preview.courtCharges.map((charge) => db.runAsync(
-        `INSERT INTO court_payments (court_booking_id, player_id, amount_paid) VALUES (?, ?, ?)`,
-        [charge.court_booking_id, charge.player_id, charge.amount]
+        `INSERT INTO court_payments (court_booking_id, player_id, amount_paid, amount_charged) VALUES (?, ?, ?, ?)`,
+        [charge.court_booking_id, charge.player_id, charge.amount, charge.amount]
     )))
 
     await Promise.all(preview.shuttleCharges.map((charge) => db.runAsync(
-        `INSERT INTO shuttle_payments (shuttle_instance_id, player_id, amount_paid) VALUES (?, ?, ?)`,
-        [charge.shuttle_instance_id, charge.player_id, charge.amount]
+        `INSERT INTO shuttle_payments (shuttle_instance_id, player_id, amount_paid, amount_charged) VALUES (?, ?, ?, ?)`,
+        [charge.shuttle_instance_id, charge.player_id, charge.amount, charge.amount]
     )))
 
     await db.runAsync(

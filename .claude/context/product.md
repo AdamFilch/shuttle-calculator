@@ -109,7 +109,6 @@ Most important known gaps (full list per feature in `features.md`):
 
 - Amounts are shown with `$` instead of **RM** (except on the Players and Sessions tabs).
 - Sessions, matches, and court bookings cannot be edited or deleted (except deleting an open session with no matches); payments and session closes cannot be undone.
-- When a charge is paid, the stored amount is set to 0, so how much a player paid is not kept. This limits payment history and future insights.
 - The player screen only shows what is still owed; there is no play history (matches played, shuttles used, sessions attended).
 - Players cannot pay before the session is closed.
 - Rounding each share to 2 decimals can make a split a cent off (RM10 ÷ 3 = RM3.33 × 3 = RM9.99).
