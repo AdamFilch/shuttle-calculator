@@ -232,7 +232,7 @@ players at positions 0, 2 (top) and 1 (bottom)
 | Reduce Motion not respected | Low | Medium | `useReducedMotion` from reanimated; toggle it in the simulator's accessibility settings |
 
 ---
-*Status: PARTIAL — PR #TBD*
+*Status: PARTIAL — PR #25*
 
 ## Implementation Status
 | AC | Status | Evidence / notes |
