@@ -808,3 +808,52 @@ export async function fetchPlayerLedger(playerId: number): Promise<PlayerLedger>
     sessions
   }
 }
+
+export type TopOwer = {
+  player_id: number,
+  name: string,
+  avatar_colour: AvatarColour | null,
+  owed: number,
+  oldest_unpaid_date: string,
+  sessions_owed: number
+}
+
+export type TopOwers = {
+  owers: TopOwer[],
+  total_owed: number,
+  owing_count: number
+}
+
+export async function fetchTopOwers(limit: number = 3): Promise<TopOwers> {
+  const rows: TopOwer[] = await db.getAllAsync(`
+      WITH unpaid AS (
+        SELECT sp.player_id, sp.amount_paid, sp.date_created, si.session_id
+        FROM shuttle_payments sp
+        JOIN shuttle_instances si ON si.shuttle_instance_id = sp.shuttle_instance_id
+        WHERE sp.amount_paid > 0
+        UNION ALL
+        SELECT cp.player_id, cp.amount_paid, cp.date_created, cb.session_id
+        FROM court_payments cp
+        JOIN court_bookings cb ON cb.court_booking_id = cp.court_booking_id
+        WHERE cp.amount_paid > 0
+      )
+      SELECT p.player_id, p.name, p.avatar_colour,
+        SUM(u.amount_paid) AS owed,
+        MIN(u.date_created) AS oldest_unpaid_date,
+        COUNT(DISTINCT u.session_id) AS sessions_owed
+      FROM unpaid u
+      JOIN players p ON p.player_id = u.player_id
+      WHERE p.status = 'active'
+      GROUP BY p.player_id
+      HAVING ROUND(SUM(u.amount_paid), 2) >= 0.01
+      ORDER BY oldest_unpaid_date ASC, owed DESC, p.name ASC
+      `)
+
+  const owers = rows.map((row) => ({ ...row, owed: roundToCents(row.owed) }))
+
+  return {
+    owers: owers.slice(0, limit),
+    total_owed: roundToCents(owers.reduce((sum, ower) => sum + ower.owed, 0)),
+    owing_count: owers.length
+  }
+}
