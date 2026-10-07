@@ -1,0 +1,631 @@
+<title>Player Detail Redesign</title>
+<style>
+/* Layout: a board of phone frames (owing, expanded, pay select, waive select, confirm, options sheet, all settled) with a note under each; app screens use the fixed light design-system tokens, the board around them follows the viewer's theme. */
+:root {
+  --page-bg: #eef1f4;
+  --page-fg: #002b5b;
+  --page-muted: #56616c;
+  --page-line: #d5dbe1;
+  --page-frame: #1d2733;
+
+  --surface: #f8f9fa;
+  --surface-raised: #ffffff;
+  --ink: #002b5b;
+  --muted: #6c757d;
+  --border: #c7cdd2;
+  --border-subtle: #e4e6e9;
+  --border-dashed: #b8bec4;
+  --primary: #004e89;
+  --primary-tint: #eaf0f5;
+  --sage: #7fc8a9;
+  --on-sage: #0e4a32;
+  --clay: #a97155;
+  --clay-tint: #fbefe8;
+  --clay-strong: #8a5640;
+  --settled: #2e7d5b;
+  --settled-tint: #e7f4ee;
+  --neutral-tint: #edeeef;
+  --disabled: #e9ebed;
+  --error: #dc2626;
+  --error-tint: #fdeceb;
+  --on-error: #ffffff;
+  --scrim: rgba(0, 43, 91, 0.45);
+  --shadow-modal: 0px 8px 24px rgba(0, 43, 91, 0.18);
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #0c1520;
+    --page-fg: #e3eaf2;
+    --page-muted: #98a6b5;
+    --page-line: #233242;
+    --page-frame: #050a10;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #0c1520;
+  --page-fg: #e3eaf2;
+  --page-muted: #98a6b5;
+  --page-line: #233242;
+  --page-frame: #050a10;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--page-bg); color: var(--page-fg); font-family: var(--sans); padding-inline: 16px; padding-block: 32px 56px; }
+.board-head { max-width: 1180px; margin: 0 auto 28px; display: grid; gap: 8px; }
+.board-head h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.board-head p { margin: 0; color: var(--page-muted); font-size: 15px; line-height: 22px; max-width: 70ch; }
+.priorities { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.priorities li { font-size: 12px; line-height: 16px; font-weight: 500; border: 1px solid var(--page-line); border-radius: 999px; padding: 5px 10px; color: var(--page-muted); }
+.priorities b { color: var(--page-fg); font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+.board { max-width: 1180px; margin: 0 auto; display: grid; gap: 40px 28px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); justify-items: center; align-items: start; }
+figure { margin: 0; display: grid; gap: 14px; width: 100%; max-width: 360px; }
+figcaption { display: grid; gap: 4px; }
+figcaption strong { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+figcaption span { font-size: 13px; line-height: 19px; color: var(--page-muted); }
+
+.phone { width: 100%; border-radius: 40px; background: var(--page-frame); padding: 10px; }
+.screen { position: relative; border-radius: 31px; overflow: hidden; background: var(--surface); color: var(--ink); font-size: 14px; line-height: 20px; display: flex; flex-direction: column; }
+.screen.fixed { height: 680px; }
+.status-bar { height: 40px; display: flex; align-items: center; justify-content: space-between; padding-inline: 26px; font-size: 14px; font-weight: 600; flex: none; }
+.status-bar .dots { display: flex; gap: 4px; align-items: center; }
+.status-bar .dots i { width: 16px; height: 9px; border-radius: 2px; background: var(--ink); display: block; }
+.status-bar .dots i:first-child { width: 12px; opacity: .55; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 2px 8px 0 6px; height: 44px; flex: none; }
+.nav .back { display: flex; align-items: center; gap: 2px; color: var(--primary); font-size: 15px; height: 44px; padding-right: 8px; }
+.nav .text-btn { color: var(--primary); font-size: 15px; height: 44px; display: flex; align-items: center; padding-inline: 10px; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; color: var(--ink); }
+.icon-btn.ring { outline: 2px solid var(--primary); outline-offset: -6px; }
+
+.content { padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 24px; }
+.ident { display: flex; align-items: center; gap: 14px; }
+.ident .body { display: grid; gap: 2px; min-width: 0; }
+.screen-title { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.meta { color: var(--muted); }
+.mode-title { display: grid; gap: 4px; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 4px 10px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; flex: none; }
+.badge.settled { background: var(--settled-tint); color: var(--settled); }
+.badge.owes, .badge.estimate { background: var(--clay-tint); color: var(--clay-strong); }
+.badge.waived { background: var(--neutral-tint); color: var(--muted); }
+
+.card { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: 12px; }
+.hero { padding: 16px; display: grid; gap: 4px; }
+.section-label { font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.hero-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.hero-value { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.split-bar { display: flex; height: 6px; border-radius: 999px; overflow: hidden; margin: 10px 0 6px; background: var(--neutral-tint); }
+.split-bar i { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend span::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+.legend b { color: var(--ink); font-weight: 500; }
+.caption { font-size: 12px; line-height: 16px; color: var(--muted); margin: 6px 0 0; }
+.hero-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.hero-actions .btn:first-child { grid-column: 1 / -1; }
+
+.section { display: grid; gap: 8px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; }
+.section-head .count { font-size: 12px; color: var(--muted); }
+
+.avatar { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; flex: none; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--surface); }
+.avatar.lg { width: 56px; height: 56px; font-size: 18px; line-height: 22px; }
+.av-muted { background: var(--muted); }
+
+.sess { overflow: hidden; }
+.sess.sel-pay { border-color: var(--sage); }
+.sess.sel-waive { border-color: var(--clay); }
+.sess-head { display: flex; align-items: center; gap: 10px; padding: 12px 10px 12px 14px; min-height: 64px; }
+.sess-head .body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.name { font-size: 16px; line-height: 22px; font-weight: 500; }
+.sub { font-size: 13px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chev { color: var(--muted); flex: none; transition: transform .15s ease; }
+.chev.down { transform: rotate(90deg); }
+.sess-foot { border-top: 1px solid var(--border-subtle); padding: 10px 14px 12px; display: grid; }
+
+.group-label { padding: 10px 14px 4px; border-top: 1px solid var(--border-subtle); display: grid; gap: 2px; }
+.group-label .t { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.group-label .teams { font-size: 13px; line-height: 18px; color: var(--ink); }
+.group-label .teams .vs { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-inline: 4px; }
+.charge { display: flex; align-items: center; gap: 12px; padding: 10px 14px; min-height: 52px; }
+.charge + .charge { border-top: 1px dashed var(--border-subtle); }
+.charge .ico { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex: none; }
+.charge .ico.shuttle { background: var(--clay-tint); color: var(--clay); }
+.charge .ico.court { background: var(--primary-tint); color: var(--primary); }
+.charge .body { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.charge .ttl { font-size: 14px; line-height: 20px; font-weight: 500; }
+.charge .amt { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.charge.done .ttl, .charge.done .amt { color: var(--muted); }
+.charge.done .amt { font-weight: 400; text-decoration: line-through; }
+.charge .state { font-size: 12px; line-height: 16px; color: var(--settled); }
+.charge.picked-pay { background: var(--settled-tint); }
+.charge.picked-waive { background: var(--clay-tint); }
+
+.cb { width: 24px; height: 24px; border-radius: 6px; border: 1.5px solid var(--border); background: var(--surface-raised); display: grid; place-items: center; flex: none; }
+.cb-hit { width: 44px; height: 44px; margin: -10px -8px -10px -10px; display: grid; place-items: center; flex: none; }
+.cb.pay { background: var(--sage); border-color: var(--sage); color: var(--on-sage); }
+.cb.waive { background: var(--clay); border-color: var(--clay); color: var(--surface); }
+.cb.off { background: var(--disabled); border-color: var(--disabled); }
+
+.bar { border-top: 1px solid var(--border-subtle); background: var(--surface); padding: 10px 16px 28px; display: grid; gap: 8px; margin-top: auto; flex: none; }
+.bar-sum { display: flex; justify-content: space-between; font-size: 13px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar-sum b { color: var(--ink); font-weight: 600; }
+.btn { height: 44px; border-radius: 8px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 500 14px/20px var(--sans); cursor: pointer; padding-inline: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.btn.sage { background: var(--sage); color: var(--on-sage); }
+.btn.sage-outline { background: var(--surface-raised); color: var(--on-sage); border: 1.5px solid var(--sage); }
+.btn.secondary { background: var(--surface-raised); color: var(--ink); border: 1px solid var(--border); }
+.btn.clay { background: var(--clay); color: var(--surface); }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 5px; border-radius: 999px; background: var(--ink); opacity: .85; }
+.scroll { flex: 1; overflow: hidden; }
+
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface-raised); border-radius: 16px 16px 0 0; box-shadow: var(--shadow-modal); padding: 8px 20px 34px; display: grid; gap: 16px; }
+.grabber { width: 36px; height: 5px; border-radius: 999px; background: var(--border); justify-self: center; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.modal-title { font-size: 20px; line-height: 26px; font-weight: 600; margin: 0; }
+.menu-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 56px; }
+.menu-row .body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.menu-row .ico { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--error-tint); color: var(--error); }
+.menu-row.is-disabled .ico { background: var(--disabled); color: var(--muted); }
+.menu-row.is-disabled .name { color: var(--muted); }
+.menu-row.danger .name { color: var(--error); }
+.menu-row > svg { color: var(--muted); }
+
+.dialog { position: absolute; left: 20px; right: 20px; top: 50%; transform: translateY(-50%); background: var(--surface-raised); border-radius: 16px; box-shadow: var(--shadow-modal); padding: 20px; display: grid; gap: 14px; }
+.dialog p { margin: 0; color: var(--muted); }
+.split-list { display: grid; border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; }
+.split-list div { display: flex; justify-content: space-between; gap: 8px; padding: 9px 12px; font-variant-numeric: tabular-nums; }
+.split-list div + div { border-top: 1px solid var(--border-subtle); }
+.split-list .grp { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--surface); padding-block: 6px; }
+.split-list b { font-weight: 500; white-space: nowrap; }
+.split-list .tot span { color: var(--muted); }
+.split-list .tot b { font-weight: 600; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.toast { align-self: center; display: inline-flex; gap: 8px; align-items: center; background: var(--ink); color: var(--surface); border-radius: 999px; padding: 8px 14px; font-size: 13px; line-height: 18px; font-weight: 500; }
+
+svg { display: block; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-shuttle" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 3.5h11l-2.6 10.2h-5.8z" opacity=".85"/><rect x="8.6" y="14.6" width="6.8" height="1.6" rx=".8"/><path d="M8.8 17.1h6.4a3.2 3.2 0 0 1-6.4 0z"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-court" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 12h16M12 3v6M12 15v6M4 8h16M4 16h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h12"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+  </defs>
+</svg>
+
+<header class="board-head">
+  <h1>Player detail, redesigned</h1>
+  <p>The page you land on after tapping a player. It leads with what they owe, then every session they joined, owing first. Each session suggests paying it in one go and opens to show the court share and every shuttle, match by match. Pay individually and Waive use the same pick list. Sample player: Chloe, who owes for two closed sessions and is playing in tonight's open one.</p>
+  <ul class="priorities" aria-label="Priorities this layout answers">
+    <li><b>1</b>How much they owe</li>
+    <li><b>2</b>Sessions joined</li>
+    <li><b>3</b>Owed per session</li>
+    <li><b>4</b>Matches and shuttles in each</li>
+    <li><b>5</b>Pay all · Pay individually · Waive</li>
+  </ul>
+</header>
+
+<main class="board">
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Player detail, owing">
+        <div class="status-bar"><span>21:14</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Players</span>
+          <span class="icon-btn" role="button" aria-label="Player options"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content">
+          <div class="ident">
+            <span class="avatar lg av-muted">CH</span>
+            <span class="body"><h2 class="screen-title">Chloe</h2><span class="meta">5 sessions · 11 matches</span></span>
+          </div>
+
+          <section class="card hero" aria-label="Owes RM 23.75 across 2 sessions">
+            <div class="hero-top"><p class="section-label">Owes</p><span class="badge owes">2 sessions</span></div>
+            <div class="hero-value">RM 23.75</div>
+            <div class="split-bar" aria-hidden="true"><i style="width:43%;background:var(--sage)"></i><i style="width:57%;background:var(--clay)"></i></div>
+            <div class="legend">
+              <span style="--c:var(--sage)">Paid <b>RM 18</b></span>
+              <span style="--c:var(--clay)">Owed <b>RM 23.75</b></span>
+            </div>
+            <p class="caption">Tonight's open session adds about RM 5.84 when it closes.</p>
+            <div class="hero-actions">
+              <button class="btn sage" type="button">Pay all · RM 23.75</button>
+              <button class="btn secondary" type="button">Pay individually</button>
+              <button class="btn secondary" type="button">Waive</button>
+            </div>
+          </section>
+
+          <section class="section" aria-label="Sessions">
+            <div class="section-head"><p class="section-label">Sessions</p><span class="count">Owing first</span></div>
+
+            <div class="card sess">
+              <div class="sess-head" role="button" aria-expanded="false">
+                <span class="body"><span class="name">Weekly Smash</span><span class="sub">29 Sep 2026 · 2 matches</span></span>
+                <span class="badge owes">Owes RM 17.50</span>
+                <svg class="chev" width="18" height="18"><use href="#i-chev"/></svg>
+              </div>
+              <div class="sess-foot"><button class="btn sage-outline" type="button">Pay session · RM 17.50</button></div>
+            </div>
+
+            <div class="card sess">
+              <div class="sess-head" role="button" aria-expanded="false">
+                <span class="body"><span class="name">Tuesday Social</span><span class="sub">15 Sep 2026 · 2 matches</span></span>
+                <span class="badge owes">Owes RM 6.25</span>
+                <svg class="chev" width="18" height="18"><use href="#i-chev"/></svg>
+              </div>
+              <div class="sess-foot"><button class="btn sage-outline" type="button">Pay session · RM 6.25</button></div>
+            </div>
+
+            <div class="card sess">
+              <div class="sess-head" role="button" aria-expanded="false">
+                <span class="body"><span class="name">Friday Doubles</span><span class="sub">Tonight · 2 matches · open</span></span>
+                <span class="badge estimate">≈ RM 5.84</span>
+                <svg class="chev" width="18" height="18"><use href="#i-chev"/></svg>
+              </div>
+            </div>
+
+            <div class="card sess">
+              <div class="sess-head" role="button" aria-expanded="false">
+                <span class="body"><span class="name">Weekly Smash</span><span class="sub">8 Sep 2026 · 3 matches · paid RM 14</span></span>
+                <span class="badge settled">Settled</span>
+                <svg class="chev" width="18" height="18"><use href="#i-chev"/></svg>
+              </div>
+            </div>
+
+            <div class="card sess">
+              <div class="sess-head" role="button" aria-expanded="false">
+                <span class="body"><span class="name">Holiday Hit</span><span class="sub">1 Sep 2026 · 2 matches · RM 6 waived</span></span>
+                <span class="badge waived">Waived</span>
+                <svg class="chev" width="18" height="18"><use href="#i-chev"/></svg>
+              </div>
+            </div>
+          </section>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Owing (default)</strong>
+      <span>The balance card answers "how much" first and holds the three actions: Pay all is the one primary (sage, because it settles money). Pay individually and Waive sit under it as secondary buttons. Each owing session suggests paying it whole before you open it. The open session shows an estimate with no pay button, because nothing is charged until it closes.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="A session expanded">
+        <div class="status-bar"><span>21:15</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Players</span>
+          <span class="icon-btn"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content">
+          <section class="section" aria-label="Sessions">
+            <div class="section-head"><p class="section-label">Sessions</p><span class="count">Owing first</span></div>
+            <div class="card sess">
+              <div class="sess-head" role="button" aria-expanded="true">
+                <span class="body"><span class="name">Weekly Smash</span><span class="sub">29 Sep 2026 · 2 matches</span></span>
+                <span class="badge owes">Owes RM 17.50</span>
+                <svg class="chev down" width="18" height="18"><use href="#i-chev"/></svg>
+              </div>
+
+              <div class="group-label"><span class="t">Courts</span></div>
+              <div class="charge">
+                <span class="ico court"><svg width="18" height="18"><use href="#i-court"/></svg></span>
+                <span class="body"><span class="ttl">Court share</span><span class="sub">RM 60 ÷ 6 players</span></span>
+                <span class="amt">RM 10</span>
+              </div>
+
+              <div class="group-label"><span class="t">Match 1</span><span class="teams">Chloe &amp; Alice<span class="vs">vs</span>Ben &amp; Daniel</span></div>
+              <div class="charge">
+                <span class="ico shuttle"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span>
+                <span class="body"><span class="ttl">Yonex AS-30</span><span class="sub">RM 9 ÷ 4 players</span></span>
+                <span class="amt">RM 2.25</span>
+              </div>
+              <div class="charge">
+                <span class="ico shuttle"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span>
+                <span class="body"><span class="ttl">Yonex AS-30</span><span class="sub">RM 9 ÷ 4 players</span></span>
+                <span class="amt">RM 2.25</span>
+              </div>
+
+              <div class="group-label"><span class="t">Match 3</span><span class="teams">Chloe &amp; Elena<span class="vs">vs</span>Daniel &amp; Farid</span></div>
+              <div class="charge">
+                <span class="ico shuttle"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span>
+                <span class="body"><span class="ttl">Victor Master No.1</span><span class="sub">RM 12 ÷ 4 players</span></span>
+                <span class="amt">RM 3</span>
+              </div>
+
+              <div class="sess-foot"><button class="btn sage-outline" type="button">Pay session · RM 17.50</button></div>
+            </div>
+
+            <div class="card sess">
+              <div class="sess-head" role="button" aria-expanded="true">
+                <span class="body"><span class="name">Tuesday Social</span><span class="sub">15 Sep 2026 · 2 matches</span></span>
+                <span class="badge owes">Owes RM 6.25</span>
+                <svg class="chev down" width="18" height="18"><use href="#i-chev"/></svg>
+              </div>
+              <div class="group-label"><span class="t">Courts</span></div>
+              <div class="charge done">
+                <span class="ico court"><svg width="18" height="18"><use href="#i-court"/></svg></span>
+                <span class="body"><span class="ttl">Court share</span><span class="state">Paid 20 Sep 2026</span></span>
+                <span class="amt">RM 4</span>
+              </div>
+              <div class="group-label"><span class="t">Match 2</span><span class="teams">Chloe &amp; Ben<span class="vs">vs</span>Elena &amp; Farid</span></div>
+              <div class="charge">
+                <span class="ico shuttle"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span>
+                <span class="body"><span class="ttl">Yonex AS-30</span><span class="sub">RM 9 ÷ 4 players</span></span>
+                <span class="amt">RM 2.25</span>
+              </div>
+              <div class="group-label"><span class="t">Match 4</span><span class="teams">Chloe &amp; Daniel<span class="vs">vs</span>Alice &amp; Ben</span></div>
+              <div class="charge">
+                <span class="ico shuttle"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span>
+                <span class="body"><span class="ttl">Victor Master No.1</span><span class="sub">RM 12 ÷ 3 players · reused</span></span>
+                <span class="amt">RM 4</span>
+              </div>
+              <div class="sess-foot"><button class="btn sage-outline" type="button">Pay session · RM 6.25</button></div>
+            </div>
+          </section>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Session opened</strong>
+      <span>Opening a session lists the court share first, then each match with who played whom and every shuttle in it. Each row shows how its share was worked out ("RM 9 ÷ 4 players"), so the player can check it. Paid rows stay visible but greyed, with the date paid. The Pay session button stays at the foot.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen fixed" aria-label="Pay individually, selecting">
+        <div class="status-bar"><span>21:16</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="text-btn">Cancel</span><span class="text-btn">Select all</span></div>
+        <div class="scroll">
+          <div class="content">
+            <div class="mode-title"><h2 class="screen-title">Pay individually</h2><span class="meta">Tick what Chloe is paying now.</span></div>
+            <section class="section">
+              <div class="card sess sel-pay">
+                <div class="sess-head">
+                  <span class="cb-hit" role="checkbox" aria-checked="mixed" aria-label="Weekly Smash, all charges"><span class="cb pay"><svg width="14" height="14"><use href="#i-dash"/></svg></span></span>
+                  <span class="body"><span class="name">Weekly Smash</span><span class="sub">29 Sep 2026 · 3 of 4 picked</span></span>
+                  <span class="badge owes">RM 17.50</span>
+                </div>
+                <div class="group-label"><span class="t">Courts</span></div>
+                <div class="charge picked-pay">
+                  <span class="cb-hit" role="checkbox" aria-checked="true"><span class="cb pay"><svg width="14" height="14"><use href="#i-check"/></svg></span></span>
+                  <span class="body"><span class="ttl">Court share</span><span class="sub">RM 60 ÷ 6 players</span></span>
+                  <span class="amt">RM 10</span>
+                </div>
+                <div class="group-label"><span class="t">Match 1</span><span class="teams">Chloe &amp; Alice<span class="vs">vs</span>Ben &amp; Daniel</span></div>
+                <div class="charge picked-pay">
+                  <span class="cb-hit" role="checkbox" aria-checked="true"><span class="cb pay"><svg width="14" height="14"><use href="#i-check"/></svg></span></span>
+                  <span class="body"><span class="ttl">Yonex AS-30</span><span class="sub">RM 9 ÷ 4 players</span></span>
+                  <span class="amt">RM 2.25</span>
+                </div>
+                <div class="charge picked-pay">
+                  <span class="cb-hit" role="checkbox" aria-checked="true"><span class="cb pay"><svg width="14" height="14"><use href="#i-check"/></svg></span></span>
+                  <span class="body"><span class="ttl">Yonex AS-30</span><span class="sub">RM 9 ÷ 4 players</span></span>
+                  <span class="amt">RM 2.25</span>
+                </div>
+                <div class="group-label"><span class="t">Match 3</span><span class="teams">Chloe &amp; Elena<span class="vs">vs</span>Daniel &amp; Farid</span></div>
+                <div class="charge">
+                  <span class="cb-hit" role="checkbox" aria-checked="false"><span class="cb"></span></span>
+                  <span class="body"><span class="ttl">Victor Master No.1</span><span class="sub">RM 12 ÷ 4 players</span></span>
+                  <span class="amt">RM 3</span>
+                </div>
+              </div>
+              <div class="card sess">
+                <div class="sess-head">
+                  <span class="cb-hit" role="checkbox" aria-checked="false"><span class="cb"></span></span>
+                  <span class="body"><span class="name">Tuesday Social</span><span class="sub">15 Sep 2026 · 0 of 2 picked</span></span>
+                  <span class="badge owes">RM 6.25</span>
+                </div>
+                <div class="group-label"><span class="t">Courts</span></div>
+                <div class="charge done">
+                  <span class="cb-hit" aria-hidden="true"><span class="cb off"></span></span>
+                  <span class="body"><span class="ttl">Court share</span><span class="state">Paid 20 Sep 2026</span></span>
+                  <span class="amt">RM 4</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="bar-sum"><span>3 charges picked</span><b>RM 14.50</b></div>
+          <button class="btn sage" type="button">Pay RM 14.50</button>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Pay individually</strong>
+      <span>The same list becomes a pick list. Only owing sessions are shown, and they open automatically. Every court and shuttle charge gets a 44pt checkbox. The session checkbox ticks or clears all of its charges and shows a dash when only some are picked. Already-paid rows can't be ticked. A fixed bar keeps the running total in thumb reach.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen fixed" aria-label="Waive, selecting">
+        <div class="status-bar"><span>21:17</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="text-btn">Cancel</span><span class="text-btn">Select all</span></div>
+        <div class="scroll">
+          <div class="content">
+            <div class="mode-title"><h2 class="screen-title">Waive charges</h2><span class="meta">Tick what Chloe no longer has to pay.</span></div>
+            <section class="section">
+              <div class="card sess">
+                <div class="sess-head">
+                  <span class="cb-hit" role="checkbox" aria-checked="false"><span class="cb"></span></span>
+                  <span class="body"><span class="name">Weekly Smash</span><span class="sub">29 Sep 2026 · 0 of 4 picked</span></span>
+                  <span class="badge owes">RM 17.50</span>
+                </div>
+                <div class="group-label"><span class="t">Courts</span></div>
+                <div class="charge">
+                  <span class="cb-hit" role="checkbox" aria-checked="false"><span class="cb"></span></span>
+                  <span class="body"><span class="ttl">Court share</span><span class="sub">RM 60 ÷ 6 players</span></span>
+                  <span class="amt">RM 10</span>
+                </div>
+                <div class="group-label"><span class="t">Match 1</span><span class="teams">Chloe &amp; Alice<span class="vs">vs</span>Ben &amp; Daniel</span></div>
+                <div class="charge">
+                  <span class="cb-hit" role="checkbox" aria-checked="false"><span class="cb"></span></span>
+                  <span class="body"><span class="ttl">Yonex AS-30</span><span class="sub">RM 9 ÷ 4 players</span></span>
+                  <span class="amt">RM 2.25</span>
+                </div>
+              </div>
+              <div class="card sess sel-waive">
+                <div class="sess-head">
+                  <span class="cb-hit" role="checkbox" aria-checked="true" aria-label="Tuesday Social, all charges"><span class="cb waive"><svg width="14" height="14"><use href="#i-check"/></svg></span></span>
+                  <span class="body"><span class="name">Tuesday Social</span><span class="sub">15 Sep 2026 · 2 of 2 picked</span></span>
+                  <span class="badge owes">RM 6.25</span>
+                </div>
+                <div class="group-label"><span class="t">Match 2</span><span class="teams">Chloe &amp; Ben<span class="vs">vs</span>Elena &amp; Farid</span></div>
+                <div class="charge picked-waive">
+                  <span class="cb-hit" role="checkbox" aria-checked="true"><span class="cb waive"><svg width="14" height="14"><use href="#i-check"/></svg></span></span>
+                  <span class="body"><span class="ttl">Yonex AS-30</span><span class="sub">RM 9 ÷ 4 players</span></span>
+                  <span class="amt">RM 2.25</span>
+                </div>
+                <div class="group-label"><span class="t">Match 4</span><span class="teams">Chloe &amp; Daniel<span class="vs">vs</span>Alice &amp; Ben</span></div>
+                <div class="charge picked-waive">
+                  <span class="cb-hit" role="checkbox" aria-checked="true"><span class="cb waive"><svg width="14" height="14"><use href="#i-check"/></svg></span></span>
+                  <span class="body"><span class="ttl">Victor Master No.1</span><span class="sub">RM 12 ÷ 3 players · reused</span></span>
+                  <span class="amt">RM 4</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="bar-sum"><span>2 charges picked</span><b>RM 6.25</b></div>
+          <button class="btn clay" type="button">Waive RM 6.25</button>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Waive</strong>
+      <span>The same pick list, so there's nothing new to learn. Clay replaces sage on ticks, outlines and the button, so it's always clear the charge is being forgiven, not paid. It isn't red because nothing is being deleted. The title and helper line say "no longer has to pay" in words, not only in colour.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen fixed" aria-label="Confirm payment">
+        <div class="status-bar"><span>21:17</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="text-btn">Cancel</span><span class="text-btn">Select all</span></div>
+        <div class="content"><div class="mode-title"><h2 class="screen-title">Pay individually</h2></div></div>
+        <div class="scrim"></div>
+        <div class="dialog" role="alertdialog" aria-label="Mark RM 14.50 paid">
+          <h3 class="modal-title">Mark RM 14.50 paid?</h3>
+          <p>Chloe has paid these charges. You can't undo this.</p>
+          <div class="split-list">
+            <div class="grp">Weekly Smash · 29 Sep</div>
+            <div><span>Court share</span><b>RM 10</b></div>
+            <div><span>Match 1 · 2 shuttles</span><b>RM 4.50</b></div>
+            <div class="tot"><span>Total</span><b>RM 14.50</b></div>
+          </div>
+          <p class="caption">Still owed afterwards: RM 9.25</p>
+          <div class="actions">
+            <button class="btn secondary" type="button">Cancel</button>
+            <button class="btn sage" type="button">Mark paid</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Confirmation</strong>
+      <span>Every money action asks first, listing exactly what's being cleared, grouped by session, and what's left afterwards. Waive uses the same dialog: "Waive RM 6.25?", "Chloe won't be asked to pay these. You can't undo this.", and a clay "Waive" button. After either one, a toast says "Paid RM 14.50" or "Waived RM 6.25".</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen fixed" aria-label="Player options sheet">
+        <div class="status-bar"><span>21:18</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Players</span>
+          <span class="icon-btn ring"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content">
+          <div class="ident"><span class="avatar lg av-muted">CH</span><span class="body"><h2 class="screen-title">Chloe</h2><span class="meta">5 sessions · 11 matches</span></span></div>
+          <section class="card hero"><p class="section-label">Owes</p><div class="hero-value">RM 23.75</div></section>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet" role="dialog" aria-label="Player options">
+          <span class="grabber"></span>
+          <div class="sheet-head">
+            <h3 class="modal-title">Player options</h3>
+            <span class="icon-btn" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></span>
+          </div>
+          <div class="card menu-row is-disabled" aria-disabled="true">
+            <span class="ico"><svg width="20" height="20"><use href="#i-trash"/></svg></span>
+            <span class="body"><span class="name">Delete player</span><span class="sub">Settle or waive RM 23.75 first</span></span>
+          </div>
+          <div class="card menu-row danger">
+            <span class="ico"><svg width="20" height="20"><use href="#i-trash"/></svg></span>
+            <span class="body"><span class="name">Delete player</span><span class="sub">When settled: moves Chloe to Recently deleted</span></span>
+            <svg width="18" height="18"><use href="#i-chev"/></svg>
+          </div>
+          <button class="btn secondary" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Options sheet (⋯)</strong>
+      <span>Delete moves out of the header and behind ⋯, as on session detail, so it never sits next to the money actions. Both states are shown here. While the player owes anything, the row is disabled and says what to do first. Once they're settled it turns red and opens the existing delete confirmation.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Player detail, all settled">
+        <div class="status-bar"><span>21:20</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Players</span>
+          <span class="icon-btn" role="button" aria-label="Player options"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content">
+          <span class="toast" role="status"><svg width="16" height="16"><use href="#i-check"/></svg>Paid RM 23.75</span>
+          <div class="ident">
+            <span class="avatar lg av-muted">CH</span>
+            <span class="body"><h2 class="screen-title">Chloe</h2><span class="meta">5 sessions · 11 matches</span></span>
+          </div>
+          <section class="card hero" aria-label="All settled">
+            <div class="hero-top"><p class="section-label">All settled</p><span class="badge settled">Settled</span></div>
+            <div class="hero-value">RM 0</div>
+            <p class="caption">Paid RM 41.75 · waived RM 6 across 4 closed sessions</p>
+          </section>
+          <section class="section" aria-label="Sessions">
+            <div class="section-head"><p class="section-label">Sessions</p><span class="count">Newest first</span></div>
+            <div class="card sess"><div class="sess-head"><span class="body"><span class="name">Friday Doubles</span><span class="sub">Tonight · 2 matches · open</span></span><span class="badge estimate">≈ RM 5.84</span><svg class="chev" width="18" height="18"><use href="#i-chev"/></svg></div></div>
+            <div class="card sess"><div class="sess-head"><span class="body"><span class="name">Weekly Smash</span><span class="sub">29 Sep 2026 · 2 matches · paid RM 17.50</span></span><span class="badge settled">Settled</span><svg class="chev" width="18" height="18"><use href="#i-chev"/></svg></div></div>
+            <div class="card sess"><div class="sess-head"><span class="body"><span class="name">Tuesday Social</span><span class="sub">15 Sep 2026 · 2 matches · paid RM 10.25</span></span><span class="badge settled">Settled</span><svg class="chev" width="18" height="18"><use href="#i-chev"/></svg></div></div>
+            <div class="card sess"><div class="sess-head"><span class="body"><span class="name">Weekly Smash</span><span class="sub">8 Sep 2026 · 3 matches · paid RM 14</span></span><span class="badge settled">Settled</span><svg class="chev" width="18" height="18"><use href="#i-chev"/></svg></div></div>
+            <div class="card sess"><div class="sess-head"><span class="body"><span class="name">Holiday Hit</span><span class="sub">1 Sep 2026 · 2 matches · RM 6 waived</span></span><span class="badge waived">Waived</span><svg class="chev" width="18" height="18"><use href="#i-chev"/></svg></div></div>
+          </section>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>All settled</strong>
+      <span>With nothing owed, the card says so in words and the action buttons go away. The history stays: every session can still be opened to see the matches and what was paid or waived. A brief toast confirms the last action.</span>
+    </figcaption>
+  </figure>
+
+</main>
+

@@ -39,6 +39,17 @@ Exist today (reuse until replaced):
 
 Target components named by the design system (not yet built): `TextInput` (a search-only `SearchInput` exists). `StatCard` on Home is still to be replaced by `StatTile`.
 
+## Mockups
+
+Every design starts as an HTML mockup the product owner approves before a spec is written.
+
+- **Index**: `.claude/design/mockups.md` lists every mockup with its artifact link, source file, states shown, status and spec. Check it before designing an area that already has one.
+- **Sources**: `.claude/design/mockups/<feature-slug>.html`. Republish from this file with the artifact's `url` so the link never changes.
+- **Format**: a plain HTML artifact, not a Design-canvas type. A board header (h1, a one-paragraph summary of the screen, and a numbered "priorities" pill strip), then a responsive grid of `figure`s: a `.phone` frame holding a `.screen` (status bar, nav, content, home indicator), with a `figcaption` under it (the state's name in uppercase, then a short explanation of the decision). App screens use the fixed light design-system tokens; the board around them follows the viewer's light or dark theme. Show several states side by side (default, empty, long content, sheets, confirmations, edge cases), with realistic sample data in RM.
+- **References**: copy structure and CSS from [Player Detail Redesign](https://claude.ai/artifact/4q4VyNMLykPH61DpY7SdkM) and [Match Detail Redesign](https://claude.ai/artifact/RiroM71BXm2VpHVb9QMnGv) (sources in `.claude/design/mockups/`).
+- **Method**: UX rules come from the `ui-ux-pro-max` skill; its generated palette and fonts are not used because this design system overrides them.
+- **Lifecycle**: `draft` → `approved` → `spec written` → `implemented (PRD [N])`. The spec links the mockup in its header (`**Mockup**: <url> (<states>)`).
+
 ## Decision log
 
 Add an entry whenever a design decision is made or reversed. The designer agent proposes entries; the product owner accepts them.

@@ -1,0 +1,531 @@
+<title>Session Detail Redesign</title>
+<style>
+/* Layout: a board of phone frames (open, closed, options sheet, book courts, close confirm) with a short note under each; app screens use the fixed light design-system tokens, the board around them follows the viewer's theme. */
+:root {
+  --page-bg: #eef1f4;
+  --page-fg: #002b5b;
+  --page-muted: #56616c;
+  --page-line: #d5dbe1;
+  --page-frame: #1d2733;
+
+  --surface: #f8f9fa;
+  --surface-raised: #ffffff;
+  --ink: #002b5b;
+  --muted: #6c757d;
+  --border: #c7cdd2;
+  --border-subtle: #e4e6e9;
+  --border-dashed: #b8bec4;
+  --primary: #004e89;
+  --primary-tint: #eaf0f5;
+  --sage: #7fc8a9;
+  --on-sage: #0e4a32;
+  --clay: #a97155;
+  --clay-tint: #fbefe8;
+  --clay-strong: #8a5640;
+  --settled: #2e7d5b;
+  --settled-tint: #e7f4ee;
+  --neutral-tint: #edeeef;
+  --scrim: rgba(0, 43, 91, 0.45);
+  --shadow-modal: 0px 8px 24px rgba(0, 43, 91, 0.18);
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #0c1520;
+    --page-fg: #e3eaf2;
+    --page-muted: #98a6b5;
+    --page-line: #233242;
+    --page-frame: #050a10;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #0c1520;
+  --page-fg: #e3eaf2;
+  --page-muted: #98a6b5;
+  --page-line: #233242;
+  --page-frame: #050a10;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font-family: var(--sans);
+  padding-inline: 16px;
+  padding-block: 32px 56px;
+}
+code { font-size: 0.92em; }
+.board-head { max-width: 1180px; margin: 0 auto 28px; display: grid; gap: 8px; }
+.board-head h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.board-head p { margin: 0; color: var(--page-muted); font-size: 15px; line-height: 22px; max-width: 68ch; }
+.priorities { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.priorities li { font-size: 12px; line-height: 16px; font-weight: 500; border: 1px solid var(--page-line); border-radius: 999px; padding: 5px 10px; color: var(--page-muted); }
+.priorities b { color: var(--page-fg); font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+.board {
+  max-width: 1180px; margin: 0 auto;
+  display: grid; gap: 40px 28px;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  justify-items: center; align-items: start;
+}
+figure { margin: 0; display: grid; gap: 14px; width: 100%; max-width: 360px; }
+figcaption { display: grid; gap: 4px; }
+figcaption strong { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+figcaption span { font-size: 13px; line-height: 19px; color: var(--page-muted); }
+
+.phone { width: 100%; border-radius: 40px; background: var(--page-frame); padding: 10px; }
+.screen {
+  position: relative; border-radius: 31px; overflow: hidden;
+  background: var(--surface); color: var(--ink);
+  font-size: 14px; line-height: 20px;
+  display: flex; flex-direction: column;
+}
+.screen.fixed { height: 640px; }
+.status-bar { height: 40px; display: flex; align-items: center; justify-content: space-between; padding-inline: 26px; font-size: 14px; font-weight: 600; }
+.status-bar .dots { display: flex; gap: 4px; align-items: center; }
+.status-bar .dots i { width: 16px; height: 9px; border-radius: 2px; background: var(--ink); display: block; }
+.status-bar .dots i:first-child { width: 12px; opacity: .55; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 2px 8px 0 6px; height: 44px; }
+.nav .back { display: flex; align-items: center; gap: 2px; color: var(--primary); font-size: 15px; height: 44px; padding-right: 8px; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; color: var(--ink); }
+.icon-btn.ring { outline: 2px solid var(--primary); outline-offset: -6px; }
+
+.content { padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 24px; }
+.title-block { display: grid; gap: 6px; }
+.screen-title { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.meta { color: var(--muted); }
+
+.badge {
+  justify-self: start; display: inline-flex; align-items: center; gap: 4px;
+  border-radius: 999px; padding: 4px 10px;
+  font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap;
+  font-variant-numeric: tabular-nums; flex: none;
+}
+.badge.open { background: var(--primary-tint); color: var(--primary); }
+.badge.settled { background: var(--settled-tint); color: var(--settled); }
+.badge.owes, .badge.estimate { background: var(--clay-tint); color: var(--clay-strong); }
+
+.card { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: 12px; }
+.hero { padding: 16px; display: grid; gap: 4px; }
+.section-label { font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.hero-value { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.hero-value .approx { color: var(--clay); font-weight: 500; }
+.hero-value .of { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+.split-bar { display: flex; height: 6px; border-radius: 999px; overflow: hidden; margin: 10px 0 6px; background: var(--neutral-tint); }
+.split-bar i { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend span::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+.legend b { color: var(--ink); font-weight: 500; }
+.caption { font-size: 12px; line-height: 16px; color: var(--muted); margin: 6px 0 0; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { padding: 12px; display: grid; gap: 2px; align-content: start; position: relative; }
+.stat .k { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.stat .k svg { color: var(--clay); }
+.stat .v { font-size: 22px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat .s { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stat .chev { position: absolute; top: 10px; right: 8px; color: var(--muted); }
+
+.section { display: grid; gap: 8px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; }
+.section-head .count { font-size: 12px; color: var(--muted); }
+
+.row { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; min-height: 60px; }
+.row .body, .menu-row .body, .booked-row .body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.name { font-size: 16px; line-height: 22px; font-weight: 500; }
+.sub { font-size: 13px; line-height: 18px; color: var(--muted); }
+
+.avatar { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; flex: none; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--surface); }
+.av-primary { background: var(--primary); }
+.av-clay { background: var(--clay); }
+.av-sage { background: var(--sage); color: var(--on-sage); }
+.av-muted { background: var(--muted); }
+
+.match { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 12px 14px; align-items: center; }
+.match .no { font-size: 16px; line-height: 22px; font-weight: 500; display: flex; gap: 8px; align-items: baseline; }
+.match .no small { font-size: 12px; font-weight: 400; color: var(--muted); }
+.teams { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; }
+.teams .vs { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.teams .side { display: inline-flex; align-items: center; gap: 6px; }
+.mini-av { display: inline-flex; }
+.mini-av i { width: 20px; height: 20px; border-radius: 999px; border: 2px solid var(--surface-raised); display: block; }
+.mini-av i + i { margin-left: -6px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 4px 10px 4px 8px; background: var(--clay-tint); color: var(--clay-strong); font-size: 12px; line-height: 16px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.shuttle-note { grid-column: 1 / -1; font-size: 12px; line-height: 16px; color: var(--muted); }
+
+.bar { border-top: 1px solid var(--border-subtle); background: var(--surface); padding: 12px 16px 28px; display: grid; grid-template-columns: 1fr 1.35fr; gap: 8px; }
+.btn { height: 44px; border-radius: 8px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 500 14px/20px var(--sans); cursor: pointer; }
+.btn.primary { background: var(--primary); color: var(--surface); }
+.btn.sage { background: var(--sage); color: var(--on-sage); }
+.btn.secondary { background: var(--surface-raised); color: var(--ink); border: 1px solid var(--border); }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 5px; border-radius: 999px; background: var(--ink); opacity: .85; }
+
+.closed-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; font-size: 13px; line-height: 18px; color: var(--muted); }
+.closed-note svg { flex: none; color: var(--settled); margin-top: 1px; }
+
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface-raised); border-radius: 16px 16px 0 0; box-shadow: var(--shadow-modal); padding: 8px 20px 34px; display: grid; gap: 16px; }
+.grabber { width: 36px; height: 5px; border-radius: 999px; background: var(--border); justify-self: center; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.modal-title { font-size: 20px; line-height: 26px; font-weight: 600; margin: 0; }
+.sheet-sub { font-size: 13px; line-height: 18px; color: var(--muted); margin: -12px 0 0; }
+.menu-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 56px; }
+.menu-row.pressed { background: var(--primary-tint); }
+.menu-row .ico { width: 36px; height: 36px; border-radius: 8px; background: var(--primary-tint); color: var(--primary); display: grid; place-items: center; flex: none; }
+.menu-row.pressed .ico { background: var(--surface-raised); }
+.menu-row > svg { color: var(--muted); }
+.booked { display: grid; gap: 8px; }
+.booked-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.booked-row .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+.field { display: grid; gap: 6px; }
+.field .lbl { font-size: 12px; line-height: 16px; color: var(--muted); }
+.input { height: 44px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; display: flex; align-items: center; background: var(--surface-raised); font-variant-numeric: tabular-nums; }
+.input .pre { color: var(--muted); margin-right: 6px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stepper { display: flex; align-items: center; justify-content: space-between; height: 44px; }
+.stepper .sb { width: 44px; height: 44px; border-radius: 8px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--surface-raised); color: var(--ink); }
+.stepper .sb.plus { background: var(--primary); color: var(--surface); border-color: var(--primary); }
+.stepper .n { font-weight: 500; font-variant-numeric: tabular-nums; }
+.total-line { display: flex; justify-content: space-between; color: var(--muted); font-variant-numeric: tabular-nums; border-top: 1px dashed var(--border-dashed); padding-top: 12px; }
+.total-line b { color: var(--ink); font-weight: 600; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.dialog { position: absolute; left: 20px; right: 20px; top: 50%; transform: translateY(-50%); background: var(--surface-raised); border-radius: 16px; box-shadow: var(--shadow-modal); padding: 20px; display: grid; gap: 14px; }
+.dialog p { margin: 0; color: var(--muted); }
+.split-list { display: grid; border: 1px solid var(--border-subtle); border-radius: 12px; }
+.split-list div { display: flex; justify-content: space-between; gap: 8px; padding: 9px 12px; font-variant-numeric: tabular-nums; }
+.split-list div + div { border-top: 1px solid var(--border-subtle); }
+.split-list b { font-weight: 500; white-space: nowrap; }
+.split-list .tot span { color: var(--muted); }
+
+svg { display: block; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-feather" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 20l10-10"/><path d="M14 5v5h5"/><path d="M10 9v5h5"/><path d="M20.2 7.8a4 4 0 0 0-5.7-5.6L8 8.7V16h7.3z"/>
+    </symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-court" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 12h16M12 3v6M12 15v6M4 8h16M4 16h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  </defs>
+</svg>
+
+<header class="board-head">
+  <h1>Session detail, redesigned</h1>
+  <p>The screen you land on after tapping a session. Money comes first, then the headcount, shuttles and courts, then who played whom. Sample data is the <code>default</code> seed, plus one extra match tonight so the shares differ. Amounts follow the same split rules as closing a session.</p>
+  <ul class="priorities" aria-label="Priorities this layout answers">
+    <li><b>1</b>What everyone owes</li>
+    <li><b>2</b>Players joined</li>
+    <li><b>3</b>Shuttles used</li>
+    <li><b>4</b>Create match · Close session · Book courts</li>
+    <li><b>5</b>Every match played</li>
+  </ul>
+</header>
+
+<main class="board">
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Open session screen">
+        <div class="status-bar"><span>19:52</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Sessions</span>
+          <span class="icon-btn" role="button" aria-label="Session options"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content">
+          <div class="title-block">
+            <h2 class="screen-title">Friday Doubles</h2>
+            <div class="meta">6 Oct 2026 · 7:30 pm · Community Centre</div>
+            <span class="badge open">In progress</span>
+          </div>
+
+          <section class="card hero" aria-label="Estimated cost so far">
+            <p class="section-label">Estimated so far</p>
+            <div class="hero-value"><span class="approx">≈</span>RM 47</div>
+            <div class="split-bar" aria-hidden="true"><i style="width:53%;background:var(--primary)"></i><i style="width:47%;background:var(--clay)"></i></div>
+            <div class="legend">
+              <span style="--c:var(--primary)">Courts <b>RM 25</b></span>
+              <span style="--c:var(--clay)">Shuttles <b>RM 22</b></span>
+            </div>
+            <p class="caption">The final split is set when you close the session.</p>
+          </section>
+
+          <div class="stats">
+            <div class="card stat"><span class="k">Players</span><span class="v">6</span><span class="s">in 3 matches</span></div>
+            <div class="card stat"><span class="k"><svg width="14" height="14"><use href="#i-feather"/></svg>Shuttles</span><span class="v">4</span><span class="s">1 free</span></div>
+            <div class="card stat" role="button" aria-label="Courts, 1 booked, RM 25. Book courts"><svg class="chev" width="16" height="16"><use href="#i-chev"/></svg><span class="k">Courts</span><span class="v">1</span><span class="s">RM 25</span></div>
+          </div>
+
+          <section class="section" aria-label="Players">
+            <div class="section-head"><p class="section-label">Players</p><span class="count">Estimated share</span></div>
+            <div class="card row"><span class="avatar av-clay">AL</span><span class="body"><span class="name">Alice</span><span class="sub">2 matches</span></span><span class="badge estimate">≈ RM 8.84</span></div>
+            <div class="card row"><span class="avatar av-primary">DA</span><span class="body"><span class="name">Daniel</span><span class="sub">2 matches</span></span><span class="badge estimate">≈ RM 8.84</span></div>
+            <div class="card row"><span class="avatar av-clay">EL</span><span class="body"><span class="name">Elena</span><span class="sub">2 matches</span></span><span class="badge estimate">≈ RM 8.84</span></div>
+            <div class="card row"><span class="avatar av-sage">FA</span><span class="body"><span class="name">Farid</span><span class="sub">2 matches</span></span><span class="badge estimate">≈ RM 8.84</span></div>
+            <div class="card row"><span class="avatar av-sage">BE</span><span class="body"><span class="name">Ben</span><span class="sub">2 matches</span></span><span class="badge estimate">≈ RM 5.84</span></div>
+            <div class="card row"><span class="avatar av-muted">CH</span><span class="body"><span class="name">Chloe</span><span class="sub">2 matches</span></span><span class="badge estimate">≈ RM 5.84</span></div>
+          </section>
+
+          <section class="section" aria-label="Matches">
+            <div class="section-head"><p class="section-label">Matches</p><span class="count">3 played</span></div>
+            <div class="card match">
+              <span class="no">Match 3 <small>8:41 pm</small></span>
+              <span class="chip"><svg width="14" height="14"><use href="#i-feather"/></svg>2 shuttles</span>
+              <span class="teams">
+                <span class="side"><span class="mini-av"><i class="av-clay"></i><i class="av-clay"></i></span>Alice &amp; Elena</span>
+                <span class="vs">vs</span>
+                <span class="side"><span class="mini-av"><i class="av-primary"></i><i class="av-sage"></i></span>Daniel &amp; Farid</span>
+              </span>
+            </div>
+            <div class="card match">
+              <span class="no">Match 2 <small>8:12 pm</small></span>
+              <span class="chip"><svg width="14" height="14"><use href="#i-feather"/></svg>2 shuttles</span>
+              <span class="teams">
+                <span class="side"><span class="mini-av"><i class="av-primary"></i><i class="av-muted"></i></span>Daniel &amp; Chloe</span>
+                <span class="vs">vs</span>
+                <span class="side"><span class="mini-av"><i class="av-sage"></i><i class="av-sage"></i></span>Farid &amp; Ben</span>
+              </span>
+              <span class="shuttle-note">1 reused from match 1 · 1 free</span>
+            </div>
+            <div class="card match">
+              <span class="no">Match 1 <small>7:40 pm</small></span>
+              <span class="chip"><svg width="14" height="14"><use href="#i-feather"/></svg>1 shuttle</span>
+              <span class="teams">
+                <span class="side"><span class="mini-av"><i class="av-clay"></i><i class="av-sage"></i></span>Alice &amp; Ben</span>
+                <span class="vs">vs</span>
+                <span class="side"><span class="mini-av"><i class="av-muted"></i><i class="av-clay"></i></span>Chloe &amp; Elena</span>
+              </span>
+            </div>
+          </section>
+        </div>
+        <div class="bar">
+          <button class="btn sage" type="button">Close session</button>
+          <button class="btn primary" type="button"><svg width="16" height="16"><use href="#i-plus"/></svg>Create match</button>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Open session</strong>
+      <span>The estimate leads. The three tiles answer "how many" at a glance, and the courts tile opens Book courts. The bottom bar stays put while the page scrolls under it, so Create match is always in thumb reach.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Closed session screen">
+        <div class="status-bar"><span>09:14</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Sessions</span>
+          <span class="icon-btn" role="button" aria-label="Session options"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content">
+          <div class="title-block">
+            <h2 class="screen-title">Weekly Smash</h2>
+            <div class="meta">29 Sep 2026 · 8:00 pm · Sports Hall A</div>
+            <span class="badge owes">RM 79.50 due</span>
+          </div>
+
+          <section class="card hero" aria-label="Still owed">
+            <p class="section-label">Still owed</p>
+            <div class="hero-value">RM 79.50 <span class="of">of RM 96</span></div>
+            <div class="split-bar" aria-hidden="true"><i style="width:17%;background:var(--sage)"></i><i style="width:83%;background:var(--clay)"></i></div>
+            <div class="legend">
+              <span style="--c:var(--sage)">Paid <b>RM 16.50</b></span>
+              <span style="--c:var(--clay)">Owed <b>RM 79.50</b></span>
+            </div>
+            <p class="caption">1 of 6 players settled · closed 29 Sep 2026</p>
+          </section>
+
+          <div class="stats">
+            <div class="card stat"><span class="k">Players</span><span class="v">6</span><span class="s">in 3 matches</span></div>
+            <div class="card stat"><span class="k"><svg width="14" height="14"><use href="#i-feather"/></svg>Shuttles</span><span class="v">4</span><span class="s">RM 36</span></div>
+            <div class="card stat"><span class="k">Courts</span><span class="v">2</span><span class="s">RM 60</span></div>
+          </div>
+
+          <section class="section" aria-label="Players">
+            <div class="section-head"><p class="section-label">Players</p><span class="count">Final share</span></div>
+            <div class="card row"><span class="avatar av-muted">CH</span><span class="body"><span class="name">Chloe</span><span class="sub">2 matches</span></span><span class="badge owes">Owes RM 17.50</span></div>
+            <div class="card row"><span class="avatar av-primary">DA</span><span class="body"><span class="name">Daniel</span><span class="sub">2 matches</span></span><span class="badge owes">Owes RM 17.50</span></div>
+            <div class="card row"><span class="avatar av-sage">BE</span><span class="body"><span class="name">Ben</span><span class="sub">2 matches</span></span><span class="badge owes">Owes RM 16.50</span></div>
+            <div class="card row"><span class="avatar av-clay">EL</span><span class="body"><span class="name">Elena</span><span class="sub">2 matches</span></span><span class="badge owes">Owes RM 14</span></div>
+            <div class="card row"><span class="avatar av-sage">FA</span><span class="body"><span class="name">Farid</span><span class="sub">2 matches</span></span><span class="badge owes">Owes RM 14</span></div>
+            <div class="card row"><span class="avatar av-clay">AL</span><span class="body"><span class="name">Alice</span><span class="sub">2 matches · paid RM 16.50</span></span><span class="badge settled">Settled</span></div>
+          </section>
+
+          <section class="section" aria-label="Matches">
+            <div class="section-head"><p class="section-label">Matches</p><span class="count">3 played</span></div>
+            <div class="card match">
+              <span class="no">Match 3</span>
+              <span class="chip"><svg width="14" height="14"><use href="#i-feather"/></svg>1 shuttle</span>
+              <span class="teams">
+                <span class="side"><span class="mini-av"><i class="av-muted"></i><i class="av-clay"></i></span>Chloe &amp; Elena</span>
+                <span class="vs">vs</span>
+                <span class="side"><span class="mini-av"><i class="av-primary"></i><i class="av-sage"></i></span>Daniel &amp; Farid</span>
+              </span>
+            </div>
+            <div class="card match">
+              <span class="no">Match 2</span>
+              <span class="chip"><svg width="14" height="14"><use href="#i-feather"/></svg>1 shuttle</span>
+              <span class="teams">
+                <span class="side"><span class="mini-av"><i class="av-clay"></i><i class="av-clay"></i></span>Elena &amp; Alice</span>
+                <span class="vs">vs</span>
+                <span class="side"><span class="mini-av"><i class="av-sage"></i><i class="av-sage"></i></span>Farid &amp; Ben</span>
+              </span>
+            </div>
+            <div class="card match">
+              <span class="no">Match 1</span>
+              <span class="chip"><svg width="14" height="14"><use href="#i-feather"/></svg>2 shuttles</span>
+              <span class="teams">
+                <span class="side"><span class="mini-av"><i class="av-clay"></i><i class="av-muted"></i></span>Alice &amp; Chloe</span>
+                <span class="vs">vs</span>
+                <span class="side"><span class="mini-av"><i class="av-sage"></i><i class="av-primary"></i></span>Ben &amp; Daniel</span>
+              </span>
+            </div>
+          </section>
+
+          <div class="card closed-note"><svg width="18" height="18"><use href="#i-lock"/></svg><span>This session is closed, so no new matches or courts can be added. Record payments from each player's page.</span></div>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Closed session</strong>
+      <span>Same layout with real amounts. The hero switches to what is still owed against the total, players sort by amount owed with settled players last, and the action bar goes away.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen fixed" aria-label="Session options sheet">
+        <div class="status-bar"><span>19:53</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Sessions</span>
+          <span class="icon-btn ring"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content">
+          <div class="title-block">
+            <h2 class="screen-title">Friday Doubles</h2>
+            <div class="meta">6 Oct 2026 · 7:30 pm · Community Centre</div>
+            <span class="badge open">In progress</span>
+          </div>
+          <section class="card hero">
+            <p class="section-label">Estimated so far</p>
+            <div class="hero-value"><span class="approx">≈</span>RM 47</div>
+          </section>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet" role="dialog" aria-label="Session options">
+          <span class="grabber"></span>
+          <div class="sheet-head">
+            <h3 class="modal-title">Session options</h3>
+            <span class="icon-btn" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></span>
+          </div>
+          <div class="card menu-row pressed">
+            <span class="ico"><svg width="20" height="20"><use href="#i-court"/></svg></span>
+            <span class="body"><span class="name">Book courts</span><span class="sub">1 court booked · RM 25</span></span>
+            <svg width="18" height="18"><use href="#i-chev"/></svg>
+          </div>
+          <button class="btn secondary" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Options sheet (⋯)</strong>
+      <span>Session settings live behind ⋯ so they never compete with the two main actions. Book courts is the only item for now. Later settings (edit, pay early) go here as more rows.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen fixed" aria-label="Book courts sheet">
+        <div class="status-bar"><span>19:53</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Sessions</span>
+          <span class="icon-btn"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content"><div class="title-block"><h2 class="screen-title">Friday Doubles</h2></div></div>
+        <div class="scrim"></div>
+        <div class="sheet" role="dialog" aria-label="Book courts">
+          <span class="grabber"></span>
+          <div class="sheet-head">
+            <h3 class="modal-title">Book courts</h3>
+            <span class="icon-btn" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></span>
+          </div>
+          <p class="sheet-sub">Split evenly across everyone who played when you close the session.</p>
+          <div class="booked">
+            <p class="section-label">Booked</p>
+            <div class="card booked-row">
+              <span class="body"><span class="name">Court 1</span><span class="sub">RM 25 × 1 · 90 min</span></span>
+              <span class="amt">RM 25</span>
+            </div>
+          </div>
+          <p class="section-label">Add a booking</p>
+          <div class="field"><span class="lbl">Label (optional)</span><div class="input">Court 2</div></div>
+          <div class="two">
+            <div class="field"><span class="lbl">Price per court</span><div class="input"><span class="pre">RM</span>25</div></div>
+            <div class="field"><span class="lbl">Courts</span>
+              <div class="stepper"><span class="sb" aria-label="One fewer court"><svg width="16" height="16"><use href="#i-minus"/></svg></span><span class="n">2</span><span class="sb plus" aria-label="One more court"><svg width="16" height="16"><use href="#i-plus"/></svg></span></div>
+            </div>
+          </div>
+          <div class="total-line"><span>This booking</span><b>RM 50</b></div>
+          <div class="actions">
+            <button class="btn secondary" type="button">Cancel</button>
+            <button class="btn primary" type="button">Book court</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Book courts sheet</strong>
+      <span>Courts already booked are listed first with price × count, so "how many courts, at how much" is answered before you add another. The running total shows what the new booking adds.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen fixed" aria-label="Close session confirmation">
+        <div class="status-bar"><span>22:05</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav">
+          <span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Sessions</span>
+          <span class="icon-btn"><svg width="22" height="22"><use href="#i-dots"/></svg></span>
+        </div>
+        <div class="content"><div class="title-block"><h2 class="screen-title">Friday Doubles</h2></div></div>
+        <div class="scrim"></div>
+        <div class="dialog" role="alertdialog" aria-label="Close session">
+          <h3 class="modal-title">Close session?</h3>
+          <p>This locks in each player's share. You can't add matches or courts afterwards.</p>
+          <div class="split-list">
+            <div><span>Alice, Daniel, Elena, Farid</span><b>RM 8.84 each</b></div>
+            <div><span>Ben, Chloe</span><b>RM 5.84 each</b></div>
+            <div class="tot"><span>Total</span><b>RM 47.04</b></div>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" type="button">Cancel</button>
+            <button class="btn sage" type="button">Close session</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Close confirmation</strong>
+      <span>Closing changes money, so it asks first and shows the exact shares it will create. Players with the same amount are grouped. The total can come out a few sen above the cost because each share is rounded.</span>
+    </figcaption>
+  </figure>
+
+</main>
+

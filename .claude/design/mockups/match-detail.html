@@ -1,0 +1,514 @@
+<title>Match Detail Redesign</title>
+<style>
+/* Layout: a board of phone frames (result set, no result, singles, two vs one, scores level) with a note under each; app screens use the fixed light design-system tokens, the board around them follows the viewer's theme. */
+:root {
+  --page-bg: #eef1f4;
+  --page-fg: #002b5b;
+  --page-muted: #56616c;
+  --page-line: #d5dbe1;
+  --page-frame: #1d2733;
+
+  --surface: #f8f9fa;
+  --surface-raised: #ffffff;
+  --ink: #002b5b;
+  --muted: #6c757d;
+  --border: #c7cdd2;
+  --border-subtle: #e4e6e9;
+  --border-dashed: #b8bec4;
+  --primary: #004e89;
+  --primary-tint: #eaf0f5;
+  --sage: #7fc8a9;
+  --on-sage: #0e4a32;
+  --clay: #a97155;
+  --clay-tint: #fbefe8;
+  --clay-strong: #8a5640;
+  --settled: #2e7d5b;
+  --settled-tint: #e7f4ee;
+  --neutral-tint: #edeeef;
+  --court: #7ab698;
+  --court-line: #ffffff;
+  --court-shadow: rgba(0, 43, 91, 0.35);
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #0c1520;
+    --page-fg: #e3eaf2;
+    --page-muted: #98a6b5;
+    --page-line: #233242;
+    --page-frame: #050a10;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #0c1520;
+  --page-fg: #e3eaf2;
+  --page-muted: #98a6b5;
+  --page-line: #233242;
+  --page-frame: #050a10;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--page-bg); color: var(--page-fg); font-family: var(--sans); padding-inline: 16px; padding-block: 32px 56px; }
+.board-head { max-width: 1180px; margin: 0 auto 28px; display: grid; gap: 8px; }
+.board-head h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.board-head p { margin: 0; color: var(--page-muted); font-size: 15px; line-height: 22px; max-width: 70ch; }
+.priorities { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.priorities li { font-size: 12px; line-height: 16px; font-weight: 500; border: 1px solid var(--page-line); border-radius: 999px; padding: 5px 10px; color: var(--page-muted); }
+.priorities b { color: var(--page-fg); font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+.board { max-width: 1180px; margin: 0 auto; display: grid; gap: 40px 28px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); justify-items: center; align-items: start; }
+figure { margin: 0; display: grid; gap: 14px; width: 100%; max-width: 360px; }
+figcaption { display: grid; gap: 4px; }
+figcaption strong { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+figcaption span { font-size: 13px; line-height: 19px; color: var(--page-muted); }
+
+.phone { width: 100%; border-radius: 40px; background: var(--page-frame); padding: 10px; }
+.screen { position: relative; border-radius: 31px; overflow: hidden; background: var(--surface); color: var(--ink); font-size: 14px; line-height: 20px; display: flex; flex-direction: column; padding-bottom: 22px; }
+.status-bar { height: 40px; display: flex; align-items: center; justify-content: space-between; padding-inline: 26px; font-size: 14px; font-weight: 600; flex: none; }
+.status-bar .dots { display: flex; gap: 4px; align-items: center; }
+.status-bar .dots i { width: 16px; height: 9px; border-radius: 2px; background: var(--ink); display: block; }
+.status-bar .dots i:first-child { width: 12px; opacity: .55; }
+.nav { display: flex; align-items: center; padding: 2px 8px 0 6px; height: 44px; flex: none; }
+.nav .back { display: flex; align-items: center; gap: 2px; color: var(--primary); font-size: 15px; height: 44px; padding-right: 8px; }
+.home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 5px; border-radius: 999px; background: var(--ink); opacity: .85; }
+
+.content { padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 24px; }
+.title-block { display: grid; gap: 2px; }
+.screen-title { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.meta { color: var(--muted); }
+.section-label { font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.caption { font-size: 12px; line-height: 16px; color: var(--muted); margin: 0; }
+.card { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: 12px; }
+
+.result { padding: 16px; display: grid; gap: 14px; }
+.result-head { display: flex; align-items: center; justify-content: space-between; min-height: 20px; }
+.text-btn { color: var(--primary); font-size: 14px; font-weight: 500; min-height: 44px; min-width: 44px; margin: -12px -8px; padding-inline: 8px; display: flex; align-items: center; justify-content: flex-end; background: none; border: 0; font-family: inherit; cursor: pointer; }
+.banner { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; }
+.banner.won { background: var(--settled-tint); }
+.banner.none { border: 1px dashed var(--border-dashed); }
+.banner .medal { width: 40px; height: 40px; border-radius: 999px; background: var(--sage); color: var(--on-sage); display: grid; place-items: center; flex: none; }
+.banner .body { display: grid; gap: 2px; min-width: 0; }
+.banner .big { font-size: 16px; line-height: 22px; font-weight: 600; }
+.banner.none .big { font-weight: 500; }
+.banner .score { color: var(--settled); font-variant-numeric: tabular-nums; }
+.field-label { font-size: 12px; line-height: 16px; color: var(--muted); }
+.field { display: grid; gap: 8px; }
+.sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.side-btn { min-height: 56px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-raised); display: flex; align-items: center; gap: 8px; text-align: left; font-family: inherit; color: var(--ink); cursor: pointer; }
+.side-btn[aria-pressed="true"] { border: 2px solid var(--sage); background: var(--settled-tint); padding: 7px 9px; }
+.side-btn .who { display: grid; min-width: 0; }
+.side-btn .names { font-size: 14px; line-height: 20px; font-weight: 500; }
+.side-btn .state { font-size: 12px; line-height: 16px; color: var(--muted); }
+.side-btn[aria-pressed="true"] .state { color: var(--settled); font-weight: 500; }
+.dots-stack { display: flex; flex: none; }
+.dots-stack i { width: 18px; height: 18px; border-radius: 999px; border: 2px solid var(--surface-raised); display: block; }
+.dots-stack i + i { margin-left: -6px; }
+.scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; }
+.score-field { display: grid; gap: 4px; min-width: 0; }
+.score-field label { font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score-field input { height: 48px; width: 100%; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); text-align: center; font: 600 20px/1 var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+.score-field input::placeholder { color: var(--border-dashed); }
+.score-field input.focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+.scores .dash { height: 48px; display: flex; align-items: center; font-size: 20px; color: var(--muted); }
+
+.court-wrap { padding-block: 12px; }
+.court { position: relative; width: 100%; max-width: 100%; aspect-ratio: 806 / 1211; border-radius: 12px; background: var(--court); }
+.bounds { position: absolute; top: 2.3%; bottom: 2.3%; left: 3.5%; right: 3.5%; border: 4px solid var(--court-line); }
+.ln-v { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--court-line); }
+.ln-h { position: absolute; left: 0; right: 0; height: 2px; margin-top: -1px; background: var(--court-line); }
+.ln-d { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--court-line); margin-top: -1px; }
+.half { position: absolute; left: 7%; right: 7%; padding: 3px; display: flex; gap: 5px; }
+.half.top { top: 5.2%; bottom: 57.6%; }
+.half.bottom { top: 57.6%; bottom: 5.2%; }
+.slot { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding-inline: 4px; border-radius: 6px; background: var(--fill); box-shadow: 0 1px 4px rgba(0, 43, 91, 0.18); transition: opacity .2s ease-out, box-shadow .2s ease-out; }
+.slot .nm { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--court-line); text-shadow: 0 1px 2px var(--court-shadow); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.half.won .slot { background: var(--fill-strong); box-shadow: 0 0 0 3px var(--court-line); }
+.half.lost .slot { opacity: .45; }
+.avatar { width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: var(--surface); background: var(--av); flex: none; }
+.slot.solo .avatar { width: 60px; height: 60px; font-size: 20px; }
+.slot.solo .nm { font-size: 16px; line-height: 22px; }
+.c-primary { --av: #004e89; --fill: rgba(0, 78, 137, 0.3); --fill-strong: rgba(0, 78, 137, 0.5); }
+.c-clay { --av: #a97155; --fill: rgba(169, 113, 85, 0.3); --fill-strong: rgba(169, 113, 85, 0.5); }
+.c-sage { --av: #7fc8a9; --fill: rgba(127, 200, 169, 0.3); --fill-strong: rgba(127, 200, 169, 0.5); }
+.c-sage .avatar { color: var(--on-sage); }
+.c-muted { --av: #6c757d; --fill: rgba(108, 117, 125, 0.3); --fill-strong: rgba(108, 117, 125, 0.5); }
+.dots-stack i.c-primary, .dots-stack i.c-clay, .dots-stack i.c-sage, .dots-stack i.c-muted { background: var(--av); }
+.net { position: absolute; top: 50%; left: 1.4%; right: 1.4%; height: 8px; margin-top: -4px; border-radius: 999px; background: var(--ink); }
+.net::before, .net::after { content: ""; position: absolute; top: -2px; width: 12px; height: 12px; border-radius: 999px; background: var(--ink); }
+.net::before { left: -4px; }
+.net::after { right: -4px; }
+.net i { position: absolute; left: 10px; right: 10px; top: 3px; border-top: 2px dotted rgba(255, 255, 255, 0.85); }
+.winner { position: absolute; left: 50%; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--ink); color: var(--court-line); font-size: 12px; line-height: 16px; font-weight: 600; box-shadow: 0 0 0 3px var(--court-line); white-space: nowrap; }
+.winner.at-top { top: 0; transform: translate(-50%, -50%); }
+.winner.at-bottom { bottom: 0; transform: translate(-50%, 50%); }
+
+.section { display: grid; gap: 8px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; }
+.section-head .count { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--clay-strong); font-variant-numeric: tabular-nums; }
+.rows { overflow: hidden; }
+.row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; min-height: 56px; }
+.row + .row { border-top: 1px dashed var(--border-subtle); }
+.row .ico { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--clay-tint); color: var(--clay); }
+.row .ico.free { background: var(--neutral-tint); color: var(--muted); }
+.row .body { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.row .ttl { font-size: 14px; line-height: 20px; font-weight: 500; }
+.row .sub { font-size: 13px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 10px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; flex: none; }
+.badge.new { background: var(--clay-tint); color: var(--clay-strong); }
+.badge.reused, .badge.free { background: var(--neutral-tint); color: var(--muted); }
+
+svg { display: block; }
+button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-shuttle" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 3.5h11l-2.6 10.2h-5.8z" opacity=".85"/><rect x="8.6" y="14.6" width="6.8" height="1.6" rx=".8"/><path d="M8.8 17.1h6.4a3.2 3.2 0 0 1-6.4 0z"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10M17 4v8a5 5 0 0 1-10 0V4"/><circle cx="5" cy="9" r="2"/><circle cx="19" cy="9" r="2"/></symbol>
+  </defs>
+</svg>
+
+<header class="board-head">
+  <h1>Match detail, redesigned</h1>
+  <p>The page you land on after tapping a match on Session detail. It reuses the Create match court, read-only, so everyone sees exactly where each player stood. A result card above it records who won and an optional score, and the court shows the winning side. Below it are the shuttles used in this match, grouped by type and by whether each one was new, reused or free. Sample: Thursday doubles, tonight's open session.</p>
+  <ul class="priorities" aria-label="Priorities this layout answers">
+    <li><b>1</b>Who played where</li>
+    <li><b>2</b>Who won</li>
+    <li><b>3</b>The score (optional)</li>
+    <li><b>4</b>Shuttles used</li>
+  </ul>
+</header>
+
+<main class="board">
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Match detail, result set">
+        <div class="status-bar"><span>20:52</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Thursday doubles</span></div>
+        <div class="content">
+          <div class="title-block"><h2 class="screen-title">Match 3</h2><span class="meta">7 Oct 2026 · 8:40 pm · Doubles</span></div>
+
+          <section class="card result" aria-label="Result">
+            <div class="result-head"><p class="section-label">Result</p><button class="text-btn" type="button">Clear</button></div>
+            <div class="banner won" role="status">
+              <span class="medal"><svg width="20" height="20"><use href="#i-trophy"/></svg></span>
+              <span class="body"><span class="big">Aisyah &amp; Ben won</span><span class="score">21–17</span></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Who won?</span>
+              <div class="sides">
+                <button class="side-btn" type="button" aria-pressed="true"><span class="dots-stack"><i class="c-primary"></i><i class="c-clay"></i></span><span class="who"><span class="names">Aisyah &amp; Ben</span><span class="state">Won</span></span></button>
+                <button class="side-btn" type="button" aria-pressed="false"><span class="dots-stack"><i class="c-sage"></i><i class="c-muted"></i></span><span class="who"><span class="names">Chloe &amp; Dev</span><span class="state">Tap if they won</span></span></button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Score (optional)</span>
+              <div class="scores">
+                <div class="score-field"><label for="s1a">Aisyah &amp; Ben</label><input id="s1a" inputmode="numeric" maxlength="2" value="21"></div>
+                <span class="dash" aria-hidden="true">–</span>
+                <div class="score-field"><label for="s1b">Chloe &amp; Dev</label><input id="s1b" inputmode="numeric" maxlength="2" value="17"></div>
+              </div>
+              <p class="caption">The higher score picks the winner. Results aren't saved yet.</p>
+            </div>
+          </section>
+
+          <div class="court-wrap">
+            <div class="court" role="img" aria-label="Court. Top: Aisyah and Ben, winners. Bottom: Chloe and Dev.">
+              <div class="bounds">
+                <span class="ln-v" style="left:7%"></span><span class="ln-v" style="left:50%"></span><span class="ln-v" style="left:93%"></span>
+                <span class="ln-d" style="top:5.2%"></span><span class="ln-h" style="top:42.4%"></span><span class="ln-h" style="top:57.6%"></span><span class="ln-d" style="top:94.8%"></span>
+                <div class="half top won">
+                  <div class="slot c-primary"><span class="avatar">A</span><span class="nm">Aisyah</span></div>
+                  <div class="slot c-clay"><span class="avatar">B</span><span class="nm">Ben</span></div>
+                </div>
+                <div class="half bottom lost">
+                  <div class="slot c-sage"><span class="avatar">C</span><span class="nm">Chloe</span></div>
+                  <div class="slot c-muted"><span class="avatar">D</span><span class="nm">Dev</span></div>
+                </div>
+              </div>
+              <span class="net"><i></i></span>
+              <span class="winner at-top"><svg width="16" height="16"><use href="#i-trophy"/></svg>Winner</span>
+            </div>
+          </div>
+
+          <section class="section" aria-label="Shuttles used">
+            <div class="section-head"><p class="section-label">Shuttles used</p><span class="count"><svg width="14" height="14"><use href="#i-shuttle"/></svg>3 shuttles</span></div>
+            <div class="card rows">
+              <div class="row"><span class="ico"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span><span class="body"><span class="ttl">Aerosensa 30</span><span class="sub">×2 · RM 4.50 each</span></span><span class="badge new">New</span></div>
+              <div class="row"><span class="ico"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span><span class="body"><span class="ttl">Aerosensa 30</span><span class="sub">×1 · RM 4.50 each</span></span><span class="badge reused">Reused from match 2</span></div>
+            </div>
+          </section>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Result set (default with a score)</strong>
+      <span>The result card says who won in words first. The court backs it up: the winning half gets a white ring and an ink "Winner" pill on its back line, and the losing half fades. Sage isn't used on the court because it's almost the same green as the court itself. Typing 21 and 17 picked the winner on its own.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Match detail, no result yet">
+        <div class="status-bar"><span>20:41</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Thursday doubles</span></div>
+        <div class="content">
+          <div class="title-block"><h2 class="screen-title">Match 3</h2><span class="meta">7 Oct 2026 · 8:40 pm · Doubles</span></div>
+
+          <section class="card result" aria-label="Result">
+            <div class="result-head"><p class="section-label">Result</p></div>
+            <div class="banner none" role="status">
+              <span class="body"><span class="big">No result yet</span><span class="caption">Tap the side that won, or enter the score.</span></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Who won?</span>
+              <div class="sides">
+                <button class="side-btn" type="button" aria-pressed="false"><span class="dots-stack"><i class="c-primary"></i><i class="c-clay"></i></span><span class="who"><span class="names">Aisyah &amp; Ben</span><span class="state">Tap if they won</span></span></button>
+                <button class="side-btn" type="button" aria-pressed="false"><span class="dots-stack"><i class="c-sage"></i><i class="c-muted"></i></span><span class="who"><span class="names">Chloe &amp; Dev</span><span class="state">Tap if they won</span></span></button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Score (optional)</span>
+              <div class="scores">
+                <div class="score-field"><label for="s2a">Aisyah &amp; Ben</label><input id="s2a" inputmode="numeric" maxlength="2" placeholder="0"></div>
+                <span class="dash" aria-hidden="true">–</span>
+                <div class="score-field"><label for="s2b">Chloe &amp; Dev</label><input id="s2b" inputmode="numeric" maxlength="2" placeholder="0"></div>
+              </div>
+              <p class="caption">The higher score picks the winner. Results aren't saved yet.</p>
+            </div>
+          </section>
+
+          <div class="court-wrap">
+            <div class="court" role="img" aria-label="Court. Top: Aisyah and Ben. Bottom: Chloe and Dev.">
+              <div class="bounds">
+                <span class="ln-v" style="left:7%"></span><span class="ln-v" style="left:50%"></span><span class="ln-v" style="left:93%"></span>
+                <span class="ln-d" style="top:5.2%"></span><span class="ln-h" style="top:42.4%"></span><span class="ln-h" style="top:57.6%"></span><span class="ln-d" style="top:94.8%"></span>
+                <div class="half top">
+                  <div class="slot c-primary"><span class="avatar">A</span><span class="nm">Aisyah</span></div>
+                  <div class="slot c-clay"><span class="avatar">B</span><span class="nm">Ben</span></div>
+                </div>
+                <div class="half bottom">
+                  <div class="slot c-sage"><span class="avatar">C</span><span class="nm">Chloe</span></div>
+                  <div class="slot c-muted"><span class="avatar">D</span><span class="nm">Dev</span></div>
+                </div>
+              </div>
+              <span class="net"><i></i></span>
+            </div>
+          </div>
+
+          <section class="section" aria-label="Shuttles used">
+            <div class="section-head"><p class="section-label">Shuttles used</p><span class="count"><svg width="14" height="14"><use href="#i-shuttle"/></svg>3 shuttles</span></div>
+            <div class="card rows">
+              <div class="row"><span class="ico"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span><span class="body"><span class="ttl">Aerosensa 30</span><span class="sub">×2 · RM 4.50 each</span></span><span class="badge new">New</span></div>
+              <div class="row"><span class="ico"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span><span class="body"><span class="ttl">Aerosensa 30</span><span class="sub">×1 · RM 4.50 each</span></span><span class="badge reused">Reused from match 2</span></div>
+            </div>
+          </section>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>No result yet</strong>
+      <span>What you see straight after a match ends. The court looks exactly like it did on Create match, but nothing on it can be tapped: no "Add player", no press state. Clear only appears once something has been entered. The two side buttons are 56pt tall and name the players, so the right one is easy to hit between games.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Match detail, singles">
+        <div class="status-bar"><span>21:18</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Thursday doubles</span></div>
+        <div class="content">
+          <div class="title-block"><h2 class="screen-title">Match 4</h2><span class="meta">7 Oct 2026 · 9:05 pm · Singles</span></div>
+
+          <section class="card result" aria-label="Result">
+            <div class="result-head"><p class="section-label">Result</p><button class="text-btn" type="button">Clear</button></div>
+            <div class="banner won" role="status">
+              <span class="medal"><svg width="20" height="20"><use href="#i-trophy"/></svg></span>
+              <span class="body"><span class="big">Dev won</span><span class="score">No score entered</span></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Who won?</span>
+              <div class="sides">
+                <button class="side-btn" type="button" aria-pressed="false"><span class="dots-stack"><i class="c-primary"></i></span><span class="who"><span class="names">Aisyah</span><span class="state">Tap if they won</span></span></button>
+                <button class="side-btn" type="button" aria-pressed="true"><span class="dots-stack"><i class="c-muted"></i></span><span class="who"><span class="names">Dev</span><span class="state">Won</span></span></button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Score (optional)</span>
+              <div class="scores">
+                <div class="score-field"><label for="s3a">Aisyah</label><input id="s3a" inputmode="numeric" maxlength="2" placeholder="0"></div>
+                <span class="dash" aria-hidden="true">–</span>
+                <div class="score-field"><label for="s3b">Dev</label><input id="s3b" inputmode="numeric" maxlength="2" placeholder="0"></div>
+              </div>
+              <p class="caption">The higher score picks the winner. Results aren't saved yet.</p>
+            </div>
+          </section>
+
+          <div class="court-wrap">
+            <div class="court" role="img" aria-label="Court. Top: Aisyah. Bottom: Dev, winner.">
+              <div class="bounds">
+                <span class="ln-v" style="left:7%"></span><span class="ln-v" style="left:50%"></span><span class="ln-v" style="left:93%"></span>
+                <span class="ln-d" style="top:5.2%"></span><span class="ln-h" style="top:42.4%"></span><span class="ln-h" style="top:57.6%"></span><span class="ln-d" style="top:94.8%"></span>
+                <div class="half top lost">
+                  <div class="slot solo c-primary"><span class="avatar">A</span><span class="nm">Aisyah</span></div>
+                </div>
+                <div class="half bottom won">
+                  <div class="slot solo c-muted"><span class="avatar">D</span><span class="nm">Dev</span></div>
+                </div>
+              </div>
+              <span class="net"><i></i></span>
+              <span class="winner at-bottom"><svg width="16" height="16"><use href="#i-trophy"/></svg>Winner</span>
+            </div>
+          </div>
+
+          <section class="section" aria-label="Shuttles used">
+            <div class="section-head"><p class="section-label">Shuttles used</p><span class="count"><svg width="14" height="14"><use href="#i-shuttle"/></svg>2 shuttles</span></div>
+            <div class="card rows">
+              <div class="row"><span class="ico"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span><span class="body"><span class="ttl">Aerosensa 30</span><span class="sub">×1 · RM 4.50 each</span></span><span class="badge reused">Reused from match 3</span></div>
+              <div class="row"><span class="ico free"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span><span class="body"><span class="ttl">Free shuttle</span><span class="sub">×1 · no charge</span></span><span class="badge free">Free</span></div>
+            </div>
+          </section>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Singles, winner tapped</strong>
+      <span>When a side has only one player, that player fills the whole half, with a bigger avatar and name, instead of sitting in one service box next to an empty one. The winner was tapped with no score, so the banner says "No score entered". A free shuttle is grey and says "no charge", so it doesn't look like money.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Match detail, two against one">
+        <div class="status-bar"><span>21:31</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Thursday doubles</span></div>
+        <div class="content">
+          <div class="title-block"><h2 class="screen-title">Match 5</h2><span class="meta">7 Oct 2026 · 9:20 pm · 2 vs 1</span></div>
+
+          <section class="card result" aria-label="Result">
+            <div class="result-head"><p class="section-label">Result</p><button class="text-btn" type="button">Clear</button></div>
+            <div class="banner won" role="status">
+              <span class="medal"><svg width="20" height="20"><use href="#i-trophy"/></svg></span>
+              <span class="body"><span class="big">Chloe won</span><span class="score">21–19</span></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Who won?</span>
+              <div class="sides">
+                <button class="side-btn" type="button" aria-pressed="false"><span class="dots-stack"><i class="c-primary"></i><i class="c-clay"></i></span><span class="who"><span class="names">Aisyah &amp; Ben</span><span class="state">Tap if they won</span></span></button>
+                <button class="side-btn" type="button" aria-pressed="true"><span class="dots-stack"><i class="c-sage"></i></span><span class="who"><span class="names">Chloe</span><span class="state">Won</span></span></button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Score (optional)</span>
+              <div class="scores">
+                <div class="score-field"><label for="s4a">Aisyah &amp; Ben</label><input id="s4a" inputmode="numeric" maxlength="2" value="19"></div>
+                <span class="dash" aria-hidden="true">–</span>
+                <div class="score-field"><label for="s4b">Chloe</label><input id="s4b" inputmode="numeric" maxlength="2" value="21"></div>
+              </div>
+              <p class="caption">The higher score picks the winner. Results aren't saved yet.</p>
+            </div>
+          </section>
+
+          <div class="court-wrap">
+            <div class="court" role="img" aria-label="Court. Top: Aisyah and Ben. Bottom: Chloe, winner.">
+              <div class="bounds">
+                <span class="ln-v" style="left:7%"></span><span class="ln-v" style="left:50%"></span><span class="ln-v" style="left:93%"></span>
+                <span class="ln-d" style="top:5.2%"></span><span class="ln-h" style="top:42.4%"></span><span class="ln-h" style="top:57.6%"></span><span class="ln-d" style="top:94.8%"></span>
+                <div class="half top lost">
+                  <div class="slot c-primary"><span class="avatar">A</span><span class="nm">Aisyah</span></div>
+                  <div class="slot c-clay"><span class="avatar">B</span><span class="nm">Ben</span></div>
+                </div>
+                <div class="half bottom won">
+                  <div class="slot solo c-sage"><span class="avatar">C</span><span class="nm">Chloe</span></div>
+                </div>
+              </div>
+              <span class="net"><i></i></span>
+              <span class="winner at-bottom"><svg width="16" height="16"><use href="#i-trophy"/></svg>Winner</span>
+            </div>
+          </div>
+
+          <section class="section" aria-label="Shuttles used">
+            <div class="section-head"><p class="section-label">Shuttles used</p><span class="count"><svg width="14" height="14"><use href="#i-shuttle"/></svg>1 shuttle</span></div>
+            <div class="card rows">
+              <div class="row"><span class="ico"><svg width="18" height="18"><use href="#i-shuttle"/></svg></span><span class="body"><span class="ttl">Victor Master No.1</span><span class="sub">×1 · RM 6 each</span></span><span class="badge new">New</span></div>
+            </div>
+          </section>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Two against one</strong>
+      <span>Create match allows uneven sides, so each half is laid out on its own: two players share the top half and one player fills the bottom. The winner badge, ring and fade work the same way whatever the player count.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone">
+      <div class="screen" aria-label="Match detail, scores level">
+        <div class="status-bar"><span>20:55</span><span class="dots"><i></i><i></i></span></div>
+        <div class="nav"><span class="back"><svg width="22" height="22"><use href="#i-back"/></svg>Thursday doubles</span></div>
+        <div class="content">
+          <div class="title-block"><h2 class="screen-title">Match 3</h2><span class="meta">7 Oct 2026 · 8:40 pm · Doubles</span></div>
+
+          <section class="card result" aria-label="Result">
+            <div class="result-head"><p class="section-label">Result</p><button class="text-btn" type="button">Clear</button></div>
+            <div class="banner none" role="status">
+              <span class="body"><span class="big">Scores are level</span><span class="caption">Change a score, or tap the side that won.</span></span>
+            </div>
+            <div class="field">
+              <span class="field-label">Who won?</span>
+              <div class="sides">
+                <button class="side-btn" type="button" aria-pressed="false"><span class="dots-stack"><i class="c-primary"></i><i class="c-clay"></i></span><span class="who"><span class="names">Aisyah &amp; Ben</span><span class="state">Tap if they won</span></span></button>
+                <button class="side-btn" type="button" aria-pressed="false"><span class="dots-stack"><i class="c-sage"></i><i class="c-muted"></i></span><span class="who"><span class="names">Chloe &amp; Dev</span><span class="state">Tap if they won</span></span></button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Score (optional)</span>
+              <div class="scores">
+                <div class="score-field"><label for="s5a">Aisyah &amp; Ben</label><input id="s5a" inputmode="numeric" maxlength="2" value="20"></div>
+                <span class="dash" aria-hidden="true">–</span>
+                <div class="score-field"><label for="s5b">Chloe &amp; Dev</label><input id="s5b" class="focus" inputmode="numeric" maxlength="2" value="20"></div>
+              </div>
+              <p class="caption">The higher score picks the winner. Results aren't saved yet.</p>
+            </div>
+          </section>
+
+          <div class="court-wrap">
+            <div class="court" role="img" aria-label="Court. Top: Aisyah and Ben. Bottom: Chloe and Dev.">
+              <div class="bounds">
+                <span class="ln-v" style="left:7%"></span><span class="ln-v" style="left:50%"></span><span class="ln-v" style="left:93%"></span>
+                <span class="ln-d" style="top:5.2%"></span><span class="ln-h" style="top:42.4%"></span><span class="ln-h" style="top:57.6%"></span><span class="ln-d" style="top:94.8%"></span>
+                <div class="half top">
+                  <div class="slot c-primary"><span class="avatar">A</span><span class="nm">Aisyah</span></div>
+                  <div class="slot c-clay"><span class="avatar">B</span><span class="nm">Ben</span></div>
+                </div>
+                <div class="half bottom">
+                  <div class="slot c-sage"><span class="avatar">C</span><span class="nm">Chloe</span></div>
+                  <div class="slot c-muted"><span class="avatar">D</span><span class="nm">Dev</span></div>
+                </div>
+              </div>
+              <span class="net"><i></i></span>
+            </div>
+          </div>
+        </div>
+        <span class="home-ind" aria-hidden="true"></span>
+      </div>
+    </div>
+    <figcaption>
+      <strong>Scores level</strong>
+      <span>While a score is being typed, an equal score means no winner yet, so the court stays neutral and the banner says why. Scores pick the winner only when both are filled in and differ. Tapping a side that disagrees with the score clears the score, so the two can never contradict each other.</span>
+    </figcaption>
+  </figure>
+
+</main>
+
