@@ -231,7 +231,7 @@ export type SessionChargesPreview = {
     shuttleCharges: { shuttle_instance_id: number, player_id: number, amount: string }[]
 }
 
-function roundToCents(amount: number): number {
+export function roundToCents(amount: number): number {
     return Math.round(amount * 100) / 100
 }
 
