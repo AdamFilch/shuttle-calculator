@@ -111,7 +111,7 @@ export default function PlayerDetailPage() {
   const router = useRouter();
   const toast = useAppToast();
   const [ledger, setLedger] = useState<PlayerLedger | null>(null);
-  const [blockers, setBlockers] = useState<PlayerDeleteBlockers | null>(null);
+  const [blockers, setBlockers] = useState<(PlayerDeleteBlockers & { playerId: number }) | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [mode, setMode] = useState<Mode>("view");
   const [selected, setSelected] = useState<Set<ChargeKey>>(new Set());
@@ -125,7 +125,7 @@ export default function PlayerDetailPage() {
       fetchPlayerDeleteBlockers(id),
     ]);
     setLedger(nextLedger);
-    setBlockers(nextBlockers);
+    setBlockers({ playerId: id, ...nextBlockers });
   }, [id]);
 
   useFocusEffect(
@@ -149,7 +149,7 @@ export default function PlayerDetailPage() {
     headerTintColor: designTokens.primary,
   };
 
-  if (!ledger) {
+  if (!ledger || ledger.player.player_id !== id) {
     return (
       <View className="flex-1 bg-surface">
         <Stack.Screen options={headerOptions} />
@@ -421,7 +421,7 @@ export default function PlayerDetailPage() {
         isOpen={optionsOpen}
         onClose={() => setOptionsOpen(false)}
         playerName={player.name}
-        blockers={blockers}
+        blockers={blockers?.playerId === id ? blockers : null}
         onDelete={openDelete}
       />
 
