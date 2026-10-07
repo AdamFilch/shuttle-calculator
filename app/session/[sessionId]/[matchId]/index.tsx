@@ -42,6 +42,8 @@ export default function MatchPage() {
     }
 
 
+    const playerAt = Object.fromEntries(match.players.map((player) => [player.position, player]))
+
     return (
         <SafeAreaView className="flex-1 bg-background-50">
             <PageHeader
@@ -55,20 +57,20 @@ export default function MatchPage() {
                 </Heading>
                 <VStack space="sm">
                     <HStack space="sm">
-                        {match.players[0] && (
-                            <PlayerButton name={match.players[0].name} />
+                        {playerAt[0] && (
+                            <PlayerButton name={playerAt[0].name} />
                         )}
-                        {match.players[2] && (
-                            <PlayerButton name={match.players[2].name} />
+                        {playerAt[2] && (
+                            <PlayerButton name={playerAt[2].name} />
                         )}
                     </HStack>
                     <Divider />
                     <HStack space="sm">
-                        {match.players[1] && (
-                            <PlayerButton name={match.players[1].name} />
+                        {playerAt[1] && (
+                            <PlayerButton name={playerAt[1].name} />
                         )}
-                        {match.players[3] && (
-                            <PlayerButton name={match.players[3].name} />
+                        {playerAt[3] && (
+                            <PlayerButton name={playerAt[3].name} />
                         )}
                     </HStack>
                 </VStack>
@@ -97,10 +99,10 @@ export default function MatchPage() {
                                     }}
                                 >
                                     <ButtonText className="text-typography-900" size="sm">
-                                        {shuttle.item.name}
+                                        {shuttle.item.name ?? 'Free'}
                                     </ButtonText>
                                     <ButtonText className="text-typography-500" size="xs">
-                                        ({shuttle.item.quantity_used})
+                                        ({shuttle.item.quantity})
                                     </ButtonText>
                                 </Button>
                             )}

@@ -1,4 +1,5 @@
 import { openDatabaseSync } from "expo-sqlite";
+import { Player } from "./player";
 
 const db = openDatabaseSync('db.db')
 
@@ -78,84 +79,82 @@ export async function createNewMatch(payload: newMatchPayload) {
     return { matchId };
 }
 
+export type MatchPlayer = Player & { position: number }
+
+export type MatchShuttleRow = {
+    shuttle_id: number | null,
+    name: string | null,
+    origin: 'new' | 'reused' | 'free',
+    from_match_number: number | null,
+    quantity: number,
+    unit_price: number
+}
+
 export type MatchFull = {
     session_id: number,
     match_id: number,
     match_number: number,
-    date: string
-    players: 
-        Record<number, {
-        players_id: number,
-        name: string,
-        position: number,
-    }>,
-    shuttles: {
-        shuttle_id: number | null,
-        name: string,
-        quantity_used: number,
-    }[]
+    date: string,
+    players: MatchPlayer[],
+    shuttles: MatchShuttleRow[]
 }
 
-export async function fetchMatchById(id: string): Promise<MatchFull> {
+const originOrder = { new: 0, reused: 1, free: 2 }
 
-    const matchRows: any = await db.getAllAsync(`
-        SELECT
-        m.session_id,
-        m.match_id,
-        m.match_number,
-        m.date,
-        si.shuttle_instance_id,
-        si.shuttle_id,
-        s.name AS shuttle_name,
-        mp.player_id,
-        mp.position,
-        p.name AS player_name
-        FROM matches m
-        LEFT JOIN match_shuttle_instances msi ON msi.match_id = m.match_id
-        LEFT JOIN shuttle_instances si ON si.shuttle_instance_id = msi.shuttle_instance_id
-        LEFT JOIN shuttles s ON s.shuttle_id = si.shuttle_id
-        LEFT JOIN match_players mp ON mp.match_id = m.match_id
-        LEFT JOIN players p ON p.player_id = mp.player_id
-        WHERE m.match_id = ?
+export async function fetchMatchById(id: string): Promise<MatchFull | null> {
+    const match: any = await db.getFirstAsync(
+        `SELECT session_id, match_id, match_number, date FROM matches WHERE match_id = ?`,
+        [id]
+    )
+    if (!match) return null
+
+    const players: MatchPlayer[] = await db.getAllAsync(`
+        SELECT p.player_id, p.name, p.status, p.deleted_date, p.avatar_colour, mp.position
+        FROM match_players mp
+        JOIN players p ON p.player_id = mp.player_id
+        WHERE mp.match_id = ?
+        ORDER BY mp.position
         `, [id])
 
-    const playersMap: Record<number, any> = {}
-    const shuttlesMap: Record<string, { shuttle_id: number | null, name: string, quantity_used: number }> = {}
-    // match_shuttle_instances rows are cross-joined against match_players rows above,
-    // so the same shuttle_instance_id appears once per player -- dedupe before counting.
-    const seenInstances = new Set<number>()
+    const instances: any[] = await db.getAllAsync(`
+        SELECT
+        si.shuttle_id,
+        s.name,
+        s.total_price * 1.0 / s.num_of_shuttles AS unit_price,
+        (SELECT MIN(m2.match_number)
+            FROM match_shuttle_instances msi2
+            JOIN matches m2 ON m2.match_id = msi2.match_id
+            WHERE msi2.shuttle_instance_id = si.shuttle_instance_id) AS first_match_number
+        FROM match_shuttle_instances msi
+        JOIN shuttle_instances si ON si.shuttle_instance_id = msi.shuttle_instance_id
+        LEFT JOIN shuttles s ON s.shuttle_id = si.shuttle_id
+        WHERE msi.match_id = ?
+        `, [id])
 
-    for (let row of matchRows) {
-        if (row.position !== null && !playersMap[row.position]) {
-            playersMap[row.position] = {
-                player_id: row.player_id,
-                name: row.player_name,
-                position: row.position
-            }
+    const rows: Record<string, MatchShuttleRow> = {}
+    for (const instance of instances) {
+        const free = instance.shuttle_id === null
+        const origin = free ? 'free' : instance.first_match_number === match.match_number ? 'new' : 'reused'
+        const from_match_number = origin === 'reused' ? instance.first_match_number : null
+        const key = `${instance.shuttle_id}|${origin}|${from_match_number}`
+        rows[key] ??= {
+            shuttle_id: instance.shuttle_id,
+            name: free ? null : instance.name,
+            origin,
+            from_match_number,
+            quantity: 0,
+            unit_price: free ? 0 : instance.unit_price
         }
-
-        if (row.shuttle_instance_id !== null && !seenInstances.has(row.shuttle_instance_id)) {
-            seenInstances.add(row.shuttle_instance_id)
-            const key = row.shuttle_id === null ? 'free' : String(row.shuttle_id)
-            if (!shuttlesMap[key]) {
-                shuttlesMap[key] = {
-                    shuttle_id: row.shuttle_id,
-                    name: row.shuttle_id === null ? 'Free' : row.shuttle_name,
-                    quantity_used: 0
-                }
-            }
-            shuttlesMap[key].quantity_used += 1
-        }
+        rows[key].quantity += 1
     }
 
-    return {
-        session_id: matchRows[0].session_id,
-        match_id: matchRows[0].match_id,
-        match_number: matchRows[0].match_number,
-        date: matchRows[0].date,
-        players: playersMap,
-        shuttles: Object.values(shuttlesMap)
-    }
+    const shuttles = Object.values(rows).sort((a, b) =>
+        originOrder[a.origin] - originOrder[b.origin]
+        || (a.from_match_number ?? 0) - (b.from_match_number ?? 0)
+        || (a.name ?? '').localeCompare(b.name ?? '')
+    )
+
+    return { ...match, players, shuttles }
 }
 
 

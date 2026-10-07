@@ -66,6 +66,19 @@ async function seedDefault() {
             { mode: 'free' }
         ]
     })
+    await createNewMatch({
+        sessionId: today,
+        playersId: [alice, elena],
+        shuttleSelections: [{ mode: 'new', shuttleId: yonex, quantity: 1 }]
+    })
+    await createNewMatch({
+        sessionId: today,
+        playersId: [ben, daniel, chloe],
+        shuttleSelections: [
+            { mode: 'reused', shuttleInstanceId: firstInstance.shuttle_instance_id },
+            { mode: 'free' }
+        ]
+    })
 }
 
 async function seedClosedToday() {
