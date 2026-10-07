@@ -326,4 +326,4 @@ Verified on the iOS Simulator (iPhone 17 Pro, iOS 26.0, Expo Go) after `npm run 
 - AC7: check "Free shuttles only" with a match that used only free shuttles (record one in an open or closed session, or add a seed scenario).
 - AC9: look at the skeleton, for example on a slow first load.
 
-*Status: PARTIAL — PR #TBD*
+*Status: PARTIAL — PR #23*
