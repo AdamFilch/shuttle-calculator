@@ -47,6 +47,7 @@ If you were not given a ticket, or it has no acceptance criteria, derive a short
 
 ## 4. Implement
 
+- Before writing or changing any code, invoke the `ponytail:ponytail` skill (default `full` level) with the Skill tool and follow its ladder for every change in this step, including fixes made during step 5. It decides how little code to write, never what the ticket requires: every acceptance criterion and decision log entry is still built in full. Where it conflicts with `CLAUDE.md` or the user's instructions, those win (e.g. under a no-comments rule, skip its `ponytail:` marker comments and list the simplifications in the report's follow-ups instead; where the project has no test framework, don't add test files). Its terse-output rule does not apply to the PR body or report in steps 8–9.
 - Write code that reads like the surrounding code: same naming, file layout, styling approach, and idioms.
 - Follow every convention in `CLAUDE.md` and in the user's own instructions (e.g. rules about comments, data access, schema changes).
 - Prefer small, focused changes over rewrites.
