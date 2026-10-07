@@ -1,13 +1,13 @@
 # [4]: Player detail redesign
 
-The player detail screen (`app/player/[playerId]/index.tsx`) is where a session organiser lands after tapping a player. They are usually at the court or just after, while a player hands over cash or says they've transferred money. This ticket rebuilds the screen to the approved design spec ([.claude/design/specs/player-detail.md](../design/specs/player-detail.md), mockup https://claude.ai/artifact/4q4VyNMLykPH61DpY7SdkM). The screen answers the organiser's questions in this order:
+The player detail screen (`app/player/[playerId]/index.tsx`) is where a session organiser lands after tapping a player. They are usually at the court or just after, while a player hands over cash or says they've transferred money. This ticket rebuilds the screen to the approved design spec ([.claude/design/specs/player-detail.md](../../design/specs/player-detail.md), mockup https://claude.ai/artifact/4q4VyNMLykPH61DpY7SdkM). The screen answers the organiser's questions in this order:
 1. How much does the player owe?
 2. Which sessions did they join?
 3. How much do they owe for each one?
 4. Which matches did they play, and which shuttles is each charge for?
 5. What should I do next?
 
-This ticket is **frontend only**. Every read and write it needs already exists from [PRD 5](partial/5-player-payments-backend.prd.md) (see its [Contract for frontend](partial/5-player-payments-backend.prd.md#contract-for-frontend)):
+This ticket is **frontend only**. Every read and write it needs already exists from [PRD 5](5-player-payments-backend.prd.md) (see its [Contract for frontend](5-player-payments-backend.prd.md#contract-for-frontend)):
 - `fetchPlayerLedger` supplies the screen, with real paid amounts and no sample data.
 - `fetchPlayerDeleteBlockers` sets the Delete row's state.
 - `paySessionInFull` and `payChargesByKeys` record payments.
@@ -215,57 +215,57 @@ ledger.sessions = [] → "No sessions yet", ALL SETTLED RM 0 (no caption), Empty
 ## File Reference
 | File | Role |
 |---|---|
-| [app/player/[playerId]/index.tsx](../../app/player/[playerId]/index.tsx) | The rebuilt screen: modes, selection state, dialogs |
-| [app/session/[sessionId]/index.tsx](../../app/session/[sessionId]/index.tsx) | Toast moved to `useAppToast` |
-| [components/shared/StatusBadge.tsx](../../components/shared/StatusBadge.tsx) | `waived` variant |
-| [components/layout/BottomActionBar.tsx](../../components/layout/BottomActionBar.tsx) | `clay` tone, `disabled` prop |
-| [components/shared/ActionSheet.tsx](../../components/shared/ActionSheet.tsx), [Avatar.tsx](../../components/shared/Avatar.tsx), [EmptyState.tsx](../../components/shared/EmptyState.tsx) | Reused |
-| [components/session/match/ShuttleGlyph.tsx](../../components/session/match/ShuttleGlyph.tsx) | The tile on each charge row |
-| [components/session/MatchCard.tsx](../../components/session/MatchCard.tsx) | Team pairing logic to reuse (extract it into a component helper if needed) |
-| [components/user/deletePlayerDialog.tsx](../../components/user/deletePlayerDialog.tsx) | The delete confirmation, reused |
+| [app/player/[playerId]/index.tsx](../../../app/player/[playerId]/index.tsx) | The rebuilt screen: modes, selection state, dialogs |
+| [app/session/[sessionId]/index.tsx](../../../app/session/[sessionId]/index.tsx) | Toast moved to `useAppToast` |
+| [components/shared/StatusBadge.tsx](../../../components/shared/StatusBadge.tsx) | `waived` variant |
+| [components/layout/BottomActionBar.tsx](../../../components/layout/BottomActionBar.tsx) | `clay` tone, `disabled` prop |
+| [components/shared/ActionSheet.tsx](../../../components/shared/ActionSheet.tsx), [Avatar.tsx](../../../components/shared/Avatar.tsx), [EmptyState.tsx](../../../components/shared/EmptyState.tsx) | Reused |
+| [components/session/match/ShuttleGlyph.tsx](../../../components/session/match/ShuttleGlyph.tsx) | The tile on each charge row |
+| [components/session/MatchCard.tsx](../../../components/session/MatchCard.tsx) | Team pairing logic to reuse (extract it into a component helper if needed) |
+| [components/user/deletePlayerDialog.tsx](../../../components/user/deletePlayerDialog.tsx) | The delete confirmation, reused |
 | `components/player/BalanceCard.tsx`, `SessionChargesCard.tsx`, `ChargeRow.tsx`, `SettleChargesDialog.tsx`, `PlayerOptionsSheet.tsx` | **New** |
 | `components/shared/SelectBox.tsx` | **New**. A tri-state checkbox in `sage` or `clay`, with a 44pt hit area |
 | `components/shared/AppToast.tsx` | **New**. `useAppToast()` → `show(message)`, built on Gluestack's `useToast` with `duration: 1500` and bottom placement |
-| [services/player.ts](../../services/player.ts), [services/shuttle-payments.ts](../../services/shuttle-payments.ts), [services/money-display.ts](../../services/money-display.ts) | Read only: the PRD [5] contract and `formatRM` |
+| [services/player.ts](../../../services/player.ts), [services/shuttle-payments.ts](../../../services/shuttle-payments.ts), [services/money-display.ts](../../../services/money-display.ts) | Read only: the PRD [5] contract and `formatRM` |
 
 ---
 
 ## Acceptance Criteria
 **Screen layout**
 - [ ] AC1: The header shows the avatar, the name and "N sessions · M matches" (correct plurals, open sessions included), with ⋯ on the right and no Delete button.
-- [ ] AC2: The balance card shows the total owed across closed sessions, the paid/owed bar and legend (real paid amounts from the ledger), and the open-session caption when the player is in an open session.
-- [ ] AC3: Pay all is the only filled primary button. Pay individually and Waive are secondary.
-- [ ] AC4: Every session the player joined is listed in the ledger's order (owing → open → settled), with the right badge: `Owes RM X`, `≈ RM X` or `Settled`.
-- [ ] AC5: Owing sessions show **Pay session · RM X** while collapsed.
-- [ ] AC6: Expanding a session shows the court share ("RM X ÷ N players"), and each match with its teams and its shuttle charges ("RM X ÷ N players"). Paid charges show "Paid D Mon YYYY", with the real charged amount struck through.
+- [x] AC2: The balance card shows the total owed across closed sessions, the paid/owed bar and legend (real paid amounts from the ledger), and the open-session caption when the player is in an open session.
+- [x] AC3: Pay all is the only filled primary button. Pay individually and Waive are secondary.
+- [x] AC4: Every session the player joined is listed in the ledger's order (owing → open → settled), with the right badge: `Owes RM X`, `≈ RM X` or `Settled`.
+- [x] AC5: Owing sessions show **Pay session · RM X** while collapsed.
+- [x] AC6: Expanding a session shows the court share ("RM X ÷ N players"), and each match with its teams and its shuttle charges ("RM X ÷ N players"). Paid charges show "Paid D Mon YYYY", with the real charged amount struck through.
 - [ ] AC7: A reused shuttle appears once, under its first match, marked "reused". A match with only free shuttles shows "Free shuttles only".
-- [ ] AC8: Open session cards show `≈` amounts from the ledger's `estimate` that match session detail, and have no Pay button.
+- [x] AC8: Open session cards show `≈` amounts from the ledger's `estimate` that match session detail, and have no Pay button.
 - [ ] AC9: Loading shows a skeleton. A player who never played sees the "No sessions yet" state. At large Dynamic Type, names wrap and the balance actions stack.
-- [ ] AC10: Every amount uses `formatRM`, and no `$` remains on this screen.
+- [x] AC10: Every amount uses `formatRM`, and no `$` remains on this screen.
 
 **Payments**
-- [ ] AC11: Pay all and Pay session open a confirmation that lists one line per session, the total, and either "Nothing left to pay" or the amount still owed. Confirming pays through `paySessionInFull`.
+- [x] AC11: Pay all and Pay session open a confirmation that lists one line per session, the total, and either "Nothing left to pay" or the amount still owed. Confirming pays through `paySessionInFull`.
 - [ ] AC12: Pay individually enters selection mode:
   - Only owing sessions show, and they are expanded.
   - Court shares and shuttle charges have checkboxes, and each session has a tri-state checkbox.
   - Paid rows are disabled.
   - Select all / Clear all work.
-- [ ] AC13: The bottom bar shows "N charges picked" and the total. With nothing picked, it is disabled and reads "Tick charges to pay".
-- [ ] AC14: Confirming a pick calls `payChargesByKeys` once with the picked keys. On failure, the inline error shows and the picks are kept.
-- [ ] AC15: After a successful payment, the dialog closes, the screen returns to view mode and refetches, and the toast "Paid RM X" shows.
+- [x] AC13: The bottom bar shows "N charges picked" and the total. With nothing picked, it is disabled and reads "Tick charges to pay".
+- [x] AC14: Confirming a pick calls `payChargesByKeys` once with the picked keys. On failure, the inline error shows and the picks are kept.
+- [x] AC15: After a successful payment, the dialog closes, the screen returns to view mode and refetches, and the toast "Paid RM X" shows.
 - [ ] AC16: Cancel (or back) in selection mode returns to view mode with no changes.
-- [ ] AC17: Waive enters the clay selection mode with the "Waive charges" title and helper. Its button reads "Waive · coming soon" and is always disabled. Nothing is written.
+- [x] AC17: Waive enters the clay selection mode with the "Waive charges" title and helper. Its button reads "Waive · coming soon" and is always disabled. Nothing is written.
 
 **Options + delete**
 - [ ] AC18: ⋯ opens Player options, which has only Delete player.
-- [ ] AC19: Delete player is disabled with "Settle RM X first" while anything is owed, and with "In an open session — close it first" while the player is in an open session. Both come from `fetchPlayerDeleteBlockers`.
+- [x] AC19: Delete player is disabled with "Settle RM X first" while anything is owed, and with "In an open session — close it first" while the player is in an open session. Both come from `fetchPlayerDeleteBlockers`.
 - [ ] AC20: Otherwise it opens `DeletePlayerDialog`. Confirming soft-deletes the player and returns to the Players tab.
 
 **Toast**
-- [ ] AC21: `useAppToast().show(message)` shows an `ink` pill with a check icon at the bottom, above the tab bar or action bar. It is a polite live region and disappears after 1.5s. Session detail's "Session deleted" uses it.
+- [x] AC21: `useAppToast().show(message)` shows an `ink` pill with a check icon at the bottom, above the tab bar or action bar. It is a polite live region and disappears after 1.5s. Session detail's "Session deleted" uses it.
 
 **Checks**
-- [ ] AC22: The PR changes nothing under `services/` and doesn't touch the schema (`git diff --stat` against the base shows none).
+- [x] AC22: The PR changes nothing under `services/` and doesn't touch the schema (`git diff --stat` against the base shows none).
 - [ ] AC23: `npm run lint` and `npx tsc --noEmit` pass, and the change is checked on the iOS Simulator via Expo MCP with the `default` seed (`npm run db:fresh`). Never checked on web.
 
 ## Required Changes
@@ -292,4 +292,38 @@ ledger.sessions = [] → "No sessions yet", ALL SETTLED RM 0 (no caption), Empty
 | Someone mistakes the Waive UI for a working feature | Medium | Low | The button is disabled and labelled "coming soon" |
 
 ---
-*Status: READY — ticket [4]. Requires PRD [5] (PR #22) merged first.*
+## Implementation Status
+Verified on the iOS Simulator (iPhone 17 Pro, iOS 26.0, Expo Go) after `npm run db:fresh` (`[dev-db] fresh default done`), plus the `closed-today` and `empty-session` scenarios. Never checked on web. The Expo MCP local tools weren't available in this session, and `osascript` has no accessibility access, so no taps could be driven. Screens were opened with `simctl openurl` deep links and captured with `simctl io screenshot`. Interactive states (selection mode, picks, dialogs, the options sheet) and the confirm step were driven by a temporary `?debug=` param that set the screen's own state and called the dialog's own confirm handler. It was never committed. Writes were checked with read-only `sqlite3` queries of the on-device database.
+
+| AC | Status | Evidence / notes |
+|---|---|---|
+| AC1 | ⚠️ unverified | Avatar (56px), name and "2 sessions · 4 matches" (Ben), "No sessions yet" (Gina), no Delete button. The ⋯ is rendered in `headerRight`, but in every screenshot Expo Go's floating tools button sits on top of it |
+| AC2 | ✅ done | Ben: OWES RM 16.50, "1 session" badge, bar and legend Paid RM 0 / Owed RM 16.50, "Tonight's open session adds about RM 5.84 when it closes." After paying RM 12.50 the legend read Paid RM 12.50 / Owed RM 4 (`amount_charged` sums) |
+| AC3 | ✅ done | Screenshot: Pay all is the only `sage` fill. Pay individually and Waive are outlined, and Pay session is a sage outline |
+| AC4 | ✅ done | Ben: Weekly Smash (Owes RM 16.50) → Friday Doubles (≈ RM 5.84). Alice: open → Settled. `closed-today` Chloe: 7 Oct then 30 Sep, both owing (newest first) |
+| AC5 | ✅ done | Collapsed owing card shows "Pay session · RM 16.50" |
+| AC6 | ✅ done | Expanded: "Court share RM 60 ÷ 6 players RM 10", MATCH 1 "Alice & Chloe vs Ben & Daniel", "Yonex AS-30 RM 10 ÷ 4 players RM 2.50". Alice's settled session: every row "Paid 7 Oct 2026" with the charged amount struck through |
+| AC7 | ⚠️ unverified | Reused: Chloe's open session lists Yonex AS-30 once, under Match 1, "RM 10 ÷ 6 players · reused". "Free shuttles only": no seed scenario has a match with only free shuttles, so it wasn't seen (it renders from `match.freeOnly`) |
+| AC8 | ✅ done | Open card: ≈ RM 5.84 badge, court ≈ RM 4.17, shuttle ≈ RM 1.67, "Final shares are set…" caption, no Pay button. Session detail for the same session shows ≈ RM 5.84 per player |
+| AC9 | ⚠️ unverified | The never-played state (Gina) shows "No sessions yet", ALL SETTLED RM 0 with no caption, and the EmptyState. At `accessibility-large` (`simctl ui content_size`) the balance actions stack and nothing truncates. The skeleton loads too fast to capture, so it was never seen on screen |
+| AC10 | ✅ done | Every amount in the screen and `components/player/*` goes through `formatRM`. There's no `$` amount or `toFixed` (grep) |
+| AC11 | ✅ done | Pay all (`closed-today`, Chloe): the dialog listed "Friday Doubles · 7 Oct RM 9.17", "Weekly Smash · 30 Sep RM 17.50", Total RM 26.67 and "Nothing left to pay". Confirming logged `paySessionInFull 2` then `paySessionInFull 1`, and left 0 unpaid rows. The screen then showed ALL SETTLED |
+| AC12 | ⚠️ unverified | Only owing sessions show, expanded, with checkboxes on the court share and shuttles. The tri-state box was seen empty, mixed (dash) and checked. Paid rows show a disabled box. The Select all ↔ Clear all label switches, but tapping it wasn't driven |
+| AC13 | ✅ done | Nothing picked: "Tick charges to pay" and a disabled grey "Pay". One pick: "1 charge picked RM 2.50" and "Pay RM 2.50" |
+| AC14 | ✅ done | Confirm logged one `payChargesByKeys ["court:1","shuttle:1"]`. SQL shows both rows with `amount_paid` 0, a `date_paid` and an unchanged `amount_charged`. With a malformed key added, the dialog stayed open with "Couldn't save the payment. Try again.", still "2 of 4 picked", and 0 rows changed |
+| AC15 | ✅ done | After the confirm, burst screenshots show view mode with refetched values (Owes RM 4, Paid RM 12.50) and the "Paid RM 12.50" toast |
+| AC16 | ⚠️ unverified | Cancel calls `exitSelection`, and `usePreventRemove` turns back into the same thing. Neither could be tapped or swiped |
+| AC17 | ✅ done | Waive mode: "Waive charges", "Tick what Chloe no longer has to pay.", clay boxes and tints, and a disabled "Waive · coming soon" even with 4 charges picked. The button can't call anything |
+| AC18 | ⚠️ unverified | The sheet shows "Player options" with only Delete player and Cancel. Opening it from the ⋯ tap wasn't driven |
+| AC19 | ✅ done | Ben: disabled, "Settle RM 16.50 first". Alice (owes 0, in an open session): disabled, "In an open session — close it first". Gina: enabled, "Moves Gina to Recently deleted" |
+| AC20 | ⚠️ unverified | Confirming (`handleDeleteConfirm`) soft-deleted Chloe (`status = 'deleted'`) and returned to the Players tab. Opening `DeletePlayerDialog` from the row and tapping Delete wasn't driven |
+| AC21 | ✅ done | `useAppToast` (`duration: 1500`, bottom placement): an `ink` pill with a check, `accessibilityLiveRegion="polite"` and a queued announcement. Seen on player detail ("Paid RM 12.50") and session detail ("Session deleted", above the tab bar), and gone about 2 s later in both bursts |
+| AC22 | ✅ done | `git diff main --stat -- services/` is empty |
+| AC23 | ⚠️ unverified | `npx tsc --noEmit` passes. `npm run lint` shows 0 errors and 24 warnings, all in untouched files (one fewer than main). Checked on the iOS Simulator with `db:fresh`, but through `simctl` and not the Expo MCP local tools, which weren't available |
+
+### Needs attention
+- Re-run on the simulator with the Expo MCP local tools and drive real taps: ⋯ → Delete player → Delete, Cancel and the back swipe in selection mode, Select all / Clear all, and Mark paid. Then tick AC1, AC12, AC16, AC18, AC20 and AC23.
+- AC7: check "Free shuttles only" with a match that used only free shuttles (record one in an open or closed session, or add a seed scenario).
+- AC9: look at the skeleton, for example on a slow first load.
+
+*Status: PARTIAL — PR #TBD*
