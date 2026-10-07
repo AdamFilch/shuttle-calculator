@@ -23,7 +23,7 @@ export function Avatar({
 
     return (
         <View className={`h-9 w-9 items-center justify-center rounded-full ${FILL_CLASS[fill]}`}>
-            <Text className={`text-badge font-medium ${fill === "sage" ? "text-on-sage" : "text-surface"}`}>
+            <Text className={`text-badge font-medium ${fill === "sage" ? "text-on-sage" : "text-surface"}`} maxFontSizeMultiplier={1.2}>
                 {getInitials(name)}
             </Text>
         </View>

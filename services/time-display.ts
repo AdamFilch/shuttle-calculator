@@ -31,3 +31,21 @@ export function convertTimeToSQLTimeStamp(date: string | Date) {
     }
     return format(ts, "yyyy-MM-dd hh:mm:ss")
 }
+
+
+export function parseSQLTimestamp(timestamp: string): Date {
+    return new Date(`${timestamp.replace(' ', 'T')}Z`)
+}
+
+export function DisplayTimeOfDay(date: Date) {
+    return format(date, "h:mm aaa")
+}
+
+export function DisplayStartTime(startTime: string | null | undefined) {
+    if (!startTime) return
+    const [hours, minutes] = startTime.split(':').map(Number)
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return
+    const ts = new Date()
+    ts.setHours(hours, minutes, 0, 0)
+    return DisplayTimeOfDay(ts)
+}

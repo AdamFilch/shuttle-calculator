@@ -88,7 +88,7 @@ A session with 4 players. The court costs RM20. Players 1 and 2 play a match wit
 Each area has a full entry in `features.md`.
 
 - **Players**: add players (no duplicate names), search them, see each player's outstanding balance broken down by session, match, and shuttle, take payments, delete players who owe nothing, and restore deleted players.
-- **Sessions and courts**: create sessions (optionally booking courts in the same step), book more courts while open, see matches, shuttles used, and courts booked, then close the session to settle it.
+- **Sessions and courts**: create sessions (optionally booking courts in the same step), book more courts while open, see a live estimate of the session's cost and each player's share, then close the session to settle it (confirming the exact shares). A closed session shows what is still owed out of the total charged and who has settled. An open session with no matches can be deleted.
 - **Matches and shuttle usage**: place players on a court diagram, add New / Reused / Free shuttles, and view each match's players and shuttles.
 - **Shuttle inventory**: add shuttle types, see remaining stock and price per shuttle (low stock highlighted), edit name and price, see purchase history, and "buy again" to restock.
 - **Payments**: pay a session in full, court only, or selected shuttles.
@@ -108,7 +108,7 @@ The core loop is built and works on iOS/Android: players, sessions, court bookin
 Most important known gaps (full list per feature in `features.md`):
 
 - Amounts are shown with `$` instead of **RM** (except on the Players and Sessions tabs).
-- Sessions, matches, and court bookings cannot be edited or deleted; payments and session closes cannot be undone.
+- Sessions, matches, and court bookings cannot be edited or deleted (except deleting an open session with no matches); payments and session closes cannot be undone.
 - When a charge is paid, the stored amount is set to 0, so how much a player paid is not kept. This limits payment history and future insights.
 - The player screen only shows what is still owed; there is no play history (matches played, shuttles used, sessions attended).
 - Players cannot pay before the session is closed.

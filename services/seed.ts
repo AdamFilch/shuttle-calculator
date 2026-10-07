@@ -2,7 +2,7 @@ import { subDays } from "date-fns";
 import { bookCourt } from "./court";
 import { createNewMatch } from "./match";
 import { createPlayer, deletePlayer } from "./player";
-import { closeSession, createNewSession } from "./session";
+import { closeSession, createNewSession, fetchAllSessions } from "./session";
 import { addShuttlePurchase, createShuttle } from "./shuttle";
 import { paySessionInFull } from "./shuttle-payments";
 import { fetchShuttleInstancesBySessionId } from "./shuttle_instances";
@@ -66,6 +66,26 @@ async function seedDefault() {
             { mode: 'free' }
         ]
     })
+}
+
+async function seedClosedToday() {
+    await seedDefault()
+    const sessions: { session_id: number }[] = await fetchAllSessions()
+    const today = Math.max(...sessions.map((s) => s.session_id))
+    await bookCourt({ sessionId: today, label: 'Court 2', price: 20, quantity: 1 })
+    await closeSession(String(today))
+}
+
+async function seedEmptySession() {
+    await seedDefault()
+    const empty = await createNewSession({
+        name: 'Saturday Social',
+        date: new Date().toISOString(),
+        startTime: '10:00',
+        location: 'Community Centre'
+    })
+    await bookCourt({ sessionId: empty, label: 'Court 4', price: 25, quantity: 2, durationMinutes: 120 })
+    await bookCourt({ sessionId: empty, label: 'Court 5', price: 20, quantity: 1 })
 }
 
 async function seedShuttlePicker() {
@@ -138,6 +158,8 @@ export const scenarios: Record<string, () => Promise<void>> = {
     empty: async () => { },
     'shuttle-picker': seedShuttlePicker,
     'no-shuttles': seedNoShuttles,
+    'closed-today': seedClosedToday,
+    'empty-session': seedEmptySession,
 }
 
 export async function seedDatabase(scenario = 'default') {
