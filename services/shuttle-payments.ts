@@ -98,3 +98,43 @@ export async function payShuttleByPlayers({
         }
     }
 }
+export type ChargeKey = `court:${number}` | `shuttle:${number}`
+
+export async function payChargesByKeys({
+    playerId,
+    keys
+}: {
+    playerId: number | string,
+    keys: string[]
+}) {
+    const parsed = keys.map((key) => {
+        const match = /^(court|shuttle):(\d+)$/.exec(key)
+        if (!match) throw new Error(`Invalid charge key: ${key}`)
+        return { kind: match[1] as 'court' | 'shuttle', id: Number(match[2]) }
+    })
+
+    const paidAt = convertTimeToSQLTimeStamp(new Date())
+
+    await db.withTransactionAsync(async () => {
+        for (const charge of parsed) {
+            if (charge.kind === 'shuttle') {
+                await db.runAsync(`
+                    UPDATE shuttle_payments
+                    SET amount_paid = 0, date_paid = ?
+                    WHERE shuttle_instance_id = ? AND player_id = ?
+                    AND date_paid IS NULL
+                    `, [paidAt, charge.id, playerId])
+            } else {
+                await db.runAsync(`
+                    UPDATE court_payments
+                    SET amount_paid = 0, date_paid = ?
+                    WHERE player_id = ?
+                    AND date_paid IS NULL
+                    AND court_booking_id IN (
+                        SELECT court_booking_id FROM court_bookings WHERE session_id = ?
+                    )
+                    `, [paidAt, playerId, charge.id])
+            }
+        }
+    })
+}
