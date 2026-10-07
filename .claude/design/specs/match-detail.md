@@ -1,7 +1,7 @@
 # Design spec: Match detail
 
 **Screen**: `app/session/[sessionId]/[matchId]/index.tsx` (the page you land on after tapping a match card on Session detail)
-**Status**: Designed 2026-10-07, not yet implemented. No PRD yet.
+**Status**: Designed 2026-10-07, not yet implemented. PRDs: [6] Backend (`.claude/prds/6-backend-match-detail-redesign.prd.md`) and [6] Frontend (`.claude/prds/6-frontend-match-detail-redesign.prd.md`).
 **Mockup**: https://claude.ai/artifact/RiroM71BXm2VpHVb9QMnGv (result set, no result yet, singles, two against one, scores level)
 **Source of truth**: the "Shuttle Calculator" design system (see `.claude/context/design.md`). Every colour, type style, radius and spacing value below is a token from it.
 **Method**: the ui-ux-pro-max skill supplied the UX rules: status in words as well as colour, 44pt touch targets, visible labels on inputs, a numeric keyboard for numbers, tabular figures, read-only state that looks different from disabled, and no layout shift on press. Its generated palette and fonts were not used because the project design system overrides them.

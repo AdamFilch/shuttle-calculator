@@ -6,13 +6,13 @@ import { ClosedEstimateCard, OpenEstimateCard } from "@/components/session/Estim
 import { MatchCard } from "@/components/session/MatchCard";
 import { ShuttleGlyph } from "@/components/session/match/ShuttleGlyph";
 import { SessionOptionsSheet } from "@/components/session/SessionOptionsSheet";
+import { useAppToast } from "@/components/shared/AppToast";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PlayerRow } from "@/components/shared/PlayerRow";
 import { StatTile } from "@/components/shared/StatTile";
 import { isOwed, StatusBadge } from "@/components/shared/StatusBadge";
 import { designTokens } from "@/components/ui/gluestack-ui-provider/config";
 import { AddIcon, Icon, LockIcon, ThreeDotsIcon } from "@/components/ui/icon";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { formatRM } from "@/services/money-display";
 import { fetchAllPlayerPaymentsBySession, PlayersShuttlePayments } from "@/services/player";
 import {
@@ -96,7 +96,7 @@ function OptionsButton({ onPress }: { onPress: () => void }) {
 
 export default function SelectedSessionPage() {
   const router = useRouter();
-  const toast = useToast();
+  const toast = useAppToast();
   const { sessionId } = useLocalSearchParams();
   const id = sessionId.toString();
   const [data, setData] = useState<SessionData | null>(null);
@@ -206,14 +206,7 @@ export default function SelectedSessionPage() {
   const handleDeleteSession = async () => {
     await deleteEmptySession(id);
     setDeleteConfirmOpen(false);
-    toast.show({
-      placement: "bottom",
-      render: ({ id: toastId }) => (
-        <Toast nativeID={`toast-${toastId}`} className="mb-20 rounded-lg bg-ink px-4 py-3">
-          <ToastTitle className="text-body font-medium text-surface">Session deleted</ToastTitle>
-        </Toast>
-      ),
-    });
+    toast.show("Session deleted");
     router.dismissTo("/session");
   };
 

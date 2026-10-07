@@ -34,6 +34,13 @@ function Side({ players }: { players: MatchPlayer[] }) {
     )
 }
 
+export function splitTeams<T extends { position: number }>(players: T[]): [T[], T[]] {
+    return [
+        players.filter((player) => player.position === 0 || player.position === 2),
+        players.filter((player) => player.position === 1 || player.position === 3),
+    ]
+}
+
 export function shuttleNote(match: SessionMatch): string | null {
     const parts = match.reused_from.map(
         (reused) => `${reused.count} reused from match ${reused.match_number + 1}`,
@@ -51,8 +58,7 @@ export function MatchCard({
     startTime?: string,
     onPress: () => void
 }) {
-    const top = match.players.filter((player) => player.position === 0 || player.position === 2)
-    const bottom = match.players.filter((player) => player.position === 1 || player.position === 3)
+    const [top, bottom] = splitTeams(match.players)
     const title = `Match ${match.match_number + 1}`
     const shuttleLabel = match.all_free
         ? "Free"

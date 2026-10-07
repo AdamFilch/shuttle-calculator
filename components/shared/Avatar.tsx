@@ -12,18 +12,26 @@ export function getInitials(name: string): string {
     return Array.from(name.trim()).slice(0, 2).join("").toUpperCase()
 }
 
+const SIZE_CLASS = {
+    md: { container: "h-9 w-9", text: "text-badge" },
+    lg: { container: "h-14 w-14", text: "text-[18px] leading-[22px]" },
+}
+
 export function Avatar({
     name,
     colour,
+    size = "md",
 }: {
     name: string,
-    colour: AvatarColour | null
+    colour: AvatarColour | null,
+    size?: "md" | "lg"
 }) {
     const fill = colour ?? "muted"
+    const sizing = SIZE_CLASS[size]
 
     return (
-        <View className={`h-9 w-9 items-center justify-center rounded-full ${FILL_CLASS[fill]}`}>
-            <Text className={`text-badge font-medium ${fill === "sage" ? "text-on-sage" : "text-surface"}`} maxFontSizeMultiplier={1.2}>
+        <View className={`${sizing.container} items-center justify-center rounded-full ${FILL_CLASS[fill]}`}>
+            <Text className={`${sizing.text} font-medium ${fill === "sage" ? "text-on-sage" : "text-surface"}`} maxFontSizeMultiplier={1.2}>
                 {getInitials(name)}
             </Text>
         </View>

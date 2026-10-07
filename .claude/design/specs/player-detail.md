@@ -1,7 +1,7 @@
 # Design spec: Player detail
 
 **Screen**: `app/player/[playerId]/index.tsx` (the page you land on after tapping a player)
-**Status**: Designed 2026-10-07, not yet implemented. PRDs: [4] `.claude/prds/4-player-detail-redesign.prd.md` (visual, sample paid amounts), then [5] `.claude/prds/5-player-payments-backend.prd.md` (backend).
+**Status**: Designed 2026-10-07. Implemented in PRD [4] `.claude/prds/partial/4-player-detail-redesign.prd.md` (partial: tap-driven checks pending), on the backend from PRD [5] `.claude/prds/partial/5-player-payments-backend.prd.md`. Departures: Delete reads "Settle RM X first" (not "Settle or waive") and is also blocked while the player is in an open session; Waive's button is disabled ("Waive · coming soon") until a waive backend exists; the toast hides after 1.5s, not 3s.
 **Mockup**: https://claude.ai/artifact/4q4VyNMLykPH61DpY7SdkM (owing, session opened, Pay individually, Waive, confirmation, options sheet, all settled)
 **Source of truth**: the "Shuttle Calculator" design system (see `.claude/context/design.md`). Every colour, type style, radius and spacing value below is a token from it.
 **Method**: the ui-ux-pro-max skill supplied the UX rules: one primary CTA per screen, progressive disclosure (collapsed sessions), a bulk-select mode with a fixed action bar, 44pt touch targets, checkboxes that announce checked/mixed state, status in words as well as colour, confirmation before money-changing actions, and secondary/destructive actions in an overflow. Its generated palette and fonts were not used because the project design system overrides them.

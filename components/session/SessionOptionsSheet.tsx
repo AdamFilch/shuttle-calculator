@@ -6,9 +6,9 @@ import { ReactNode } from "react"
 import { Pressable, Text, View } from "react-native"
 import Svg, { Path, Rect } from "react-native-svg"
 
-function CourtGlyph() {
+export function CourtGlyph({ size = 20 }: { size?: number }) {
     return (
-        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={designTokens.primary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={designTokens.primary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
             <Rect x={4} y={3} width={16} height={18} rx={1.5} />
             <Path d="M4 12h16M12 3v6M12 15v6M4 8h16M4 16h16" />
         </Svg>

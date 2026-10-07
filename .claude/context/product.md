@@ -87,11 +87,11 @@ A session with 4 players. The court costs RM20. Players 1 and 2 play a match wit
 
 Each area has a full entry in `features.md`.
 
-- **Players**: add players (no duplicate names), search them, see each player's outstanding balance broken down by session, match, and shuttle, take payments, delete players who owe nothing, and restore deleted players.
+- **Players**: add players (no duplicate names), search them, open a player to see what they owe and every session they joined (settled and open ones too), broken down by court share, match and shuttle, take payments (pay all, per session, or picked court and shuttle charges), delete players who owe nothing and aren't in an open session, and restore deleted players.
 - **Sessions and courts**: create sessions (optionally booking courts in the same step), book more courts while open, see a live estimate of the session's cost and each player's share, then close the session to settle it (confirming the exact shares). A closed session shows what is still owed out of the total charged and who has settled. An open session with no matches can be deleted.
 - **Matches and shuttle usage**: place players on a court diagram, add New / Reused / Free shuttles, and view each match's players and shuttles.
 - **Shuttle inventory**: add shuttle types, see remaining stock and price per shuttle (low stock highlighted), edit name and price, see purchase history, and "buy again" to restock.
-- **Payments**: pay a session in full, court only, or selected shuttles.
+- **Payments**: pay everything a player owes, a session in full, or picked court shares and shuttle charges, each behind a confirmation.
 - **Home dashboard**: total outstanding across all players, shuttles used and remaining, recent sessions, and a shuttle-usage-over-time chart.
 
 ## Priorities (in order)
@@ -109,7 +109,6 @@ Most important known gaps (full list per feature in `features.md`):
 
 - Amounts are shown with `$` instead of **RM** (except on the Players and Sessions tabs).
 - Sessions, matches, and court bookings cannot be edited or deleted (except deleting an open session with no matches); payments and session closes cannot be undone.
-- The player screen only shows what is still owed; there is no play history (matches played, shuttles used, sessions attended).
 - Players cannot pay before the session is closed.
 - Rounding each share to 2 decimals can make a split a cent off (RM10 ÷ 3 = RM3.33 × 3 = RM9.99).
 - The Insights tab is an empty placeholder.
