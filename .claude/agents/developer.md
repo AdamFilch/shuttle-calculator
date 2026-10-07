@@ -106,6 +106,7 @@ Do this on the same branch, so the catalog only describes code that has merged. 
   - files changed, with a one-line purpose each
   - the features catalog entries added or updated, and the gaps closed
   - follow-ups for the user
+- Never commit screenshots, screen recordings, or other verification images, and never embed them in the PR body. Keep them outside the repo, and record what they showed as text in the acceptance-criteria evidence.
 - If `gh` is not installed or not authenticated, push the branch, give the user the compare URL, and say plainly that the PR was not opened.
 - Never merge the PR, force-push, or delete branches.
 
