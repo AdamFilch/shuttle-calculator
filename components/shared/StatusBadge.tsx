@@ -4,14 +4,16 @@ import { Text, View } from "react-native"
 export type StatusBadgeProps =
     | { variant: "settled" }
     | { variant: "open" }
-    | { variant: "owes", amount: number, format?: "owes" | "due" }
+    | { variant: "owes", amount: number, format?: "owes" | "due" | "amount" }
     | { variant: "estimate", amount: number }
+    | { variant: "waived" }
 
 const STYLES = {
     settled: { container: "bg-settled-tint", text: "text-settled" },
     open: { container: "bg-primary-tint", text: "text-primary" },
     owes: { container: "bg-clay-tint", text: "text-clay" },
     estimate: { container: "bg-clay-tint", text: "text-clay-strong" },
+    waived: { container: "bg-neutral-tint", text: "text-muted" },
 }
 
 function labelFor(props: StatusBadgeProps): string {
@@ -21,9 +23,13 @@ function labelFor(props: StatusBadgeProps): string {
         case "open":
             return "Open session"
         case "owes":
-            return props.format === "due" ? `${formatRM(props.amount)} due` : `Owes ${formatRM(props.amount)}`
+            if (props.format === "due") return `${formatRM(props.amount)} due`
+            if (props.format === "amount") return formatRM(props.amount)
+            return `Owes ${formatRM(props.amount)}`
         case "estimate":
             return `≈ ${formatRM(props.amount)}`
+        case "waived":
+            return "Waived"
     }
 }
 
