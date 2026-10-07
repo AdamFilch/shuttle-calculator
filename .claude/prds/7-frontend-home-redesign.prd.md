@@ -1,6 +1,6 @@
 # [7]: Frontend — Home Redesign
 
-**Depends on:** [[7]: Backend — Home Redesign](7-backend-home-redesign.prd.md) merged
+**Depends on:** [[7]: Backend — Home Redesign](completed/7-backend-home-redesign.prd.md) merged
 
 Home (`app/(tabs)/index.tsx`) is rebuilt to the approved [Home mockup](https://claude.ai/artifact/6VdzQQDJddjiyJTCcahsb3) and [spec](../design/specs/home.md), direction A. When the manager opens the app, Home answers "what do I do next". At the top, a session card offers **Start session** when nothing is open, or **Open session / New match** with a "≈ RM X so far" estimate while a session is running. Below it come:
 - a low-stock alert slot (built, never shown yet);
@@ -10,7 +10,7 @@ Home (`app/(tabs)/index.tsx`) is rebuilt to the approved [Home mockup](https://c
 
 Sections with nothing to show hide themselves. With no sessions at all, Home becomes a three-step **Welcome** checklist.
 
-Starting a session from Home saves it and goes straight to the new session's detail page. A session left open from an earlier day gets a "Still open" caption on Home and a "Still open since {d Mon}" badge on the Sessions tab, because nobody is charged until it is closed. This half is screen work only. It calls the readers in the backend's [Contract for frontend](7-backend-home-redesign.prd.md#contract-for-frontend) and changes nothing under `services/`.
+Starting a session from Home saves it and goes straight to the new session's detail page. A session left open from an earlier day gets a "Still open" caption on Home and a "Still open since {d Mon}" badge on the Sessions tab, because nobody is charged until it is closed. This half is screen work only. It calls the readers in the backend's [Contract for frontend](completed/7-backend-home-redesign.prd.md#contract-for-frontend) and changes nothing under `services/`.
 
 ## Summary
 Removed from Home:

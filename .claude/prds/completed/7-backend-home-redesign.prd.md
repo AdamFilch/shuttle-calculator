@@ -211,10 +211,10 @@ Deleted players can't owe money (`deletePlayer` is blocked while they owe), and 
 ---
 
 ## Acceptance Criteria
-- [ ] AC1: `fetchActivitySummary` is correct. On the `default` seed, called for today and the 29 days before, its six fields match hand-counted SQL run from the dev tools / Metro log. `charged` and `still_due` count closed sessions only. A session dated outside the window is excluded.
-- [ ] AC2: `fetchTopOwers` is correct. It returns at most `limit` active owers, ordered oldest unpaid first, then largest owed. `sessions_owed` counts distinct sessions. Owed amounts below RM 0.01 are ignored. `total_owed` and `owing_count` cover all owers, not just the top `limit`. On the `default` seed, the fully-paid player is absent.
-- [ ] AC3: `npm run db:fresh -- stale-open` loads data with a session left open from 3 days ago (plus the default data), and Metro logs `[dev-db] fresh stale-open done`.
-- [ ] AC4: no table or column changes, and no file under `app/` or `components/` is touched. `npm run lint` and `npx tsc --noEmit` pass. Checked on the iOS Simulator via Expo MCP (logs), never on web.
+- [x] AC1: `fetchActivitySummary` is correct. On the `default` seed, called for today and the 29 days before, its six fields match hand-counted SQL run from the dev tools / Metro log. `charged` and `still_due` count closed sessions only. A session dated outside the window is excluded.
+- [x] AC2: `fetchTopOwers` is correct. It returns at most `limit` active owers, ordered oldest unpaid first, then largest owed. `sessions_owed` counts distinct sessions. Owed amounts below RM 0.01 are ignored. `total_owed` and `owing_count` cover all owers, not just the top `limit`. On the `default` seed, the fully-paid player is absent.
+- [x] AC3: `npm run db:fresh -- stale-open` loads data with a session left open from 3 days ago (plus the default data), and Metro logs `[dev-db] fresh stale-open done`.
+- [x] AC4: no table or column changes, and no file under `app/` or `components/` is touched. `npm run lint` and `npx tsc --noEmit` pass. Checked on the iOS Simulator via Expo MCP (logs), never on web.
 
 ## Required Changes
 - **services/session.ts**: add `ActivitySummary` and `fetchActivitySummary` (see [Readers §1](#1-fetchactivitysummary-new)).
@@ -236,4 +236,4 @@ Deleted players can't owe money (`deletePlayer` is blocked while they owe), and 
 | Rounding drift between `owed` and the player detail balance | Low | Totals differ by a cent | Use `roundToCents` on sums, as existing readers do |
 
 ---
-*Status: READY — ticket [7] (backend)*
+*Status: COMPLETED — PR #TBD*
