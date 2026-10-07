@@ -1,8 +1,8 @@
 # [6]: Frontend — Match Detail Redesign
 
-**Depends on:** [[6]: Backend — Match Detail Redesign](6-backend-match-detail-redesign.prd.md) merged
+**Depends on:** [[6]: Backend — Match Detail Redesign](../completed/6-backend-match-detail-redesign.prd.md) merged
 
-Match detail is the screen the manager lands on after tapping a match card on Session detail. This ticket rebuilds `app/session/[sessionId]/[matchId]/index.tsx` to the approved [Match Detail mockup](https://claude.ai/artifact/RiroM71BXm2VpHVb9QMnGv) and [spec](../design/specs/match-detail.md). It answers four questions in order: who played where (the Create match court, read-only), who won (in words and on the court), the score (optional), and which shuttles were used (per type and origin, with the price per shuttle).
+Match detail is the screen the manager lands on after tapping a match card on Session detail. This ticket rebuilds `app/session/[sessionId]/[matchId]/index.tsx` to the approved [Match Detail mockup](https://claude.ai/artifact/RiroM71BXm2VpHVb9QMnGv) and [spec](../../design/specs/match-detail.md). It answers four questions in order: who played where (the Create match court, read-only), who won (in words and on the court), the score (optional), and which shuttles were used (per type and origin, with the price per shuttle).
 
 The screen loads everything from one reader, `fetchMatchById`, as defined in the backend's Contract for frontend. The winner and score live only in screen state: picking a side or typing a score updates the result banner and the court right away, and leaving the screen resets them, as the helper copy says ("Results aren't saved yet"). There's no bottom bar and no primary action. A missing match shows "Match not found". The screen is identical for open and closed sessions.
 
@@ -78,7 +78,7 @@ Non-obvious design decisions:
 4. **Scores and toggles can't contradict each other.** Differing scores pick the winner. Tapping the other side while the scores disagree clears both scores.
 
 ## Behaviour
-Token-level styling (colours, type styles, radii, spacing) is in the [spec](../design/specs/match-detail.md). Use it exactly. One `ScrollView` on `surface`, `space-4` gutter, `space-6` between sections, no bottom bar.
+Token-level styling (colours, type styles, radii, spacing) is in the [spec](../../design/specs/match-detail.md). Use it exactly. One `ScrollView` on `surface`, `space-4` gutter, `space-6` between sections, no bottom bar.
 
 ### 1. Header
 - `Stack.Screen` with the same header options as Session detail (D20): chevron-only back (D3), `surface` background, `primary` tint.
@@ -206,10 +206,10 @@ players at positions 0, 2 (top) and 1 (bottom)
 ---
 
 ## Acceptance Criteria
-- [ ] AC1 (Header + states): the title is "Match {match_number + 1}". The meta reads "D Mon YYYY · h:mm am · Doubles/Singles/2 vs 1", with the time in local time. The back button is chevron only. Loading shows skeletons. An unknown match id shows "Match not found".
+- [x] AC1 (Header + states): the title is "Match {match_number + 1}". The meta reads "D Mon YYYY · h:mm am · Doubles/Singles/2 vs 1", with the time in local time. The back button is chevron only. Loading shows skeletons. An unknown match id shows "Match not found".
 - [ ] AC2 (Result card): the banner shows "{names} won" + score or "No score entered", "No result yet", or "Scores are level". Side toggles show "Won" / "Tap if they won" and set `accessibilityState.selected`. Score inputs accept digits only, at most 2. Every row of the Result rules table holds. Clear shows only when something is set and clears everything. Leaving and reopening the screen resets the result. The helper copy reads "The higher score picks the winner. Results aren't saved yet." The banner is a polite live region, and the inputs have visible labels.
-- [ ] AC3 (Read-only court): slots can't be tapped and don't show "Add player". A lone player on a side fills the whole half. The winning half gets a white ring, a stronger fill and the ink Winner pill, and the losing half fades to 45%. Changes animate over 200ms, and are instant with Reduce Motion on. The court is a single accessibility element. Create match looks and behaves exactly as before.
-- [ ] AC4 (Shuttles used + checks): the head reads "{n} shuttle(s)", correctly pluralised. Rows read "×2 · RM 10 each" / "×1 · no charge" with `New` / `Reused from match N` / `Free` badges, in the reader's order, and cents are dropped when zero. `PlayerButton` is gone. `npm run lint` and `npx tsc --noEmit` pass. Checked on the iOS Simulator via Expo MCP after `npm run db:fresh` on a doubles, a singles and a 2 vs 1 match, with screenshots of each in the PR. Never checked on web. No file under `services/` changes.
+- [x] AC3 (Read-only court): slots can't be tapped and don't show "Add player". A lone player on a side fills the whole half. The winning half gets a white ring, a stronger fill and the ink Winner pill, and the losing half fades to 45%. Changes animate over 200ms, and are instant with Reduce Motion on. The court is a single accessibility element. Create match looks and behaves exactly as before.
+- [x] AC4 (Shuttles used + checks): the head reads "{n} shuttle(s)", correctly pluralised. Rows read "×2 · RM 10 each" / "×1 · no charge" with `New` / `Reused from match N` / `Free` badges, in the reader's order, and cents are dropped when zero. `PlayerButton` is gone. `npm run lint` and `npx tsc --noEmit` pass. Checked on the iOS Simulator via Expo MCP after `npm run db:fresh` on a doubles, a singles and a 2 vs 1 match, with screenshots of each in the PR. Never checked on web. No file under `services/` changes.
 
 ## Required Changes
 - **Court**: add the read-only mode, `winnerSide`, `solo` and the animation to `components/session/match/Court.tsx`, without changing Create match (see [Behaviour §3](#3-court-read-only)).
@@ -232,4 +232,16 @@ players at positions 0, 2 (top) and 1 (bottom)
 | Reduce Motion not respected | Low | Medium | `useReducedMotion` from reanimated; toggle it in the simulator's accessibility settings |
 
 ---
-*Status: READY — ticket [6] (frontend)*
+*Status: PARTIAL — PR #25*
+
+## Implementation Status
+| AC | Status | Evidence / notes |
+|---|---|---|
+| AC1 | ✅ done | Simulator: "Match 1 / 8 Oct 2026 · 5:43 am · Doubles", "Match 3 … Singles", "Match 4 … 2 vs 1" (seed time 05:43 local); chevron-only back when pushed; skeleton blocks captured with the fetch held (temporary, uncommitted); `session/2/999` shows "Match not found / It may have been deleted." |
+| AC2 | ⚠️ unverified (in part) | Verified on the simulator: banner in all three states ("Alice won · 21–17", "Elena won · No score entered", "No result yet", "Scores are level"); toggles read "Won" / "Tap if they won" with XCUITest `is_selected` true/false; tapping the selected toggle with deciding scores does nothing, tapping the other side clears both scores, tapping the selected side with no scores clears the winner; Clear hides when nothing is set and clears everything; leaving to Session detail and reopening resets (court label back to "Court. Top: Alice. Bottom: Elena."); helper copy and visible input labels shown. Scores were pre-filled through a temporary, uncommitted route param. **Not verified**: typing into the score inputs (digits-only stripping, 2-digit limit) and the polite live-region announcement. |
+| AC3 | ✅ done | Court is one XCUITest element labelled "Court. Top: Alice and Ben, winners. Bottom: Chloe and Elena." (no per-slot buttons, no "Add player"); singles and 2 vs 1 show one slot spanning the half; winning half ringed with the Winner pill on its back line, losing half faded; screen recording shows the fade over several frames (6.833s→6.94s+, ease-out), and with Reduce Motion on it changes in a single frame; Create match still shows four "Add player" buttons and opens the player picker. |
+| AC4 | ✅ done | "1 shuttle" / "2 shuttles"; rows "×2 · RM 10 each" + New (closed session match 1), "×1 · RM 10 each" + Reused from match 1 then "Free shuttle ×1 · no charge" + Free; `PlayerButton` removed; `npx tsc --noEmit` exit 0, `npm run lint` 0 errors (23 pre-existing warnings, none in changed files); driven on the iOS Simulator through the Expo MCP local tools (`automation_tap`, `automation_take_screenshot`, `automation_find_view`) after `npm run db:fresh`; screenshots in the PR; never run on web; no `services/` change. |
+
+### Needs attention
+- Type into both score inputs on the simulator (with the software keyboard) and confirm only digits are kept, at most 2, and that a deciding score flips the toggles and the court.
+- Check with VoiceOver that a result change is announced (polite live region).

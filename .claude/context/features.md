@@ -14,7 +14,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | 4 | [Court bookings](#4-court-bookings) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 5 | [Creating a match](#5-creating-a-match) | Built |
 | 6 | [Shuttle usage in a match (New / Reused / Free)](#6-shuttle-usage-in-a-match-new--reused--free) | Built |
-| 7 | [Match detail](#7-match-detail) | Built |
+| 7 | [Match detail](#7-match-detail) | Built: [PRD 6 backend](../prds/completed/6-backend-match-detail-redesign.prd.md), [PRD 6 frontend](../prds/partial/6-frontend-match-detail-redesign.prd.md) (partial: typing into the score inputs not driven on the simulator) |
 | 8 | [Shuttle inventory](#8-shuttle-inventory) | Built (manual verification pending) |
 | 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 10 | [Player balance and payments](#10-player-balance-and-payments) | Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md), [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
@@ -154,17 +154,22 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 ## 7. Match detail
 
 **What it does**
-- Shows the match title and date, players laid out by court position (two rows, split by a net), and "Shuttles used this match" (per type with a count, Free shuttles grouped).
-
-- `fetchMatchById` returns `null` for an unknown match, the players as full `Player` objects plus `position` (sorted by position, deleted players included), and the shuttles grouped by type and origin (`new`, `reused` with the 0-based `from_match_number` of its first use, `free`) with `quantity` and an unrounded `unit_price`, ordered new, reused (oldest source first), free. The screen itself is still the old layout until the frontend half ships.
+- Header: chevron-only back, "Match {n}" (1-based, matching the session list) and "D Mon YYYY · h:mm am · Doubles / Singles / 2 vs 1" (time the match was recorded, in local time).
+- Result card: a banner ("{names} won" with the score or "No score entered", "No result yet", or "Scores are level"), Who won? side toggles ("Won" / "Tap if they won") and optional score inputs (digits only, max 2). Differing scores pick the winner; tapping the other side while scores disagree clears both scores; Clear resets everything. The result lives only in screen state ("Results aren't saved yet") and resets when you leave.
+- Read-only court: the Create match court with nothing to tap. A lone player fills the whole half. The winning half gets a white ring, a stronger fill and an ink "Winner" pill; the losing half fades to 45%. Changes animate over 200ms (instant under Reduce Motion). The court reads as one accessibility element ("Court. Top: … winners. Bottom: …").
+- Shuttles used: "{n} shuttle(s)" and one row per type and origin: "×2 · RM 10 each" or "×1 · no charge", with a New / Reused from match N / Free badge.
+- Loading shows skeletons; an unknown match shows "Match not found". Open and closed sessions look the same.
+- `fetchMatchById` returns `null` for an unknown match, the players as full `Player` objects plus `position` (sorted by position, deleted players included), and the shuttles grouped by type and origin (`new`, `reused` with the 0-based `from_match_number` of its first use, `free`) with `quantity` and an unrounded `unit_price`, ordered new, reused (oldest source first), free.
 - The `default` seed's open session has a doubles, a doubles with a reused and a free shuttle, a singles and a 2 vs 1 match.
 
-**Where**: `app/session/[sessionId]/[matchId]/index.tsx`, `services/match.ts` (`fetchMatchById`). Spec: `.claude/prds/completed/6-backend-match-detail-redesign.prd.md`.
+**Status**: Built: [PRD 6 backend](../prds/completed/6-backend-match-detail-redesign.prd.md), [PRD 6 frontend](../prds/partial/6-frontend-match-detail-redesign.prd.md) (partial: typing into the score inputs not driven on the simulator).
+
+**Where**: `app/session/[sessionId]/[matchId]/index.tsx`, `components/session/match/Court.tsx` (`readOnly`, `winnerSide`), `MatchResultCard.tsx`, `MatchShuttleRow.tsx`, `TrophyGlyph.tsx`, `components/shared/Skeleton.tsx`, `services/match.ts` (`fetchMatchById`). Spec: `.claude/prds/completed/6-backend-match-detail-redesign.prd.md`, `.claude/prds/partial/6-frontend-match-detail-redesign.prd.md`, `.claude/design/specs/match-detail.md`.
 
 **Known gaps**
-- The title shows the raw match number ("Match 0" for the first match) while the session list shows "Match 1": an off-by-one inconsistency.
-- Player and shuttle tiles look tappable but do nothing.
 - No per-match cost shown.
+- The result (winner and score) isn't saved, and `MatchCard` doesn't show it.
+- Score inputs not yet checked by typing on the simulator (digits-only stripping and the 2-digit limit are unverified there).
 
 ## 8. Shuttle inventory
 

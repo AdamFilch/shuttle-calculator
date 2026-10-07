@@ -15,6 +15,7 @@ export function getInitials(name: string): string {
 const SIZE_CLASS = {
     md: { container: "h-9 w-9", text: "text-badge" },
     lg: { container: "h-14 w-14", text: "text-[18px] leading-[22px]" },
+    xl: { container: "h-[60px] w-[60px]", text: "text-[20px] leading-[24px]" },
 }
 
 export function Avatar({
@@ -24,7 +25,7 @@ export function Avatar({
 }: {
     name: string,
     colour: AvatarColour | null,
-    size?: "md" | "lg"
+    size?: keyof typeof SIZE_CLASS
 }) {
     const fill = colour ?? "muted"
     const sizing = SIZE_CLASS[size]

@@ -89,7 +89,7 @@ Each area has a full entry in `features.md`.
 
 - **Players**: add players (no duplicate names), search them, open a player to see what they owe and every session they joined (settled and open ones too), broken down by court share, match and shuttle, take payments (pay all, per session, or picked court and shuttle charges), delete players who owe nothing and aren't in an open session, and restore deleted players.
 - **Sessions and courts**: create sessions (optionally booking courts in the same step), book more courts while open, see a live estimate of the session's cost and each player's share, then close the session to settle it (confirming the exact shares). A closed session shows what is still owed out of the total charged and who has settled. An open session with no matches can be deleted.
-- **Matches and shuttle usage**: place players on a court diagram, add New / Reused / Free shuttles, and view each match's players and shuttles.
+- **Matches and shuttle usage**: place players on a court diagram, add New / Reused / Free shuttles, and view each match on a read-only court with the shuttles it used (type, New / Reused / Free, price per shuttle), marking who won and the score on screen (not saved yet).
 - **Shuttle inventory**: add shuttle types, see remaining stock and price per shuttle (low stock highlighted), edit name and price, see purchase history, and "buy again" to restock.
 - **Payments**: pay everything a player owes, a session in full, or picked court shares and shuttle charges, each behind a confirmation.
 - **Home dashboard**: total outstanding across all players, shuttles used and remaining, recent sessions, and a shuttle-usage-over-time chart.
