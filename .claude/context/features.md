@@ -21,7 +21,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | 11 | [Pay Early](#11-pay-early) | Planned |
 | 12 | [Home dashboard](#12-home-dashboard) | Built |
 | 13 | [Insights](#13-insights) | Planned (future improvement) |
-| 14 | [Player play history](#14-player-play-history) | Planned |
+| 14 | [Player play history](#14-player-play-history) | Planned (data read built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md); screen in PRD 4) |
 | 15 | [Settings](#15-settings) | Built (developer tools only) |
 | 16 | [Currency](#16-currency) | Gap |
 | 17 | [Web](#17-web) | Notice only |
@@ -272,11 +272,19 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 14. Player play history
 
-**Status**: Planned.
+**Status**: Planned (data read built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md); screen in PRD 4).
 
 **What it would do**: on the player detail screen, show the sessions a player attended, the matches they played (with partners and opponents), the shuttles they used, and what they paid, including sessions that are fully settled. Today the screen shows only what's still owed.
 
-**Where**: `app/player/[playerId]/index.tsx`, `services/player.ts`.
+**Where**: `app/player/[playerId]/index.tsx`, `services/player.ts` (`fetchPlayerLedger`, `PlayerLedger`). Specs: `.claude/prds/partial/5-player-payments-backend.prd.md` (data), `.claude/prds/4-player-detail-redesign.prd.md` (screen).
+
+**Data side (built, not on screen yet)**: `fetchPlayerLedger(playerId)` returns every session the player joined, open and settled ones included:
+- counts, plus totals for owed, and for paid and charged from `amount_charged`
+- sessions sorted owing → open → settled, newest first within each group, each with its matches, rosters by position, and one court share keyed `court:{sessionId}`
+- each paid shuttle keyed `shuttle:{id}` and listed once, under the first of this player's matches that used it, with `reused` and `freeOnly` flags
+- an `estimate` from `previewSessionCharges` for open sessions
+
+PRD [4] renders it.
 
 ## 15. Settings
 

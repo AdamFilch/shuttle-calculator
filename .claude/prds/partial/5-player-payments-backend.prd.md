@@ -323,14 +323,14 @@ fetchPlayerLedger → sessions = [], sessionCount 0, totals all 0
 ## Acceptance Criteria
 - [x] AC1: After `npm run db:fresh`, every `shuttle_payments` and `court_payments` row has `amount_charged` equal to the share at close.
 - [x] AC2: Paying a row, through any writer, sets `amount_paid` to 0 and stamps `date_paid`. `amount_charged` doesn't change.
-- [ ] AC3: `fetchPlayerLedger` exists and returns the `PlayerLedger` shape in [Readers](#readers). Its `paid`/`charged` values equal the stored `amount_charged` sums, and `services/player-ledger-sample.ts` doesn't exist.
+- [x] AC3: `fetchPlayerLedger` exists and returns the `PlayerLedger` shape in [Readers](#readers). Its `paid`/`charged` values equal the stored `amount_charged` sums, and `services/player-ledger-sample.ts` doesn't exist.
 - [x] AC4: `payChargesByKeys` pays the picked shuttles and every court row of a picked `court:{sessionId}` in one transaction. A forced error inside it changes no rows. Already-paid rows keep their original `date_paid`.
 - [ ] AC5: Pay individually on the redesigned player detail (PRD [4]) calls only `payChargesByKeys`. Ticked when PRD [4] lands.
 - [x] AC6: `deletePlayer` throws for a player who owes money or is in an open session, even when called directly. Otherwise it succeeds.
 - [x] AC7: `fetchAllPlayerPaymentsBySession` and `fetchAllPlayerPayments` return `amount_charged`, `total_charged_amount` and `total_paid_amount`. Session detail's paid-so-far equals the sum of `amount_charged` over paid rows.
 - [x] AC8: Owed totals on the Players tab, Home and session detail don't change against the `default` seed.
 - [ ] AC9: `npm run lint` and `npx tsc --noEmit` pass, and the change is checked on the iOS Simulator through Expo MCP after `npm run db:fresh`. Never checked on web.
-- [ ] AC10: On the `default` seed, `fetchPlayerLedger` for a player in both the closed and the open session returns:
+- [x] AC10: On the `default` seed, `fetchPlayerLedger` for a player in both the closed and the open session returns:
   - sessions ordered owing → open → settled
   - a reused shuttle once, under its first match, with `reused: true`
   - one court share per session, with `key` `court:{sessionId}`
@@ -363,23 +363,23 @@ fetchPlayerLedger → sessions = [], sessionCount 0, totals all 0
 | The ledger shape doesn't fit the screen, so PRD [4] needs a service change | Low | Medium | The shape follows the spec's "Data the screen needs". If it's still wrong, open a follow-up backend ticket rather than editing `services/` in PRD [4] |
 
 ## Implementation Status
-The backend shipped ahead of PRD [4]. It was verified on the iOS Simulator (iPhone 17 Pro, iOS 26.0, Expo Go) after `db:fresh`, and the Metro log shows `[dev-db] fresh default done`. Verification used `simctl` screenshots, read-only `sqlite3` queries of the on-device database, and a temporary dev seed scenario (not committed) that called the real service functions. The Expo MCP local tools weren't available in that session.
+The backend shipped ahead of PRD [4]. It was verified on the iOS Simulator (iPhone 17 Pro, iOS 26.0, Expo Go) after `db:fresh`, and the Metro log shows `[dev-db] fresh default done`. Verification used `simctl` screenshots, read-only `sqlite3` queries of the on-device database, and a temporary dev seed scenario (not committed) that called the real service functions. The Expo MCP local tools weren't available in that session. `fetchPlayerLedger` was added in a second run and verified the same way, by logging the ledger from a temporary seed scenario that was deleted afterwards.
 
 | AC | Status | Evidence / notes |
 |---|---|---|
 | AC1 | ✅ done | After `db:fresh`, all 16 shuttle rows and 6 court rows have a non-NULL `amount_charged`. 0 rows differ from the share recomputed independently in SQL: unit price ÷ distinct players, and court price × qty ÷ session players, both rounded to 2 dp |
 | AC2 | ✅ done | `paySessionInFull` (seed, Alice) and `payChargesByKeys` (Ben) left `amount_paid = 0`, set `date_paid`, and kept `amount_charged` (e.g. court 10, shuttle 2.5). No payment writer in `services/shuttle-payments.ts` references `amount_charged` (grep) |
-| AC3 | ⏳ to do | `fetchPlayerLedger` moved into this ticket from PRD [4]. Not built yet |
+| AC3 | ✅ done | `fetchPlayerLedger` and the exported `PlayerLedger` type are in `services/player.ts`, with the Readers shape. On the simulator, its `totals.paid`/`totals.charged` matched SQL `SUM(amount_charged)` (paid rows / all rows) for Alice (16.5 / 16.5), Chloe (7.5 / 25), Daniel (0 / 25) and Gina (0 / 0, no sessions), and per-session court `owed`/`charged` matched `court_payments` sums. `services/player-ledger-sample.ts` doesn't exist |
 | AC4 | ✅ done | `payChargesByKeys(Ben, ['court:1', 'shuttle:1'])` paid both rows in one transaction. A malformed key (`bogus:1`) threw before any write: 0 rows paid. With a `BEFORE UPDATE` trigger on `court_payments` raising ABORT, the call threw and Chloe's rows were unchanged: the shuttle update rolled back. Paying again 2 s later left every `date_paid` the same |
 | AC5 | ❌ Blocked: needs PRD [4] | The redesigned Pay individually doesn't exist yet. The current screen's "Pay Selected" already calls only `payChargesByKeys` with `shuttle:` keys |
 | AC6 | ✅ done | `deletePlayer(Ben)` (owes 4) threw the unpaid message. `deletePlayer(Alice)` (owes 0, in open session 2) threw "This player is in an open session. Close it before deleting." The seed's `deletePlayer(Gina)` (no charges, no open session) succeeded: `status = 'deleted'` |
 | AC7 | ✅ done | Both readers return `amount_charged` per item and `total_charged_amount` / `total_paid_amount` per player (e.g. Ben 16.5 / 12.5 after paying). Session detail showed "Paid RM 16.50" on the fresh seed and "Paid RM 29" after Ben paid, both equal to the SQL sum of `amount_charged` over paid rows |
 | AC8 | ✅ done | On the `default` seed, Home shows "Total outstanding $79.50", the same as `main` before the change. Players tab: Ben 16.50, Chloe 17.50, Daniel 17.50, Elena 14, Farid 14, Alice Settled. Session detail: "Still owed RM 79.50 of RM 96" |
-| AC9 | ⚠️ unverified | `npx tsc --noEmit` passes. `npm run lint` shows 0 errors; the 4 warnings in touched files were already there. Checked on the iOS Simulator after `db:fresh` and never on web, but with `simctl` and `sqlite3` instead of the Expo MCP tools the AC names, and no UI taps were driven |
-| AC10 | ⏳ to do | Comes with `fetchPlayerLedger` |
+| AC9 | ⚠️ unverified | `npx tsc --noEmit` passes. `npm run lint` shows 0 errors and 25 warnings, the same count as before; none are new. Checked on the iOS Simulator after `db:fresh` (`[dev-db] fresh default done`) and never on web. Both runs used `simctl`, Metro logs and `sqlite3`, because the Expo MCP local tools weren't available in either session, and no UI taps were driven |
+| AC10 | ✅ done | On `default` plus one extra settled session for Chloe (temporary scenario, deleted afterwards). Ordering: Chloe's sessions came out owing (S1) → open (S2) → settled (S3); Daniel's came out S3 (4 Oct) → S1 (30 Sep) → open S2. Reused shuttle 5 appears once for Chloe, under match 4 and not match 5, with `reused: true`. Court keys are `court:1`, `court:2`, `court:3`. The open `estimate` `{ total 5.84, courtShare 4.17, shuttleShares { 5: 1.67 } }` equals `previewSessionCharges('2')` for each player. `totals.owed` equals `fetchAllPlayerPayments` (Players tab): Alice 0, Chloe 17.5, Daniel 25 |
 
 ### Needs attention
-- Build `fetchPlayerLedger` (AC3, AC10).
+- AC5: tick it when PRD [4]'s redesigned Pay individually lands on `payChargesByKeys`.
 - Re-check AC9 with the Expo MCP local tools, including tapping "Pay Selected" on player detail.
 - Everyone must run `npm run db:fresh` (or Settings → Reset Database) after pulling. The new NOT NULL column breaks `closeSession` and the payment readers on an old database.
 
