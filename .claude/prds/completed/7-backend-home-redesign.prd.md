@@ -236,4 +236,4 @@ Deleted players can't owe money (`deletePlayer` is blocked while they owe), and 
 | Rounding drift between `owed` and the player detail balance | Low | Totals differ by a cent | Use `roundToCents` on sums, as existing readers do |
 
 ---
-*Status: COMPLETED — PR #TBD*
+*Status: COMPLETED — PR #27*
