@@ -295,4 +295,4 @@ Shipped backend-only, ahead of PRD [4]. Verified on the iOS Simulator (iPhone 17
 - Re-check AC9 with the Expo MCP local tools, including tapping "Pay Selected" on player detail.
 - Everyone must run `npm run db:fresh` (or Settings → Reset Database) after pulling: the new NOT NULL column breaks `closeSession` and the payment readers on an old database.
 
-*Status: PARTIAL — PR #TBD*
+*Status: PARTIAL — PR #22*
