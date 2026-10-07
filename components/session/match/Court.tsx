@@ -3,8 +3,17 @@ import { designTokens } from "@/components/ui/gluestack-ui-provider/config"
 import { AddIcon, Icon } from "@/components/ui/icon"
 import { AvatarColour, Player } from "@/services/player"
 import { DimensionValue, Pressable, Text, View } from "react-native"
+import Animated, { useReducedMotion } from "react-native-reanimated"
+import { TrophyGlyph } from "./TrophyGlyph"
 
 export type SlotPosition = 0 | 1 | 2 | 3
+
+export type CourtSide = "top" | "bottom"
+
+const SIDE_POSITIONS: Record<CourtSide, SlotPosition[]> = {
+    top: [0, 2],
+    bottom: [1, 3],
+}
 
 const SLOT_LABELS: Record<SlotPosition, string> = {
     0: "Top left",
@@ -91,6 +100,65 @@ function Net() {
     )
 }
 
+function ReadOnlySlot({
+    player,
+    solo,
+    result,
+}: {
+    player: Player,
+    solo: boolean,
+    result: "winner" | "loser" | null
+}) {
+    const reduceMotion = useReducedMotion()
+    const colour = designTokens[player.avatar_colour ?? "muted"]
+    const won = result === "winner"
+
+    return (
+        <Animated.View
+            style={[
+                SLOT_SHADOW,
+                {
+                    flex: 1,
+                    borderRadius: 8,
+                    borderWidth: 3,
+                    borderColor: won ? designTokens["court-line"] : "transparent",
+                    backgroundColor: withAlpha(colour, won ? 0.5 : 0.3),
+                    opacity: result === "loser" ? 0.45 : 1,
+                    transitionProperty: ["opacity", "borderColor"],
+                    transitionDuration: reduceMotion ? 0 : 200,
+                    transitionTimingFunction: "ease-out",
+                },
+            ]}
+        >
+            <View className="flex-1 items-center justify-center gap-2 px-1">
+                <Avatar name={player.name} colour={player.avatar_colour} size={solo ? "xl" : "md"} />
+                <Text
+                    className={`${solo ? "text-card-title" : "text-body"} font-semibold text-court-line`}
+                    style={LABEL_SHADOW}
+                    numberOfLines={1}
+                >
+                    {player.name}
+                </Text>
+            </View>
+        </Animated.View>
+    )
+}
+
+function WinnerPill({ side }: { side: CourtSide }) {
+    return (
+        <View
+            pointerEvents="none"
+            className="absolute left-0 right-0 items-center"
+            style={side === "top" ? { top: -15 } : { bottom: -15 }}
+        >
+            <View className="flex-row items-center gap-1.5 rounded-full border-[3px] border-court-line bg-ink px-3 py-[5px]">
+                <TrophyGlyph colour={designTokens["court-line"]} size={16} />
+                <Text className="text-badge font-semibold text-court-line">Winner</Text>
+            </View>
+        </View>
+    )
+}
+
 export function CourtSlot({
     position,
     player,
@@ -144,10 +212,14 @@ export function Court({
     selectedPlayers,
     players,
     onSelectSlot,
+    readOnly = false,
+    winnerSide = null,
 }: {
     selectedPlayers: (number | null)[],
     players: Player[],
-    onSelectSlot: (position: SlotPosition) => void
+    onSelectSlot?: (position: SlotPosition) => void,
+    readOnly?: boolean,
+    winnerSide?: CourtSide | null
 }) {
     const playerAt = (position: SlotPosition): Player | null => {
         const playerId = selectedPlayers[position]
@@ -155,16 +227,38 @@ export function Court({
         return players.find((p) => p.player_id === playerId) ?? null
     }
 
-    const slot = (position: SlotPosition) => (
-        <CourtSlot
-            position={position}
-            player={playerAt(position)}
-            onPress={() => onSelectSlot(position)}
-        />
-    )
+    const half = (side: CourtSide) => {
+        if (!readOnly) {
+            return SIDE_POSITIONS[side].map((position) => (
+                <CourtSlot
+                    key={position}
+                    position={position}
+                    player={playerAt(position)}
+                    onPress={() => onSelectSlot?.(position)}
+                />
+            ))
+        }
+        const filled = SIDE_POSITIONS[side].flatMap((position) => playerAt(position) ?? [])
+        const result = winnerSide === null ? null : winnerSide === side ? "winner" : "loser"
+        return filled.map((player) => (
+            <ReadOnlySlot key={player.player_id} player={player} solo={filled.length === 1} result={result} />
+        ))
+    }
+
+    const sideLabel = (side: CourtSide) => {
+        const names = SIDE_POSITIONS[side].flatMap((position) => playerAt(position)?.name ?? [])
+        const suffix = winnerSide === side ? (names.length > 1 ? ", winners" : ", winner") : ""
+        return `${side === "top" ? "Top" : "Bottom"}: ${names.join(" and ")}${suffix}.`
+    }
 
     return (
-        <View className="w-full rounded-xl bg-court" style={{ aspectRatio: 806 / 1211 }} testID="court">
+        <View
+            className="w-full rounded-xl bg-court"
+            style={{ aspectRatio: 806 / 1211 }}
+            testID="court"
+            accessible={readOnly || undefined}
+            accessibilityLabel={readOnly ? `Court. ${sideLabel("top")} ${sideLabel("bottom")}` : undefined}
+        >
             <View
                 className="absolute border-4 border-court-line"
                 style={{ top: "2.3%", bottom: "2.3%", left: "3.5%", right: "3.5%" }}
@@ -180,18 +274,17 @@ export function Court({
                     className="absolute flex-row p-0.5"
                     style={{ top: "5.2%", bottom: "57.6%", left: "7%", right: "7%", gap: 5 }}
                 >
-                    {slot(0)}
-                    {slot(2)}
+                    {half("top")}
                 </View>
                 <View
                     className="absolute flex-row p-0.5"
                     style={{ top: "57.6%", bottom: "5.2%", left: "7%", right: "7%", gap: 5 }}
                 >
-                    {slot(1)}
-                    {slot(3)}
+                    {half("bottom")}
                 </View>
             </View>
             <Net />
+            {readOnly && winnerSide ? <WinnerPill side={winnerSide} /> : null}
         </View>
     )
 }
