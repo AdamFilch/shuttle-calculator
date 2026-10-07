@@ -240,14 +240,14 @@ deletePlayer(id) → fetchPlayerDeleteBlockers → inOpenSession = true → thro
 ---
 
 ## Acceptance Criteria
-- [ ] AC1: After `npm run db:fresh`, every `shuttle_payments` and `court_payments` row has `amount_charged` equal to the share at close.
-- [ ] AC2: Paying a row, through any writer, sets `amount_paid` to 0 and stamps `date_paid`. `amount_charged` doesn't change.
+- [x] AC1: After `npm run db:fresh`, every `shuttle_payments` and `court_payments` row has `amount_charged` equal to the share at close.
+- [x] AC2: Paying a row, through any writer, sets `amount_paid` to 0 and stamps `date_paid`. `amount_charged` doesn't change.
 - [ ] AC3: `services/player-ledger-sample.ts` no longer exists. On player detail, the paid legend, the struck-through amounts and "· paid RM X" equal the stored `amount_charged` values.
-- [ ] AC4: `payChargesByKeys` pays the picked shuttles, and every court row of a picked `court:{sessionId}`, in one transaction. A forced error inside it changes no rows. Rows that were already paid keep their original `date_paid`.
+- [x] AC4: `payChargesByKeys` pays the picked shuttles, and every court row of a picked `court:{sessionId}`, in one transaction. A forced error inside it changes no rows. Rows that were already paid keep their original `date_paid`.
 - [ ] AC5: Pay individually on player detail calls only `payChargesByKeys`.
-- [ ] AC6: `deletePlayer` throws for a player who owes money or is in an open session, even when called directly. Otherwise it succeeds.
-- [ ] AC7: `fetchAllPlayerPaymentsBySession` and `fetchAllPlayerPayments` return `amount_charged`, `total_charged_amount` and `total_paid_amount`. Session detail's paid-so-far equals the sum of `amount_charged` over paid rows.
-- [ ] AC8: Owed totals on the Players tab, Home and session detail don't change against the `default` seed.
+- [x] AC6: `deletePlayer` throws for a player who owes money or is in an open session, even when called directly. Otherwise it succeeds.
+- [x] AC7: `fetchAllPlayerPaymentsBySession` and `fetchAllPlayerPayments` return `amount_charged`, `total_charged_amount` and `total_paid_amount`. Session detail's paid-so-far equals the sum of `amount_charged` over paid rows.
+- [x] AC8: Owed totals on the Players tab, Home and session detail don't change against the `default` seed.
 - [ ] AC9: `npm run lint` and `npx tsc --noEmit` pass, and the change is checked on the iOS Simulator through Expo MCP after `npm run db:fresh`. It is never checked on web.
 
 ## Required Changes
@@ -275,4 +275,24 @@ deletePlayer(id) → fetchPlayerDeleteBlockers → inOpenSession = true → thro
 | Paid-so-far is a cent off the old subtraction | Low | Low | Both use the same rounded shares. Check against the seed |
 
 ---
-*Status: READY — ticket [5]. Depends on [4].*
+## Implementation Status
+Shipped backend-only, ahead of PRD [4]. Verified on the iOS Simulator (iPhone 17 Pro, iOS 26.0, Expo Go) after `db:fresh` (Metro log: `[dev-db] fresh default done`), using `simctl` screenshots, read-only `sqlite3` queries of the on-device database, and a temporary dev seed scenario (not committed) that called the real service functions. The Expo MCP local tools weren't available in that session.
+
+| AC | Status | Evidence / notes |
+|---|---|---|
+| AC1 | ✅ done | After `db:fresh`, all 16 shuttle and 6 court rows have a non-NULL `amount_charged`. 0 rows differ from the share recomputed independently in SQL (unit price ÷ distinct players, and court price × qty ÷ session players, both rounded to 2 dp) |
+| AC2 | ✅ done | `paySessionInFull` (seed, Alice) and `payChargesByKeys` (Ben) left `amount_paid = 0`, set `date_paid`, and kept `amount_charged` (e.g. court 10, shuttle 2.5). No payment writer in `services/shuttle-payments.ts` references `amount_charged` (grep) |
+| AC3 | ❌ Blocked: needs PRD [4] | `fetchPlayerLedger`, `services/player-ledger-sample.ts` and the redesigned screen don't exist yet. PRD [4] should read `amount_charged` directly and never create the sample file |
+| AC4 | ✅ done | `payChargesByKeys(Ben, ['court:1', 'shuttle:1'])` paid both rows in one transaction. A malformed key (`bogus:1`) threw before any write (0 rows paid). With a `BEFORE UPDATE` trigger on `court_payments` raising ABORT, the call threw and Chloe's rows were unchanged (shuttle update rolled back). Paying again 2 s later left every `date_paid` the same |
+| AC5 | ❌ Blocked: needs PRD [4] | The redesigned Pay individually doesn't exist yet. Meanwhile, the current screen's "Pay Selected" already calls only `payChargesByKeys` with `shuttle:` keys |
+| AC6 | ✅ done | `deletePlayer(Ben)` (owes 4) threw the unpaid message. `deletePlayer(Alice)` (owes 0, in open session 2) threw "This player is in an open session. Close it before deleting." The seed's `deletePlayer(Gina)` (no charges, no open session) succeeded (`status = 'deleted'`) |
+| AC7 | ✅ done | Both readers return `amount_charged` per item and `total_charged_amount` / `total_paid_amount` per player (e.g. Ben 16.5 / 12.5 after paying). Session detail showed "Paid RM 16.50" on the fresh seed and "Paid RM 29" after Ben paid, equal to the SQL sum of `amount_charged` over paid rows |
+| AC8 | ✅ done | On the `default` seed: Home "Total outstanding $79.50" (same as `main` before the change), Players tab Ben 16.50, Chloe 17.50, Daniel 17.50, Elena 14, Farid 14, Alice Settled, and session detail "Still owed RM 79.50 of RM 96" |
+| AC9 | ⚠️ unverified | `npx tsc --noEmit` passes. `npm run lint` shows 0 errors (the 4 warnings in touched files were already there). Checked on the iOS Simulator after `db:fresh`, never on web, but with `simctl` and `sqlite3` rather than the Expo MCP tools the AC names, and no UI taps were driven |
+
+### Needs attention
+- Implement PRD [4] using the real `amount_charged` (no sample file) and `payChargesByKeys`, then tick AC3 and AC5.
+- Re-check AC9 with the Expo MCP local tools, including tapping "Pay Selected" on player detail.
+- Everyone must run `npm run db:fresh` (or Settings → Reset Database) after pulling: the new NOT NULL column breaks `closeSession` and the payment readers on an old database.
+
+*Status: PARTIAL — PR #TBD*

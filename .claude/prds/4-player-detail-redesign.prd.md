@@ -1,5 +1,13 @@
 # [4]: Player detail redesign
 
+> **Note (after PRD [5] shipped its backend first, see [partial/5-player-payments-backend.prd.md](partial/5-player-payments-backend.prd.md)):** `amount_charged` (on `shuttle_payments` and `court_payments`, written by `closeSession`), `fetchPlayerDeleteBlockers(playerId)` in `services/player.ts`, the `deletePlayer` guard (owed > 0 or in an open session), and `payChargesByKeys({ playerId, keys })` in `services/shuttle-payments.ts` already exist. So this ticket should:
+> - use real paid amounts: `fetchPlayerLedger` reads `amount_charged` for paid rows (`date_paid IS NOT NULL`), and `services/player-ledger-sample.ts` is **not** created (D2, AC10)
+> - reuse `fetchPlayerDeleteBlockers` instead of adding it
+> - call `payChargesByKeys` for Pay individually
+> - treat AC22 as "no further changes" to those files, since PRD [5] already changed them
+>
+> Finishing this ticket also closes PRD [5]'s AC3 and AC5.
+
 The player detail screen (`app/player/[playerId]/index.tsx`) is where a session organiser lands after tapping a player, usually at the court or just after, while a player hands over cash or says they've transferred money. This ticket rebuilds the screen to the approved design spec ([.claude/design/specs/player-detail.md](../design/specs/player-detail.md), mockup https://claude.ai/artifact/4q4VyNMLykPH61DpY7SdkM). It answers the organiser's questions in order: how much the player owes, which sessions they joined, how much they owe for each, which matches they played and which shuttles each charge is for, and what to do next.
 
 This ticket is **visual only**. There is no schema change, no new writer, and no change to how a service behaves. A new read-only reader builds the screen from the tables that exist today. Paid amounts can't be built from today's data, because paying zeroes `amount_paid`. Those values come from clearly named **sample** constants in a single file, which [PRD 5](5-player-payments-backend.prd.md) deletes when it stores real paid amounts. The money buttons use the payment writers that already exist. Waive is design only.
