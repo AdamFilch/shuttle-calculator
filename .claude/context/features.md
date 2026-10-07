@@ -181,6 +181,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 - A purchase doesn't record what was paid for it, so inventory spend can't be tracked.
 - Shuttle types can't be deleted or archived.
 - The spec's manual verification on a simulator hasn't been run.
+- Planned (no PRD yet): an optional "Warn at: N" input with a Shuttle / Session toggle in the shuttle detail pop-up. It triggers Home's low-stock alert (PRD [7] D3, D4).
 
 ## 9. Closing a session (settlement)
 
@@ -255,13 +256,18 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 **Where**: `app/(tabs)/index.tsx`, `components/shared/StatCard.tsx`, `components/insights/InsightsSection.tsx`, `services/shuttle.ts` (`fetchShuttleUsageSummary`, `fetchShuttleUsageTimeSeries`).
 
+**Planned redesign** (not built, PRD [7] backend + frontend): spec `.claude/design/specs/home.md`, direction A approved 2026-10-08. Start session goes straight to the new session; a session left open from an earlier day is flagged on Home and on the Sessions tab. Order: session card (Start session, or Open session + New match), low-stock alert with runway, Last 30 days tiles (rolling), Waiting on payment (oldest debt first), Recent sessions (compact). The big Total outstanding figure, the shuttle StatCards and the usage chart leave Home.
+
 **Known gaps**
-- The usage chart is analytics and probably belongs on the Insights page once it exists.
-- No quick action to start a session or match from Home.
+- The usage chart is analytics and moves to the Shuttles tab (see [13](#13-insights)); addressed by the Home spec.
+- No quick action to start a session or match from Home; addressed by the Home spec's session card.
+- Low-stock alert will be built in PRD [7] but not triggered; needs the per-shuttle "Warn at" setting (see [8](#8-shuttle-inventory)).
 
 ## 13. Insights
 
 **Status**: Future improvement, not available yet. The Insights tab exists but is an empty placeholder (`app/(tabs)/insights/index.jsx`).
+
+**Direction changed 2026-10-08**: no separate Insights page. Each insight lives on the screen that owns its data: shuttle usage over time on the Shuttles tab, attendance and spend on Sessions, per-player activity on Players and player detail, collection rate with the money it describes. Follow-up work; the hidden `app/(tabs)/insights/` route can be removed afterwards.
 
 **Intended content**
 - Shuttle usage over time (move or extend the Home chart), per type.

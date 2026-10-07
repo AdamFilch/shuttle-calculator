@@ -1,0 +1,631 @@
+<title>Home Redesign</title>
+<style>
+/* Layout: a brainstorm panel of candidate Home sections grouped by the manager's jobs, then a switcher between three layout directions, each a board of phone frames with captions and a "new queries" note. App screens use the fixed light design-system tokens; the board follows the viewer's theme. */
+:root {
+  --page-bg: #eef1f4;
+  --page-fg: #002b5b;
+  --page-muted: #56616c;
+  --page-line: #d5dbe1;
+  --page-frame: #1d2733;
+  --page-panel: #ffffff;
+  --page-accent: #004e89;
+  --page-accent-tint: #e2ebf3;
+
+  --surface: #f8f9fa;
+  --surface-raised: #ffffff;
+  --ink: #002b5b;
+  --muted: #6c757d;
+  --border: #c7cdd2;
+  --border-subtle: #e4e6e9;
+  --border-dashed: #b8bec4;
+  --primary: #004e89;
+  --primary-tint: #eaf0f5;
+  --sage: #7fc8a9;
+  --on-sage: #0e4a32;
+  --clay: #a97155;
+  --clay-tint: #fbefe8;
+  --clay-strong: #8a5640;
+  --settled: #2e7d5b;
+  --settled-tint: #e7f4ee;
+  --neutral-tint: #edeeef;
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #0c1520;
+    --page-fg: #e3eaf2;
+    --page-muted: #98a6b5;
+    --page-line: #233242;
+    --page-frame: #050a10;
+    --page-panel: #111d2a;
+    --page-accent: #8fbbe3;
+    --page-accent-tint: #18293b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #0c1520;
+  --page-fg: #e3eaf2;
+  --page-muted: #98a6b5;
+  --page-line: #233242;
+  --page-frame: #050a10;
+  --page-panel: #111d2a;
+  --page-accent: #8fbbe3;
+  --page-accent-tint: #18293b;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font-family: var(--sans);
+  padding-inline: 16px;
+  padding-block: 32px 56px;
+}
+code { font-size: 0.92em; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+.board-head { display: grid; gap: 8px; }
+.board-head h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.board-head p { margin: 0; color: var(--page-muted); font-size: 15px; line-height: 22px; max-width: 72ch; }
+.priorities { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.priorities li { font-size: 12px; line-height: 16px; font-weight: 500; border: 1px solid var(--page-line); border-radius: 999px; padding: 5px 10px; color: var(--page-muted); }
+.priorities b { color: var(--page-fg); font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+.panel { background: var(--page-panel); border: 1px solid var(--page-line); border-radius: 16px; padding: 20px; display: grid; gap: 18px; min-width: 0; }
+.panel h2 { margin: 0; font-size: 20px; line-height: 26px; font-weight: 600; }
+.panel > p { margin: 0; color: var(--page-muted); font-size: 14px; line-height: 21px; max-width: 75ch; }
+.job { display: grid; gap: 8px; }
+.job h3 { margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--page-muted); }
+.idea { display: grid; grid-template-columns: minmax(0, 1.4fr) 92px minmax(0, 1fr) minmax(0, 1.6fr); gap: 6px 16px; padding: 12px 0; border-top: 1px solid var(--page-line); align-items: start; font-size: 14px; line-height: 20px; }
+.idea.head { border-top: 0; padding: 0 0 2px; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--page-muted); }
+.idea .t { font-weight: 600; }
+.idea .t small { display: block; font-weight: 400; color: var(--page-muted); font-size: 13px; line-height: 18px; margin-top: 2px; }
+.idea .data { color: var(--page-muted); font-size: 13px; line-height: 18px; }
+.idea .data code { color: var(--page-fg); }
+.idea .rec { font-size: 13px; line-height: 18px; color: var(--page-muted); }
+.idea .rec b { color: var(--page-fg); font-weight: 600; }
+.val { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.val i { display: inline-flex; gap: 2px; }
+.val i::before, .val i::after, .val i span { content: ""; width: 6px; height: 12px; border-radius: 2px; background: var(--page-line); display: block; }
+.val.h i::before, .val.h i span, .val.h i::after { background: var(--page-accent); }
+.val.m i::before, .val.m i span { background: var(--page-accent); }
+.val.l i::before { background: var(--page-accent); }
+.tag { display: inline-block; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 1px 8px; margin-right: 4px; border: 1px solid var(--page-line); color: var(--page-muted); }
+.tag.home { background: var(--page-accent-tint); color: var(--page-accent); border-color: transparent; }
+@media (max-width: 760px) {
+  .idea { grid-template-columns: 1fr auto; }
+  .idea.head { display: none; }
+  .idea .data, .idea .rec { grid-column: 1 / -1; }
+}
+.summary { display: grid; gap: 6px; margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--page-accent-tint); font-size: 14px; line-height: 21px; }
+.summary b { font-weight: 600; }
+
+.switch { display: flex; flex-wrap: wrap; gap: 8px; }
+.switch button { font: 500 14px/20px var(--sans); color: var(--page-fg); background: transparent; border: 1px solid var(--page-line); border-radius: 999px; padding: 10px 16px; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.switch button[aria-pressed="true"] { background: var(--page-fg); color: var(--page-bg); border-color: var(--page-fg); }
+.switch button:focus-visible { outline: 2px solid var(--page-accent); outline-offset: 2px; }
+.switch .rec-pill { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; background: var(--page-accent-tint); color: var(--page-accent); }
+.dir-head { display: grid; gap: 6px; }
+.dir-head h2 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 600; }
+.dir-head p { margin: 0; color: var(--page-muted); font-size: 14px; line-height: 21px; max-width: 75ch; }
+.dir { display: grid; gap: 24px; }
+
+.board { display: grid; gap: 40px 28px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); justify-items: center; align-items: start; }
+figure { margin: 0; display: grid; gap: 14px; width: 100%; max-width: 360px; }
+figcaption { display: grid; gap: 4px; }
+figcaption strong { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+figcaption span { font-size: 13px; line-height: 19px; color: var(--page-muted); }
+.queries { border: 1px dashed var(--page-line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; font-size: 14px; line-height: 20px; }
+.queries h3 { margin: 0; font-size: 12px; line-height: 16px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--page-muted); font-weight: 600; }
+.queries ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.queries li span { color: var(--page-muted); }
+
+.phone { width: 100%; border-radius: 40px; background: var(--page-frame); padding: 10px; }
+.screen { position: relative; border-radius: 31px; overflow: hidden; background: var(--surface); color: var(--ink); font-size: 14px; line-height: 20px; display: flex; flex-direction: column; }
+.status-bar { height: 40px; display: flex; align-items: center; justify-content: space-between; padding-inline: 26px; font-size: 14px; font-weight: 600; }
+.status-bar .dots { display: flex; gap: 4px; align-items: center; }
+.status-bar .dots i { width: 16px; height: 9px; border-radius: 2px; background: var(--ink); display: block; }
+.status-bar .dots i:first-child { width: 12px; opacity: .55; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; padding: 6px 16px 4px; gap: 8px; }
+.page-head .eyebrow { font-size: 13px; line-height: 18px; color: var(--muted); }
+.screen-title { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 999px; color: var(--surface); background: var(--primary); flex: none; }
+
+.content { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 24px; }
+.card { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: 12px; }
+.section { display: grid; gap: 8px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.section-label { font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.link { font-size: 14px; color: var(--primary); font-weight: 500; display: inline-flex; align-items: center; min-height: 32px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 4px 10px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; flex: none; }
+.badge.open { background: var(--primary-tint); color: var(--primary); }
+.badge.settled { background: var(--settled-tint); color: var(--settled); }
+.badge.owes, .badge.estimate { background: var(--clay-tint); color: var(--clay-strong); }
+
+.session-card { padding: 16px; display: grid; gap: 12px; }
+.session-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.session-card .name { font-size: 18px; line-height: 24px; font-weight: 600; }
+.session-card .meta, .sub { font-size: 13px; line-height: 18px; color: var(--muted); }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-weight: 600; }
+.btns { display: grid; grid-template-columns: 1fr 1.35fr; gap: 8px; }
+.btn { height: 48px; border-radius: 8px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 500 15px/20px var(--sans); cursor: pointer; }
+.btn.primary { background: var(--primary); color: var(--surface); }
+.btn.secondary { background: var(--surface-raised); color: var(--ink); border: 1px solid var(--border); }
+.btn.full { width: 100%; }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.list { display: grid; }
+.list > * + * { border-top: 1px solid var(--border-subtle); }
+.row { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; min-height: 56px; }
+.row .body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.row .nm { font-size: 16px; line-height: 22px; font-weight: 500; }
+.row > svg.chev { color: var(--muted); flex: none; }
+.row .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+.row-total { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 44px; }
+.row-total b { color: var(--ink); }
+
+.avatar { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; flex: none; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--surface); }
+.av-primary { background: var(--primary); }
+.av-clay { background: var(--clay); }
+.av-sage { background: var(--sage); color: var(--on-sage); }
+.av-muted { background: var(--muted); }
+
+.alert { display: flex; gap: 12px; align-items: center; padding: 12px 14px; background: var(--clay-tint); border: 1px solid transparent; border-radius: 12px; }
+.alert .ico { width: 36px; height: 36px; border-radius: 8px; background: var(--surface-raised); color: var(--clay-strong); display: grid; place-items: center; flex: none; }
+.alert .body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.alert .nm { font-weight: 600; color: var(--clay-strong); }
+.alert .sub { color: var(--clay-strong); opacity: .9; }
+.alert > svg.chev { color: var(--clay-strong); flex: none; }
+
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tile { padding: 12px; display: grid; gap: 2px; }
+.tile .k { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.tile .k svg { color: var(--clay); }
+.tile .v { font-size: 22px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.meter { height: 6px; border-radius: 999px; background: var(--neutral-tint); overflow: hidden; margin-top: 6px; }
+.meter i { display: block; height: 100%; border-radius: 999px; }
+
+.chart { padding: 14px; display: grid; gap: 8px; }
+.chart svg text { font: 500 10px var(--sans); fill: var(--muted); }
+
+.steps { display: grid; }
+.steps > * + * { border-top: 1px solid var(--border-subtle); }
+.step { display: flex; gap: 12px; align-items: center; padding: 12px 14px; min-height: 64px; }
+.step .num { width: 28px; height: 28px; border-radius: 999px; border: 1.5px solid var(--border); display: grid; place-items: center; font-size: 13px; font-weight: 600; color: var(--muted); flex: none; }
+.step.next .num { border-color: var(--primary); background: var(--primary); color: var(--surface); }
+.step .body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.step .nm { font-weight: 600; font-size: 15px; }
+.step > svg { color: var(--muted); flex: none; }
+.hint { font-size: 13px; line-height: 19px; color: var(--muted); margin: 0; }
+
+.feed-day { display: grid; gap: 8px; }
+.feed-item { display: flex; gap: 12px; padding: 10px 14px; align-items: flex-start; }
+.feed-item .dot { width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center; flex: none; margin-top: 2px; }
+.dot.p { background: var(--primary-tint); color: var(--primary); }
+.dot.s { background: var(--settled-tint); color: var(--settled); }
+.dot.c { background: var(--clay-tint); color: var(--clay-strong); }
+.feed-item .body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.feed-item .nm { font-weight: 500; }
+
+.tabbar { display: flex; justify-content: space-around; border-top: 1px solid var(--border-subtle); background: var(--surface-raised); padding: 6px 8px 26px; position: relative; }
+.tabbar span { width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); }
+.tabbar span.on { color: var(--primary); }
+.home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 5px; border-radius: 999px; background: var(--ink); opacity: .85; }
+
+svg { display: block; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-feather" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l10-10"/><path d="M14 5v5h5"/><path d="M10 9v5h5"/><path d="M20.2 7.8a4 4 0 0 0-5.7-5.6L8 8.7V16h7.3z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+    <symbol id="i-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c1.8.8 3 2.8 3 6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 16v-4M12 16V8M17 16v-7"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M9 12h6"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="board-head">
+  <h1>Home, redesigned</h1>
+  <p>Home is the first screen the manager sees when they open the app, at the court or at home afterwards. Today it leads with one big "Total outstanding" figure, which repeats what player and session detail already do. This board starts with a brainstorm of what Home could hold, then three ways to lay it out. No section on Home uses a single huge number. Status: direction A approved on 8 Oct 2026, with the 30-day tiles moved above "Waiting on payment"; B and C are kept for reference. Sample date: Thursday 8 Oct 2026. Last session was Tuesday Smash on 6 Oct.</p>
+  <ul class="priorities" aria-label="Priorities this layout answers">
+    <li><b>1</b>Start or continue a session</li>
+    <li><b>2</b>Shuttles running low</li>
+    <li><b>3</b>Last 30 days</li>
+    <li><b>4</b>Who to chase for money</li>
+    <li><b>5</b>Recent sessions</li>
+  </ul>
+</header>
+
+<section class="panel" aria-labelledby="bs-title">
+  <h2 id="bs-title">Brainstorm: what could live on Home</h2>
+  <p>Each candidate is grouped by the job the manager is doing when they open the app. Value is how much it helps that job. "Exists" means a current <code>services/</code> function already returns the data; "New" means a backend PRD has to add a query. The tag says where it goes: Home, the screen that already owns that data (insights live where their data lives, not on a separate Insights page), an empty state, or later.</p>
+
+  <div class="idea head" aria-hidden="true"><span>Section</span><span>Value</span><span>Data</span><span>Recommendation</span></div>
+
+  <div class="job">
+    <h3>At the court (phone in one hand, between games)</h3>
+    <div class="idea"><span class="t">Open-session card<small>Name, started at, players, matches, shuttles, ≈ cost so far. Open session and New match buttons.</small></span><span class="val h"><i><span></span></i>High</span><span class="data">Exists: <code>fetchAllSessions</code> (status open) + <code>previewSessionCharges</code></span><span class="rec"><span class="tag home">Home</span><b>Top of Home.</b> New match from Home is the fastest path to the hot action.</span></div>
+    <div class="idea"><span class="t">Start session quick action<small>Shown in the same slot when nothing is open. Closes the "no quick action from Home" gap.</small></span><span class="val h"><i><span></span></i>High</span><span class="data">Exists: <code>createNewSession</code> via the existing Add session modal</span><span class="rec"><span class="tag home">Home</span><b>Top of Home.</b> Same card, two states, so the top of Home is always "what do I do next".</span></div>
+    <div class="idea"><span class="t">Still-open reminder<small>An open session from an earlier day: "Friday Doubles from 2 Oct is still open. Close it to settle."</small></span><span class="val m"><i><span></span></i>Med</span><span class="data">Exists: session <code>date</code> + <code>status</code></span><span class="rec"><span class="tag home">Home</span><b>Variant of the session card.</b> Nobody owes anything until close, so a forgotten open session hides debt.</span></div>
+    <div class="idea"><span class="t">Low-stock warning with runway<small>"Yonex AS-50: 5 left, about 1 session". Only when a type is low.</small></span><span class="val h"><i><span></span></i>High</span><span class="data">Partly: remaining from <code>fetchAllShuttlesWithInventory</code>. Runway needs <b>new</b> avg-used-per-session per type</span><span class="rec"><span class="tag home">Home</span><b>Show only when low.</b> Running out mid-session is the costly failure. Silent when stock is fine.</span></div>
+  </div>
+
+  <div class="job">
+    <h3>After the session (closing, chasing, collecting)</h3>
+    <div class="idea"><span class="t">Who owes, oldest first<small>"5 players owe RM 79", then the top 3 with how long they've owed. Each row opens the player.</small></span><span class="val h"><i><span></span></i>High</span><span class="data">Exists: <code>fetchAllPlayerPayments</code> (owed per player; oldest unpaid <code>date_created</code> per player can be derived in the UI)</span><span class="rec"><span class="tag home">Home</span><b>Replaces the big outstanding figure.</b> The total is one line; the names are what the manager acts on.</span></div>
+    <div class="idea"><span class="t">Recent sessions<small>Date, players, matches, total cost, and still-due or settled.</small></span><span class="val h"><i><span></span></i>High</span><span class="data">Exists: <code>fetchAllSessions</code> (<code>player_count</code>, <code>match_count</code>, <code>amount_due</code>, <code>outstanding_amount</code>)</span><span class="rec"><span class="tag home">Home</span><b>3 rows, compact.</b> "See all" goes to the Sessions tab.</span></div>
+    <div class="idea"><span class="t">Recent payments<small>"Alice paid RM 13 · Tue".</small></span><span class="val l"><i><span></span></i>Low</span><span class="data"><b>New</b>: payments by <code>date_paid</code></span><span class="rec"><span class="tag">Later</span>Nice confirmation, but the manager just did it themselves. Only in the Feed direction.</span></div>
+  </div>
+
+  <div class="job">
+    <h3>Over time (stock, trends, the club)</h3>
+    <div class="idea"><span class="t">Last 30 days at a glance<small>Sessions, matches, shuttles used, total charged.</small></span><span class="val m"><i><span></span></i>Med</span><span class="data"><b>New</b>: one summary query over a date range</span><span class="rec"><span class="tag home">Home</span><b>Small tiles, low on the page.</b> Rolling 30 days, not calendar month: on 8 Oct a month view would show almost nothing.</span></div>
+    <div class="idea"><span class="t">Shuttle-usage chart<small>The current line chart with 1W–12M ranges.</small></span><span class="val l"><i><span></span></i>Low</span><span class="data">Exists: <code>fetchShuttleUsageTimeSeries</code></span><span class="rec"><span class="tag">Shuttles tab</span><b>Leaves Home.</b> It's analysis, not a next action. It moves to the Shuttles tab, which owns shuttle data, as follow-up work.</span></div>
+    <div class="idea"><span class="t">Most active players<small>Sessions or matches per player, last 30 days.</small></span><span class="val l"><i><span></span></i>Low</span><span class="data"><b>New</b>: matches per player in a range</span><span class="rec"><span class="tag">Players tab</span>Interesting, but it doesn't change what the manager does today. Follow-up.</span></div>
+    <div class="idea"><span class="t">Collection rate<small>Paid vs charged over time.</small></span><span class="val l"><i><span></span></i>Low</span><span class="data"><b>New</b> aggregate over <code>amount_charged</code></span><span class="rec"><span class="tag">Sessions / Players</span>Belongs with the money it describes. Follow-up.</span></div>
+    <div class="idea"><span class="t">Setup checklist<small>First launch: add players, add a shuttle type, start a session.</small></span><span class="val h"><i><span></span></i>High</span><span class="data">Exists: counts from <code>fetchAllPlayers</code>, <code>fetchAllShuttles</code>, <code>fetchAllSessions</code></span><span class="rec"><span class="tag">Empty state</span><b>Replaces Home until the first session.</b> An empty dashboard teaches nothing.</span></div>
+  </div>
+
+  <div class="summary">
+    <span><b>Approved Home (direction A), top to bottom:</b> session card (start, or continue / new match) · low-stock alert when needed · last 30 days tiles · who owes, oldest first · recent sessions.</span>
+    <span>The chart and other analysis leave Home and move, as follow-up work, to the screen that owns their data (shuttle usage to the Shuttles tab). There is no separate Insights page.</span>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="dir-title">
+  <h2 id="dir-title">Layout directions</h2>
+  <p>Three ways to put the brainstorm together. Each is a full Home screen on the same sample data. Switch between them below.</p>
+  <div class="switch" role="group" aria-label="Layout direction">
+    <button type="button" data-dir="action" aria-pressed="true">A · Action-first <span class="rec-pill">Approved</span></button>
+    <button type="button" data-dir="dash" aria-pressed="false">B · Dashboard (not chosen)</button>
+    <button type="button" data-dir="feed" aria-pressed="false">C · Feed (not chosen)</button>
+  </div>
+</section>
+
+<!-- A: Action-first -->
+<section class="dir" id="dir-action">
+  <div class="dir-head">
+    <h2>A · Action-first (approved)</h2>
+    <p>Home answers "what do I do next" from top to bottom: the session, then anything that needs attention, then context. Sections that have nothing to say hide themselves, so on a quiet day Home is short.</p>
+  </div>
+  <div class="board">
+
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Home, no session open">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><div><div class="eyebrow">Thursday 8 Oct</div><h2 class="screen-title">Home</h2></div></div>
+        <div class="content">
+          <section class="card session-card" aria-label="No session open">
+            <div class="top"><div><div class="name">No session open</div><div class="meta">Last one: Tuesday Smash, 2 days ago</div></div></div>
+            <button class="btn primary full" type="button"><svg width="18" height="18"><use href="#i-plus"/></svg>Start session</button>
+          </section>
+
+          <div class="alert" role="button" aria-label="Yonex AS-50 running low, 5 left, about 1 session. Open Shuttles">
+            <span class="ico"><svg width="20" height="20"><use href="#i-alert"/></svg></span>
+            <span class="body"><span class="nm">Yonex AS-50 running low</span><span class="sub">5 left · about 1 session</span></span>
+            <svg class="chev" width="18" height="18"><use href="#i-chev"/></svg>
+          </div>
+
+          <section class="section" aria-label="Last 30 days">
+            <div class="section-head"><p class="section-label">Last 30 days</p><span class="sub">Today and the 29 days before</span></div>
+            <div class="tiles">
+              <div class="card tile"><span class="k">Sessions</span><span class="v">4</span><span class="s">42 matches</span></div>
+              <div class="card tile"><span class="k"><svg width="14" height="14"><use href="#i-feather"/></svg>Shuttles used</span><span class="v">37</span><span class="s">9 a session</span></div>
+              <div class="card tile"><span class="k">Players</span><span class="v">9</span><span class="s">7 a session</span></div>
+              <div class="card tile"><span class="k">Charged</span><span class="v">RM 396</span><span class="s">RM 79 still due</span></div>
+            </div>
+          </section>
+          <section class="section" aria-label="Waiting on payment">
+            <div class="section-head"><p class="section-label">Waiting on payment</p><span class="link">See all</span></div>
+            <div class="card list">
+              <div class="row"><span class="avatar av-muted">CH</span><span class="body"><span class="nm">Chloe</span><span class="sub">2 sessions · since 2 Oct</span></span><span class="badge owes">RM 30.50</span></div>
+              <div class="row"><span class="avatar av-primary">DA</span><span class="body"><span class="nm">Daniel</span><span class="sub">Since 6 Oct</span></span><span class="badge owes">RM 13</span></div>
+              <div class="row"><span class="avatar av-sage">BE</span><span class="body"><span class="nm">Ben</span><span class="sub">Since 6 Oct</span></span><span class="badge owes">RM 13</span></div>
+              <div class="row-total"><span>5 players owe</span><b>RM 79</b></div>
+            </div>
+          </section>
+
+          <section class="section" aria-label="Recent sessions">
+            <div class="section-head"><p class="section-label">Recent sessions</p><span class="link">See all</span></div>
+            <div class="card list">
+              <div class="row"><span class="body"><span class="nm">Tuesday Smash</span><span class="sub">6 Oct · 8 players · 11 matches · RM 104</span></span><span class="badge owes">RM 61.50 due</span></div>
+              <div class="row"><span class="body"><span class="nm">Friday Doubles</span><span class="sub">2 Oct · 6 players · 8 matches · RM 84</span></span><span class="badge owes">RM 17.50 due</span></div>
+              <div class="row"><span class="body"><span class="nm">Tuesday Smash</span><span class="sub">29 Sep · 8 players · 12 matches · RM 112</span></span><span class="badge settled">Settled</span></div>
+            </div>
+          </section>
+
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span class="on" aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>Default · between sessions</strong>
+        <span>The session card always holds the next step; with nothing open it is one full-width Start session button. The low-stock alert appears only when a type is low (2 sessions or less of runway). Below the tiles, money is a list of names, oldest debt first, with the total as a footer line rather than a headline. Each owing row opens the player. Recent sessions show the four facts asked for in one line. The 30-day tiles (StatTile, rolling: today and the 29 days before) sit under the alert as a quick read on the club, with no link out.</span>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Home, session in progress">
+        <div class="status-bar"><span>20:41</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><div><div class="eyebrow">Thursday 8 Oct</div><h2 class="screen-title">Home</h2></div></div>
+        <div class="content">
+          <section class="card session-card" aria-label="Session in progress">
+            <div class="top">
+              <div><div class="name">Thursday Doubles</div><div class="meta">Started 7:30 pm · Community Centre</div></div>
+              <span class="badge open">Open session</span>
+            </div>
+            <div class="facts"><span><b>6</b> players</span><span><b>4</b> matches</span><span><b>5</b> shuttles</span><span class="badge estimate">≈ RM 38 so far</span></div>
+            <div class="btns">
+              <button class="btn secondary" type="button">Open session</button>
+              <button class="btn primary" type="button"><svg width="18" height="18"><use href="#i-plus"/></svg>New match</button>
+            </div>
+          </section>
+
+          <div class="alert" role="button" aria-label="Yonex AS-50 running low, 1 left. Open Shuttles">
+            <span class="ico"><svg width="20" height="20"><use href="#i-alert"/></svg></span>
+            <span class="body"><span class="nm">Yonex AS-50: 1 left</span><span class="sub">RSL Classic has 22</span></span>
+            <svg class="chev" width="18" height="18"><use href="#i-chev"/></svg>
+          </div>
+
+          <section class="section" aria-label="Waiting on payment">
+            <div class="section-head"><p class="section-label">Waiting on payment</p><span class="link">See all</span></div>
+            <div class="card list">
+              <div class="row"><span class="avatar av-muted">CH</span><span class="body"><span class="nm">Chloe</span><span class="sub">Playing tonight · since 2 Oct</span></span><span class="badge owes">RM 30.50</span></div>
+              <div class="row"><span class="avatar av-primary">DA</span><span class="body"><span class="nm">Daniel</span><span class="sub">Playing tonight · since 6 Oct</span></span><span class="badge owes">RM 13</span></div>
+              <div class="row"><span class="avatar av-sage">BE</span><span class="body"><span class="nm">Ben</span><span class="sub">Since 6 Oct</span></span><span class="badge owes">RM 13</span></div>
+              <div class="row-total"><span>5 players owe</span><b>RM 79</b></div>
+            </div>
+          </section>
+
+          <section class="section" aria-label="Recent sessions">
+            <div class="section-head"><p class="section-label">Recent sessions</p><span class="link">See all</span></div>
+            <div class="card list">
+              <div class="row"><span class="body"><span class="nm">Tuesday Smash</span><span class="sub">6 Oct · 8 players · 11 matches · RM 104</span></span><span class="badge owes">RM 61.50 due</span></div>
+              <div class="row"><span class="body"><span class="nm">Friday Doubles</span><span class="sub">2 Oct · 6 players · 8 matches · RM 84</span></span><span class="badge owes">RM 17.50 due</span></div>
+            </div>
+          </section>
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span class="on" aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>Session in progress today</strong>
+        <span>At the court the card grows: live counts, the same "≈ RM X so far" estimate badge as session detail, and New match as the primary button, so recording a match is one tap from launch. The stock alert now counts the shuttles left tonight. Owers who are playing tonight are tagged, so the manager can collect in person. The 30-day tiles drop out while a session is open to keep the page short.</span>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Home, first launch">
+        <div class="status-bar"><span>18:03</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><div><div class="eyebrow">Thursday 8 Oct</div><h2 class="screen-title">Welcome</h2></div></div>
+        <div class="content">
+          <p class="hint" style="font-size:15px;line-height:22px;color:var(--ink)">Three steps to your first session. Shuttle Calculator splits courts across everyone who played, and each shuttle only across the players who used it.</p>
+          <section class="card steps" aria-label="Setup steps">
+            <div class="step next" role="button"><span class="num">1</span><span class="body"><span class="nm">Add your players</span><span class="sub">Everyone who plays at your club</span></span><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+            <div class="step" role="button"><span class="num">2</span><span class="body"><span class="nm">Add the shuttles you buy</span><span class="sub">Name, tube price and how many in a tube</span></span><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+            <div class="step" role="button"><span class="num">3</span><span class="body"><span class="nm">Start your first session</span><span class="sub">Book courts and record matches as you play</span></span><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+          </section>
+          <p class="hint">Once you've played, this page shows your open session, who still owes, low stock and recent sessions.</p>
+        </div>
+        <div style="flex:1"></div>
+        <nav class="tabbar" aria-label="Tabs"><span class="on" aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>Empty · first launch</strong>
+        <span>No players, shuttles or sessions, so no empty tiles or blank chart. A three-step checklist replaces Home; the numbering is real because each step needs the one before it to be useful. The next step is filled in; done steps turn into a sage check. Each row opens the same add flow its tab uses. Home switches to the normal layout after the first session is created.</span>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Home, step 1 done">
+        <div class="status-bar"><span>18:09</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><div><div class="eyebrow">Thursday 8 Oct</div><h2 class="screen-title">Welcome</h2></div></div>
+        <div class="content">
+          <section class="card steps" aria-label="Setup steps">
+            <div class="step"><span class="num" style="background:var(--settled-tint);border-color:var(--settled-tint);color:var(--settled)"><svg width="16" height="16"><use href="#i-check"/></svg></span><span class="body"><span class="nm">Add your players</span><span class="sub">8 players added</span></span><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+            <div class="step next" role="button"><span class="num">2</span><span class="body"><span class="nm">Add the shuttles you buy</span><span class="sub">Name, tube price and how many in a tube</span></span><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+            <div class="step" role="button"><span class="num">3</span><span class="body"><span class="nm">Start your first session</span><span class="sub">Book courts and record matches as you play</span></span><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+          </section>
+          <p class="hint">You can skip shuttles and use free ones, but they won't be charged to anyone.</p>
+        </div>
+        <div style="flex:1;min-height:120px"></div>
+        <nav class="tabbar" aria-label="Tabs"><span class="on" aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>Empty · partly set up</strong>
+        <span>Progress is shown with a check and a count, not colour alone. Step 3 stays tappable even without shuttles, because free shuttles are a real way to play; the hint says what that means for charges.</span>
+      </figcaption>
+    </figure>
+
+  </div>
+  <div class="queries">
+    <h3>Data for direction A</h3>
+    <ul>
+      <li><b>Exists:</b> session card (<code>fetchAllSessions</code> + <code>previewSessionCharges</code>), owers and oldest debt (<code>fetchAllPlayerPayments</code>), recent sessions (<code>fetchAllSessions</code>), stock left (<code>fetchAllShuttlesWithInventory</code>), setup checklist (existing list fetches).</li>
+      <li><b>New query: shuttle runway.</b> <span>Average shuttles used per session for each type over the last 5 closed sessions, so the UI can say "about 1 session". Low = 2 sessions or fewer, falling back to today's 2-shuttle rule when there's no history.</span></li>
+      <li><b>New query: 30-day summary.</b> <span>Sessions, matches, distinct players, shuttles used, total charged and still due between two dates.</span></li>
+      <li><b>Nice to have: top owers.</b> <span>A small query returning owed amount and oldest unpaid date per player, sorted, instead of deriving it from the full payments list in the UI.</span></li>
+      <li><b>Removed:</b> <code>InsightsSection</code> (chart) leaves Home. Moving it to the Shuttles tab is follow-up work outside this design.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- B: Dashboard -->
+<section class="dir" id="dir-dash" hidden>
+  <div class="dir-head">
+    <h2>B · Dashboard (not chosen)</h2>
+    <p>Home as a club overview: numbers first, then a compact chart, money, stock and sessions. Closest to what you first pictured, and the strongest for a weekly review. It is the weakest at the court, because starting or continuing a session shrinks to a header button.</p>
+  </div>
+  <div class="board">
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Dashboard Home">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><div><div class="eyebrow">Thursday 8 Oct</div><h2 class="screen-title">Home</h2></div><span class="icon-btn" role="button" aria-label="Start session"><svg width="22" height="22"><use href="#i-plus"/></svg></span></div>
+        <div class="content">
+          <section class="section" aria-label="Last 30 days">
+            <p class="section-label">Last 30 days</p>
+            <div class="tiles">
+              <div class="card tile"><span class="k">Sessions</span><span class="v">4</span><span class="s">42 matches</span></div>
+              <div class="card tile"><span class="k"><svg width="14" height="14"><use href="#i-feather"/></svg>Shuttles used</span><span class="v">37</span><span class="s">9 a session</span></div>
+              <div class="card tile"><span class="k">Players</span><span class="v">9</span><span class="s">7 a session</span></div>
+              <div class="card tile"><span class="k">Charged</span><span class="v">RM 396</span><span class="s">RM 79 still due</span></div>
+            </div>
+          </section>
+
+          <section class="card chart" aria-label="Shuttles per session, last 8 sessions: 8, 9, 10, 9, 11, 8, 10, 9">
+            <div class="section-head"><p class="section-label">Shuttles per session</p></div>
+            <svg viewBox="0 0 280 96" width="100%" role="img" aria-hidden="true">
+              <line x1="0" y1="76" x2="280" y2="76" stroke="var(--border-subtle)" stroke-width="1"/>
+              <g fill="var(--clay-tint)">
+                <rect x="6" y="28" width="24" height="48" rx="3"/>
+                <rect x="40" y="22" width="24" height="54" rx="3"/>
+                <rect x="74" y="16" width="24" height="60" rx="3"/>
+                <rect x="108" y="22" width="24" height="54" rx="3"/>
+                <rect x="142" y="10" width="24" height="66" rx="3"/>
+                <rect x="176" y="28" width="24" height="48" rx="3"/>
+                <rect x="210" y="16" width="24" height="60" rx="3"/>
+              </g>
+              <rect x="244" y="22" width="24" height="54" rx="3" fill="var(--clay)"/>
+              <text x="256" y="16" text-anchor="middle" style="fill:var(--ink);font-weight:600">9</text>
+              <text x="18" y="90" text-anchor="middle">11 Aug</text>
+              <text x="256" y="90" text-anchor="middle">6 Oct</text>
+            </svg>
+          </section>
+
+          <section class="section" aria-label="Waiting on payment">
+            <div class="section-head"><p class="section-label">Waiting on payment</p><span class="link">See all</span></div>
+            <div class="card list">
+              <div class="row"><span class="avatar av-muted">CH</span><span class="body"><span class="nm">Chloe</span><span class="sub">Since 2 Oct</span></span><span class="badge owes">RM 30.50</span></div>
+              <div class="row"><span class="avatar av-primary">DA</span><span class="body"><span class="nm">Daniel</span><span class="sub">Since 6 Oct</span></span><span class="badge owes">RM 13</span></div>
+              <div class="row-total"><span>5 players owe</span><b>RM 79</b></div>
+            </div>
+          </section>
+
+          <section class="section" aria-label="Shuttle stock">
+            <div class="section-head"><p class="section-label">Stock</p><span class="link">Shuttles</span></div>
+            <div class="card list">
+              <div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span class="nm" style="font-weight:500">Yonex AS-50</span><span class="amt" style="color:var(--clay-strong)">5 left · ~1 session</span></div><div class="meter"><i style="width:14%;background:var(--clay)"></i></div></div>
+              <div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span class="nm" style="font-weight:500">RSL Classic</span><span class="amt">22 left · ~3 sessions</span></div><div class="meter"><i style="width:61%;background:var(--primary)"></i></div></div>
+            </div>
+          </section>
+
+          <section class="section" aria-label="Recent sessions">
+            <div class="section-head"><p class="section-label">Recent sessions</p><span class="link">See all</span></div>
+            <div class="card list">
+              <div class="row"><span class="body"><span class="nm">Tuesday Smash</span><span class="sub">6 Oct · 8 players · 11 matches · RM 104</span></span><span class="badge owes">RM 61.50 due</span></div>
+              <div class="row"><span class="body"><span class="nm">Friday Doubles</span><span class="sub">2 Oct · 6 players · 8 matches · RM 84</span></span><span class="badge owes">RM 17.50 due</span></div>
+            </div>
+          </section>
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span class="on" aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>Dashboard · between sessions</strong>
+        <span>Four small tiles lead instead of one big number. The line chart shrinks to bars per session, which reads better than a daily line for a club that plays twice a week; the full chart would live on the Shuttles tab. Every stock type gets a meter, low or not. Start session is a round + in the header, out of thumb reach. During a session an open-session strip would sit above the tiles.</span>
+      </figcaption>
+    </figure>
+  </div>
+  <div class="queries">
+    <h3>Data for direction B</h3>
+    <ul>
+      <li><b>Exists:</b> owers, recent sessions, stock left, the open session.</li>
+      <li><b>New query: 30-day summary</b> <span>(same as A).</span></li>
+      <li><b>New query: shuttles per session</b> <span>for the last 8 sessions (today's series is by day, week or month, not by session).</span></li>
+      <li><b>New query: shuttle runway</b> <span>(same as A), for every type rather than only low ones.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- C: Feed -->
+<section class="dir" id="dir-feed" hidden>
+  <div class="dir-head">
+    <h2>C · Feed (not chosen)</h2>
+    <p>Home as a timeline of what happened, newest first: sessions closed, payments taken, stock bought, stock running low. Good at "what changed since I last looked". Weak at "who owes right now", because debt is scattered across days.</p>
+  </div>
+  <div class="board">
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Feed Home">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><div><div class="eyebrow">Thursday 8 Oct</div><h2 class="screen-title">Home</h2></div></div>
+        <div class="content">
+          <section class="card session-card" aria-label="No session open">
+            <div class="top"><div><div class="name">No session open</div><div class="meta">5 players owe RM 79 in total</div></div></div>
+            <button class="btn primary full" type="button"><svg width="18" height="18"><use href="#i-plus"/></svg>Start session</button>
+          </section>
+
+          <section class="feed-day" aria-label="Today">
+            <p class="section-label">Today</p>
+            <div class="card list">
+              <div class="feed-item"><span class="dot c"><svg width="16" height="16"><use href="#i-alert"/></svg></span><span class="body"><span class="nm">Yonex AS-50 is running low</span><span class="sub">5 left · about 1 session</span></span></div>
+            </div>
+          </section>
+
+          <section class="feed-day" aria-label="Wednesday 7 October">
+            <p class="section-label">Wed 7 Oct</p>
+            <div class="card list">
+              <div class="feed-item"><span class="dot s"><svg width="16" height="16"><use href="#i-check"/></svg></span><span class="body"><span class="nm">Alice paid RM 13</span><span class="sub">Tuesday Smash · Alice is settled</span></span></div>
+              <div class="feed-item"><span class="dot s"><svg width="16" height="16"><use href="#i-check"/></svg></span><span class="body"><span class="nm">Gina paid RM 13</span><span class="sub">Tuesday Smash</span></span></div>
+            </div>
+          </section>
+
+          <section class="feed-day" aria-label="Tuesday 6 October">
+            <p class="section-label">Tue 6 Oct</p>
+            <div class="card list">
+              <div class="feed-item"><span class="dot p"><svg width="16" height="16"><use href="#i-coin"/></svg></span><span class="body"><span class="nm">Tuesday Smash closed</span><span class="sub">RM 104 split across 8 players · RM 61.50 still due</span></span></div>
+              <div class="feed-item"><span class="dot p"><svg width="16" height="16"><use href="#i-cal"/></svg></span><span class="body"><span class="nm">11 matches played</span><span class="sub">10 shuttles, 1 of them free</span></span></div>
+            </div>
+          </section>
+
+          <section class="feed-day" aria-label="Friday 2 October">
+            <p class="section-label">Fri 2 Oct</p>
+            <div class="card list">
+              <div class="feed-item"><span class="dot c"><svg width="16" height="16"><use href="#i-feather"/></svg></span><span class="body"><span class="nm">Bought 2 tubes of RSL Classic</span><span class="sub">24 shuttles</span></span></div>
+              <div class="feed-item"><span class="dot p"><svg width="16" height="16"><use href="#i-coin"/></svg></span><span class="body"><span class="nm">Friday Doubles closed</span><span class="sub">RM 84 split across 6 players · RM 17.50 still due</span></span></div>
+            </div>
+          </section>
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span class="on" aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>Feed · between sessions</strong>
+        <span>The session card stays on top, so the hot path survives. Below it, each day lists what changed. It explains itself well ("why does Chloe owe?") but the manager has to scroll and add up to see who to chase, and a busy week pushes older debt off screen. It also logs things the manager did themselves a minute ago.</span>
+      </figcaption>
+    </figure>
+  </div>
+  <div class="queries">
+    <h3>Data for direction C</h3>
+    <ul>
+      <li><b>Exists:</b> the session card, stock left.</li>
+      <li><b>New query: activity feed.</b> <span>A union over sessions (<code>closed_date</code>), payments (<code>date_paid</code>), <code>shuttle_purchases.date</code> and matches per session, newest first and paged. All dates already exist; grouping paid charges into one "paid RM X" line per player per day needs care.</span></li>
+      <li><b>New query: shuttle runway</b> <span>(same as A).</span></li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.switch button');
+  function show(dir) {
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.dir === dir)); });
+    ['action', 'dash', 'feed'].forEach(function (d) { document.getElementById('dir-' + d).hidden = d !== dir; });
+  }
+  buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.dir); }); });
+  var h = location.hash.replace('#', '');
+  if (h === 'dash' || h === 'feed' || h === 'action') show(h);
+})();
+</script>
