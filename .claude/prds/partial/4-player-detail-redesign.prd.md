@@ -232,7 +232,7 @@ ledger.sessions = [] → "No sessions yet", ALL SETTLED RM 0 (no caption), Empty
 
 ## Acceptance Criteria
 **Screen layout**
-- [ ] AC1: The header shows the avatar, the name and "N sessions · M matches" (correct plurals, open sessions included), with ⋯ on the right and no Delete button.
+- [x] AC1: The header shows the avatar, the name and "N sessions · M matches" (correct plurals, open sessions included), with ⋯ on the right and no Delete button.
 - [x] AC2: The balance card shows the total owed across closed sessions, the paid/owed bar and legend (real paid amounts from the ledger), and the open-session caption when the player is in an open session.
 - [x] AC3: Pay all is the only filled primary button. Pay individually and Waive are secondary.
 - [x] AC4: Every session the player joined is listed in the ledger's order (owing → open → settled), with the right badge: `Owes RM X`, `≈ RM X` or `Settled`.
@@ -257,9 +257,9 @@ ledger.sessions = [] → "No sessions yet", ALL SETTLED RM 0 (no caption), Empty
 - [x] AC17: Waive enters the clay selection mode with the "Waive charges" title and helper. Its button reads "Waive · coming soon" and is always disabled. Nothing is written.
 
 **Options + delete**
-- [ ] AC18: ⋯ opens Player options, which has only Delete player.
+- [x] AC18: ⋯ opens Player options, which has only Delete player.
 - [x] AC19: Delete player is disabled with "Settle RM X first" while anything is owed, and with "In an open session — close it first" while the player is in an open session. Both come from `fetchPlayerDeleteBlockers`.
-- [ ] AC20: Otherwise it opens `DeletePlayerDialog`. Confirming soft-deletes the player and returns to the Players tab.
+- [x] AC20: Otherwise it opens `DeletePlayerDialog`. Confirming soft-deletes the player and returns to the Players tab.
 
 **Toast**
 - [x] AC21: `useAppToast().show(message)` shows an `ink` pill with a check icon at the bottom, above the tab bar or action bar. It is a polite live region and disappears after 1.5s. Session detail's "Session deleted" uses it.
@@ -297,7 +297,7 @@ Verified on the iOS Simulator (iPhone 17 Pro, iOS 26.0, Expo Go) after `npm run 
 
 | AC | Status | Evidence / notes |
 |---|---|---|
-| AC1 | ⚠️ unverified | Avatar (56px), name and "2 sessions · 4 matches" (Ben), "No sessions yet" (Gina), no Delete button. The ⋯ is rendered in `headerRight`, but in every screenshot Expo Go's floating tools button sits on top of it |
+| AC1 | ✅ done | Avatar (56px), name and "2 sessions · 4 matches" (Ben), "No sessions yet" (Alice in `no-shuttles`), no Delete button. Re-run 2026-10-08: with Expo Go's floating gear dragged aside, the ⋯ is visible at the header's right and a real tap opens Player options |
 | AC2 | ✅ done | Ben: OWES RM 16.50, "1 session" badge, bar and legend Paid RM 0 / Owed RM 16.50, "Tonight's open session adds about RM 5.84 when it closes." After paying RM 12.50 the legend read Paid RM 12.50 / Owed RM 4 (`amount_charged` sums) |
 | AC3 | ✅ done | Screenshot: Pay all is the only `sage` fill. Pay individually and Waive are outlined, and Pay session is a sage outline |
 | AC4 | ✅ done | Ben: Weekly Smash (Owes RM 16.50) → Friday Doubles (≈ RM 5.84). Alice: open → Settled. `closed-today` Chloe: 7 Oct then 30 Sep, both owing (newest first) |
@@ -308,21 +308,21 @@ Verified on the iOS Simulator (iPhone 17 Pro, iOS 26.0, Expo Go) after `npm run 
 | AC9 | ⚠️ unverified | The never-played state (Gina) shows "No sessions yet", ALL SETTLED RM 0 with no caption, and the EmptyState. At `accessibility-large` (`simctl ui content_size`) the balance actions stack and nothing truncates. The skeleton loads too fast to capture, so it was never seen on screen |
 | AC10 | ✅ done | Every amount in the screen and `components/player/*` goes through `formatRM`. There's no `$` amount or `toFixed` (grep) |
 | AC11 | ✅ done | Pay all (`closed-today`, Chloe): the dialog listed "Friday Doubles · 7 Oct RM 9.17", "Weekly Smash · 30 Sep RM 17.50", Total RM 26.67 and "Nothing left to pay". Confirming logged `paySessionInFull 2` then `paySessionInFull 1`, and left 0 unpaid rows. The screen then showed ALL SETTLED |
-| AC12 | ⚠️ unverified | Only owing sessions show, expanded, with checkboxes on the court share and shuttles. The tri-state box was seen empty, mixed (dash) and checked. Paid rows show a disabled box. The Select all ↔ Clear all label switches, but tapping it wasn't driven |
+| AC12 | ⚠️ unverified | Only owing sessions show, expanded, with checkboxes on the court share and shuttles. The tri-state box was seen empty, mixed (dash) and checked. Paid rows show a disabled box. Re-run 2026-10-08 with real taps (Ben, `default`): Pay individually showed only Weekly Smash, expanded, and hid the open session. **Select all** ticked all 4 ("4 of 4 picked", session box checked, "4 charges picked · RM 16.50", "Pay RM 16.50") and the label became "Clear all". **Clear all** is still untapped: Expo Go's gear covered it on that run |
 | AC13 | ✅ done | Nothing picked: "Tick charges to pay" and a disabled grey "Pay". One pick: "1 charge picked RM 2.50" and "Pay RM 2.50" |
 | AC14 | ✅ done | Confirm logged one `payChargesByKeys ["court:1","shuttle:1"]`. SQL shows both rows with `amount_paid` 0, a `date_paid` and an unchanged `amount_charged`. With a malformed key added, the dialog stayed open with "Couldn't save the payment. Try again.", still "2 of 4 picked", and 0 rows changed |
 | AC15 | ✅ done | After the confirm, burst screenshots show view mode with refetched values (Owes RM 4, Paid RM 12.50) and the "Paid RM 12.50" toast |
-| AC16 | ⚠️ unverified | Cancel calls `exitSelection`, and `usePreventRemove` turns back into the same thing. Neither could be tapped or swiped |
+| AC16 | ⚠️ unverified | Re-run 2026-10-08: a real tap on Cancel with 4 charges picked returned to view mode with nothing written (still Owes RM 16.50, Paid RM 0). The back swipe (`usePreventRemove`) can't be driven: the Expo MCP tools have no swipe gesture |
 | AC17 | ✅ done | Waive mode: "Waive charges", "Tick what Chloe no longer has to pay.", clay boxes and tints, and a disabled "Waive · coming soon" even with 4 charges picked. The button can't call anything |
-| AC18 | ⚠️ unverified | The sheet shows "Player options" with only Delete player and Cancel. Opening it from the ⋯ tap wasn't driven |
+| AC18 | ✅ done | Re-run 2026-10-08 with real taps (Ben, `default`): tapping ⋯ (`player-options-button`) opened "Player options" with only Delete player and Cancel. The row reported `is_enabled: false` with "Settle RM 16.50 first", and tapping it opened nothing |
 | AC19 | ✅ done | Ben: disabled, "Settle RM 16.50 first". Alice (owes 0, in an open session): disabled, "In an open session — close it first". Gina: enabled, "Moves Gina to Recently deleted" |
-| AC20 | ⚠️ unverified | Confirming (`handleDeleteConfirm`) soft-deleted Chloe (`status = 'deleted'`) and returned to the Players tab. Opening `DeletePlayerDialog` from the row and tapping Delete wasn't driven |
+| AC20 | ✅ done | Re-run 2026-10-08 with real taps (Alice, `npm run db:fresh -- no-shuttles`): ⋯ → Delete player (enabled, "Moves Alice to Recently deleted") opened `DeletePlayerDialog` "Delete Alice?". Tapping Delete returned to the Players tab (Ben, Chloe, Daniel left), and Recently Deleted lists Alice with Restore. The first tap on Delete didn't register (probably mid-animation); the second did |
 | AC21 | ✅ done | `useAppToast` (`duration: 1500`, bottom placement): an `ink` pill with a check, `accessibilityLiveRegion="polite"` and a queued announcement. Seen on player detail ("Paid RM 12.50") and session detail ("Session deleted", above the tab bar), and gone about 2 s later in both bursts |
 | AC22 | ✅ done | `git diff main --stat -- services/` is empty |
 | AC23 | ⚠️ unverified | `npx tsc --noEmit` passes. `npm run lint` shows 0 errors and 24 warnings, all in untouched files (one fewer than main). Checked on the iOS Simulator with `db:fresh`, but through `simctl` and not the Expo MCP local tools, which weren't available |
 
 ### Needs attention
-- Re-run on the simulator with the Expo MCP local tools and drive real taps: ⋯ → Delete player → Delete, Cancel and the back swipe in selection mode, Select all / Clear all, and Mark paid. Then tick AC1, AC12, AC16, AC18, AC20 and AC23.
+- With the Expo MCP local tools (2026-10-08), AC1, AC18 and AC20 were verified with real taps. Still to tap: Clear all (AC12), the back swipe in selection mode (AC16, no swipe tool), then tick AC23 once the rest pass. Drag Expo Go's floating gear away from the top right first; it covers the header buttons.
 - AC7: check "Free shuttles only" with a match that used only free shuttles (record one in an open or closed session, or add a seed scenario).
 - AC9: look at the skeleton, for example on a slow first load.
 
