@@ -19,7 +19,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 10 | [Player balance and payments](#10-player-balance-and-payments) | Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md), [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 11 | [Pay Early](#11-pay-early) | Planned |
-| 12 | [Home dashboard](#12-home-dashboard) | Built |
+| 12 | [Home dashboard](#12-home-dashboard) | Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md) (readers for the redesign ready; the screen is unchanged until the frontend half ships) |
 | 13 | [Insights](#13-insights) | Planned (future improvement) |
 | 14 | [Player play history](#14-player-play-history) | Built: [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 15 | [Settings](#15-settings) | Built (developer tools only) |
@@ -256,15 +256,21 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 12. Home dashboard
 
+**Status**: Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md) (readers for the redesign ready; the screen is unchanged until the frontend half ships).
+
 **What it does**
 - "Total outstanding" across all active players.
 - "Total Shuttle Used" and "Remaining Shuttles" across all types.
 - "Recent Sessions": the 2 newest, tappable.
 - A shuttle-usage chart (shuttles used over time) with ranges 1W, 1M (daily), 6M (weekly), 12M (monthly).
 
-**Where**: `app/(tabs)/index.tsx`, `components/shared/StatCard.tsx`, `components/insights/InsightsSection.tsx`, `services/shuttle.ts` (`fetchShuttleUsageSummary`, `fetchShuttleUsageTimeSeries`).
+**Where**: `app/(tabs)/index.tsx`, `components/shared/StatCard.tsx`, `components/insights/InsightsSection.tsx`, `services/shuttle.ts` (`fetchShuttleUsageSummary`, `fetchShuttleUsageTimeSeries`). Redesign readers: `services/session.ts` (`fetchActivitySummary`), `services/player.ts` (`fetchTopOwers`); seed scenario `stale-open` in `services/seed.ts`. PRD: `.claude/prds/completed/7-backend-home-redesign.prd.md`.
 
-**Planned redesign** (not built, PRD [7] backend + frontend): spec `.claude/design/specs/home.md`, direction A approved 2026-10-08. Start session goes straight to the new session; a session left open from an earlier day is flagged on Home and on the Sessions tab. Order: session card (Start session, or Open session + New match), low-stock alert with runway, Last 30 days tiles (rolling), Waiting on payment (oldest debt first), Recent sessions (compact). The big Total outstanding figure, the shuttle StatCards and the usage chart leave Home.
+**Readers for the redesign** (built, not yet used by a screen)
+- `fetchActivitySummary(from, to)`: sessions, matches, distinct players and paid (non-free) shuttles for sessions dated in the window, open or closed; `charged` (sum of `amount_due`) and `still_due` (sum of owed payment rows) count closed sessions only. Dates are compared with `datetime(...)` on both sides.
+- `fetchTopOwers(limit = 3)`: active players owing at least RM 0.01 (after rounding), oldest unpaid charge first, then largest owed, then name, with `sessions_owed` (distinct sessions with unpaid charges). `total_owed` and `owing_count` cover every ower, not just the first `limit`.
+
+**Planned redesign** (screen not built yet, PRD [7] frontend): spec `.claude/design/specs/home.md`, direction A approved 2026-10-08. Start session goes straight to the new session; a session left open from an earlier day is flagged on Home and on the Sessions tab. Order: session card (Start session, or Open session + New match), low-stock alert with runway, Last 30 days tiles (rolling), Waiting on payment (oldest debt first), Recent sessions (compact). The big Total outstanding figure, the shuttle StatCards and the usage chart leave Home.
 
 **Known gaps**
 - The usage chart is analytics and moves to the Shuttles tab (see [13](#13-insights)); addressed by the Home spec.

@@ -412,3 +412,46 @@ export async function fetchShuttlePaymentsBySessionId(id: string) {
         `
     [id])
 }
+
+export type ActivitySummary = {
+    sessions: number,
+    matches: number,
+    players: number,
+    shuttles_used: number,
+    charged: number,
+    still_due: number
+}
+
+export async function fetchActivitySummary(from: string, to: string): Promise<ActivitySummary> {
+    const row: any = await db.getFirstAsync(`
+        WITH w AS (
+            SELECT session_id, status, amount_due FROM sessions
+            WHERE datetime(date) BETWEEN datetime(?) AND datetime(?)
+        ),
+        closed AS (SELECT session_id FROM w WHERE status = 'closed')
+        SELECT
+            (SELECT COUNT(*) FROM w) AS sessions,
+            (SELECT COUNT(*) FROM matches WHERE session_id IN (SELECT session_id FROM w)) AS matches,
+            (SELECT COUNT(DISTINCT mp.player_id) FROM match_players mp
+                JOIN matches m ON m.match_id = mp.match_id
+                WHERE m.session_id IN (SELECT session_id FROM w) AND mp.player_id IS NOT NULL) AS players,
+            (SELECT COUNT(*) FROM shuttle_instances
+                WHERE session_id IN (SELECT session_id FROM w) AND shuttle_id IS NOT NULL) AS shuttles_used,
+            (SELECT COALESCE(SUM(amount_due), 0) FROM w WHERE status = 'closed') AS charged,
+            (SELECT COALESCE(SUM(sp.amount_paid), 0) FROM shuttle_payments sp
+                JOIN shuttle_instances si ON si.shuttle_instance_id = sp.shuttle_instance_id
+                WHERE si.session_id IN (SELECT session_id FROM closed))
+            + (SELECT COALESCE(SUM(cp.amount_paid), 0) FROM court_payments cp
+                JOIN court_bookings cb ON cb.court_booking_id = cp.court_booking_id
+                WHERE cb.session_id IN (SELECT session_id FROM closed)) AS still_due
+    `, [from, to])
+
+    return {
+        sessions: row?.sessions ?? 0,
+        matches: row?.matches ?? 0,
+        players: row?.players ?? 0,
+        shuttles_used: row?.shuttles_used ?? 0,
+        charged: roundToCents(row?.charged ?? 0),
+        still_due: roundToCents(row?.still_due ?? 0)
+    }
+}

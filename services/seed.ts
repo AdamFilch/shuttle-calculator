@@ -1,9 +1,9 @@
 import { subDays } from "date-fns";
 import { bookCourt } from "./court";
 import { createNewMatch } from "./match";
-import { createPlayer, deletePlayer } from "./player";
+import { createPlayer, deletePlayer, fetchAllPlayers } from "./player";
 import { closeSession, createNewSession, fetchAllSessions } from "./session";
-import { addShuttlePurchase, createShuttle } from "./shuttle";
+import { addShuttlePurchase, createShuttle, fetchAllShuttles } from "./shuttle";
 import { paySessionInFull } from "./shuttle-payments";
 import { fetchShuttleInstancesBySessionId } from "./shuttle_instances";
 
@@ -101,6 +101,23 @@ async function seedEmptySession() {
     await bookCourt({ sessionId: empty, label: 'Court 5', price: 20, quantity: 1 })
 }
 
+async function seedStaleOpen() {
+    await seedDefault()
+    const players = await fetchAllPlayers()
+    const [yonex] = await fetchAllShuttles()
+    const stale = await createNewSession({
+        name: 'Friday Doubles',
+        date: subDays(new Date(), 3).toISOString(),
+        startTime: '19:30',
+        location: 'Community Centre'
+    })
+    await createNewMatch({
+        sessionId: stale,
+        playersId: players.slice(0, 4).map((p) => p.player_id),
+        shuttleSelections: [{ mode: 'new', shuttleId: yonex.shuttle_id, quantity: 1 }]
+    })
+}
+
 async function seedShuttlePicker() {
     const ids: number[] = []
     for (const name of ['Alice', 'Ben', 'Chloe', 'Daniel']) ids.push(await createPlayer(name))
@@ -173,6 +190,7 @@ export const scenarios: Record<string, () => Promise<void>> = {
     'no-shuttles': seedNoShuttles,
     'closed-today': seedClosedToday,
     'empty-session': seedEmptySession,
+    'stale-open': seedStaleOpen,
 }
 
 export async function seedDatabase(scenario = 'default') {
