@@ -231,7 +231,7 @@ Open session dated 3 days ago
 | Many sections each fetching on focus | Low | Brief flicker | Keep old data while refetching (spec §7) |
 
 ---
-*Status: PARTIAL — PR #PRNUM*
+*Status: PARTIAL — PR #28*
 
 ## Implementation Status
 | AC | Status | Evidence / notes |
