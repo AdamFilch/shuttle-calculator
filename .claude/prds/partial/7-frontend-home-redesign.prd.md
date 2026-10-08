@@ -184,7 +184,7 @@ Open session dated 3 days ago
 ---
 
 ## Acceptance Criteria
-- [ ] AC1 (layout and removals): Home shows no "Total outstanding", no shuttle StatCards and no chart.
+- [x] AC1 (layout and removals): Home shows no "Total outstanding", no shuttle StatCards and no chart.
   - Order: session card → (low-stock slot) → Last 30 days → Waiting on payment → Recent sessions.
   - Empty sections hide.
   - `StatCard.tsx` is deleted.
@@ -231,4 +231,16 @@ Open session dated 3 days ago
 | Many sections each fetching on focus | Low | Brief flicker | Keep old data while refetching (spec §7) |
 
 ---
-*Status: READY — ticket [7] (frontend)*
+*Status: PARTIAL — PR #PRNUM*
+
+## Implementation Status
+| AC | Status | Evidence / notes |
+|---|---|---|
+| AC1 | ✅ done | iOS Simulator screenshots (default, closed-today, stale-open): no Total outstanding, shuttle StatCards or chart; order session card → Last 30 days → Waiting on payment → Recent sessions; sections hide when empty; `components/shared/StatCard.tsx` deleted (grep found no other users); all amounts via `formatRM` |
+| AC2 | ⚠️ unverified (taps) | Seen on the simulator: "No session open" + "Last one: Friday Doubles, today" (closed-today); open card "Friday Doubles · Started 7:30 pm · Community Centre · 6 players 4 matches 4 shuttles · ≈ RM 45 so far", equal to session detail's "≈ RM 45" (default); stale caption and "Started Mon 5 Oct" (stale-open with today's session closed by a throwaway local seed, reverted); "+1 more open session" (stale-open); tiles hidden while open, shown with Sessions 2 / 7 matches, Shuttles 6 / 3 a session, Players 6 / 6 a session, Charged RM 161.02 / RM 144.52 still due (closed-today). **Not driven**: tapping Start session → save → session detail, Open session, New match, "+N more" (no tap tool, see below) |
+| AC3 | ⚠️ unverified (taps) | Seen: Waiting on payment 3 rows, oldest first, "Playing tonight · Since 8 Oct" (default) and "2 sessions · since 8 Oct" (closed-today), amount badge, footer "5 players owe RM 79.50"; Recent sessions compact rows "8 Oct · 6 players · 4 matches · RM 65.02" with due badges, max 2 while a session is open, card's session excluded, extra open session shown with "≈ RM 10" and the stale badge; Welcome checklist (empty) and step 1 done "3 players added" + skip-shuttles hint (players-only throwaway seed). **Not driven**: row taps, See all, checklist steps opening the add modals |
+| AC4 | ⚠️ partly verified | Sessions tab shows "Still open since 5 Oct" on the stale session only; other cards unchanged (stale-open). `npm run lint` 0 errors (23 pre-existing warnings, none in changed files), `npx tsc --noEmit` passes, no file under `services/` changed, never run on web. Largest Dynamic Type checked: title/badge and the card buttons stack. Accessibility labels and ≥ 44pt targets are in code (`min-h-11`/`min-h-12`/`min-h-14`) but not checked with VoiceOver. Seeds were checked with `xcrun simctl io booted screenshot`, not Expo MCP (its local tools were not connected) |
+
+### Needs attention
+- Drive the taps on the iOS Simulator with Expo MCP local tools connected (`npm run start:mcp`, then `/mcp` reconnect): Start session → save lands on the new session's detail; Open session / New match; "+1 more open session" → Sessions tab; owers rows → player, See all → Players; recent rows → session, See all → Sessions; Welcome steps 1–3 open AddPlayerModal / AddShuttleModal / AddSessionModal.
+- Check the VoiceOver labels from spec §8 with the Accessibility Inspector.
