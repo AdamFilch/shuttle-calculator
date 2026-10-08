@@ -74,7 +74,7 @@ Data reloads on focus and after either dialog closes (as today).
 - Row: name (left, `card-title`, medium, truncates to one line) and status text (right, `body` medium, tabular). Below, a 6pt meter. Chevron at the right. Whole row is one button, min height 56pt.
 - Status text: "{n} left · ~{k} session(s)" when a runway exists; "{n} left" when it doesn't; "Out of stock" at 0 or below.
 - Runway `k` = floor(remaining ÷ this type's average per session). Rounded down to stay on the safe side. When remaining > 0 but k = 0, show "<1 session" (Home says "less than 1 session"), never "~0 sessions".
-- Meter fill = remaining ÷ (remaining + paid shuttles of this type used since its latest purchase). Full right after a restock, empties as shuttles are used. Clamp 0–100%.
+- Meter fill = remaining ÷ (remaining + paid shuttles of this type used in sessions dated after its latest purchase). Full right after a restock, empties as shuttles are used. Clamp 0–100%.
 - Sort: out first, then low, then ok. Within each group by runway ascending; types with no runway after those with one; ties by name A–Z.
 
 **Chart** (section card)
@@ -248,7 +248,7 @@ The dialog stays as it is today, titled with the type's name. Changes:
 - *Club average* = paid shuttles used in the window ÷ sessions in the window.
 - *Type average* = paid shuttles of that type used in the window ÷ sessions in the window. If 0 (type unused in the window), the type has no runway.
 - *Runway* = floor(remaining ÷ type average); null with no history or a zero average.
-- *Status*: `out` if remaining ≤ 0; else `low` if Warn at is in shuttles and remaining ≤ N, or Warn at is in sessions, runway is not null and runway ≤ N, or there is no Warn at and remaining < 2; else `ok`. Only types with a Warn at alert (tab dot, Home).
+- *Status*: `out` if remaining ≤ 0; else `low` if Warn at is in shuttles and remaining ≤ N, or Warn at is in sessions and runway (type average, else the club average) ≤ N, or there is no Warn at and remaining < 2; else `ok`. Only types with a Warn at alert (tab dot, Home).
 
 ## 8. Accessibility
 

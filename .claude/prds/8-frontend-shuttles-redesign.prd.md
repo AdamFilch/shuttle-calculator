@@ -66,7 +66,7 @@ Create match's shuttle picker keeps its behaviour; only its New / Reuse toggle b
 | D9 | Where rounding happens | At save: `total_price = round2(unit) × count` | All existing readers unchanged | User |
 | D10 | Warn schema | `warn_at INTEGER CHECK ≥1`, `warn_unit TEXT CHECK IN ('shuttles','sessions')`, both NULL or both set | DB guards bad values | User |
 | D11 | Seed | Update `default` (one low, one out) + new `shuttles` scenario | All states visible | User |
-| D12 | Meter basis | Paid instances dated after the latest purchase | Uses existing timestamps | User |
+| D12 | Meter basis | Paid instances used after the latest purchase (revised by D24: by session date, not insert time) | Uses existing data | User |
 | D13 | Contract | Mapping table as confirmed; `createShuttle({name, tube_price, per_tube, tubes})` | Money maths stays in the service | User |
 | D14 | Acceptance criteria | All four groups for each half | Confirmed | User |
 | D15 | Status/sort computed in service | `fetchShuttleStock` returns `status` and sorted `types[]` | One rule for tab, dot and Home (spec §7) | Claude — straightforward |
@@ -78,6 +78,12 @@ Create match's shuttle picker keeps its behaviour; only its New / Reuse toggle b
 | D21 | Backend touching screen files | Allowed as named exceptions only: insights route removal in `app/(tabs)/_layout.tsx`, stopgap call sites in the two shuttle dialogs | Removing a route needs its layout entry gone; signatures change here | User |
 | D22 | Error handling | Shared pattern: field errors under the field, save failures as an `AppToast` with the dialog kept open, load failures inline "Couldn't load. Pull to refresh.", tab dot keeps its last value | One behaviour across all shuttle writers and readers | User |
 | D23 | Restock unit | Add shuttle uses tubes (min 1); Buy again stays a plain shuttle count, no tubes | Restocks are often loose shuttles | User |
+| D24 | Meter date basis | A paid instance counts as "used since the latest purchase" when its session's `sessions.date` is after the purchase's `date` (via `shuttle_instances.session_id`), compared with `datetime()` on both sides | The session link gives the real play date; insert time doesn't | User |
+| D25 | Backdated purchases for the seed | `addShuttlePurchase` gains an optional `date`; only `services/seed.ts` passes it | The seed's past sessions need purchases dated before them so meters show use | Claude — straightforward |
+| D26 | Dev verification scenario | Deferred to a future ticket; AC checks use a temporary Metro log | Not needed to ship | User |
+| D27 | Price edited while a session is open | Allowed; the open session is charged the new price at close, as today | Charges are read at close | User |
+| D28 | "Uses ~X a session" when it rounds to 0 | Hide that part of the detail hint | "~0" reads as wrong | User |
+| D29 | Sessions Warn at for a type unused in the window | Status falls back to the club average: `runway = floor(remaining ÷ club_avg_per_session)` for the low check only; the row still shows no runway | Otherwise it can't warn until 0 | User |
 
 ## Overview
 Every number on the tab, the dot and Home's alert comes from one reader, `fetchShuttleStock()`, which returns sorted `types[]` with a `status` and `totals`. The chart reads `fetchShuttlesPerSession(8)`. The two dialogs call `createShuttle`, `updateShuttle`, `isShuttleNameTaken`, `addShuttlePurchase` and `fetchShuttlePurchaseHistory`. The screen never works out status, runway or sort order itself (D15). Its only maths is display: meter fill, the live per-shuttle line and the Warn at hint preview.
@@ -90,6 +96,7 @@ Non-obvious design decisions:
 5. **Create match can't over-pick (D20).** In `selectShuttleModal.tsx` the New-shuttle stepper's + is disabled at the type's `remaining` (the `Stepper` gets a `max` prop), so stock can't go negative from the app.
 6. **One error pattern (D22).** Writer errors map to fields by message (table in the [backend contract](8-backend-shuttles-redesign.prd.md#contract-for-frontend)); an unknown error shows an `AppToast` "Couldn't save. Try again." and the dialog stays open with input kept. A failed load on the tab or Home shows "Couldn't load. Pull to refresh." inline. A failed tab-dot query keeps the last value.
 7. **Tubes only on Add (D23).** Add shuttle's Tubes stepper has min 1. Buy again in the detail dialog stays a plain shuttle count (integer ≥ 1), no tubes.
+8. **Detail hint edge cases.** When the type's average rounds to 0, the "(uses ~X a session)" part is left out (D28). When the type has no average but the club has one, the sessions hint uses the club average: "Not used in recent sessions, so this uses the club average of ~{club} a session." (D29)
 
 ## Readers
 All from [the backend contract](8-backend-shuttles-redesign.prd.md#contract-for-frontend).
@@ -193,10 +200,6 @@ Detail → Warn at 2, Sessions, avg_per_session null
 ## Features Catalog
 - **Extends**: #8 Shuttle inventory; #12 Home dashboard (low-stock alert now live)
 - **Closes known gaps**: "Planned (no PRD yet): an optional "Warn at: N" input with a Shuttle / Session toggle in the shuttle detail pop-up. It triggers Home's low-stock alert (PRD [7] D3, D4)."; "The spec's manual verification on a simulator hasn't been run." (for the redesigned tab)
-
-## Open Questions
-- [ ] Detail hint "uses ~X a session" rounds the average to a whole number, so 0.4 reads "~0". Show one decimal below 1?
-- [ ] A type with a sessions Warn at that wasn't used in the last 8 sessions has no average, so it never shows low until 0. Fall back to the club average?
 
 ## Risks
 | Risk | Likelihood | Impact | Mitigation |

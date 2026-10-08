@@ -26,12 +26,14 @@ This backend half adds two columns to `shuttles`, two stock readers, a name chec
 
 ## Scope
 **MVP**
+- `addShuttlePurchase` optional `date` (seed only).
 - `warn_at` / `warn_unit` columns, and the writer changes in [Writers](#writers).
 - `fetchShuttleStock`, `fetchShuttlesPerSession`, `isShuttleNameTaken`.
 - Seed updates (`default` + new `shuttles` scenario).
 - Removal of `fetchShuttleUsageTimeSeries`, `fetchEarliestShuttleUsageDate`, `fetchShuttleUsageSummary`, `components/insights/InsightsSection.tsx` and `app/(tabs)/insights/`.
 
 **Out of scope**
+- A dev verification scenario for these readers and writers. Deferred to a future ticket (D26).
 - Any screen or component redesign. That's in the frontend PRD. The only exceptions are the named files in [Required Changes → Special exception](#required-changes) (D21).
 - A stock check inside `createNewMatch`. The cap lives in the Create match stepper (D20, frontend).
 - Recording what a purchase cost. This is a known gap in features §8, and nothing on screen needs it.
@@ -70,7 +72,7 @@ This backend half adds two columns to `shuttles`, two stock readers, a name chec
 | D9 | Where rounding happens | At save: `total_price = round2(unit) × count` | All existing readers unchanged | User |
 | D10 | Warn schema | `warn_at INTEGER CHECK ≥1`, `warn_unit TEXT CHECK IN ('shuttles','sessions')`, both NULL or both set | DB guards bad values | User |
 | D11 | Seed | Update `default` (one low, one out) + new `shuttles` scenario | All states visible | User |
-| D12 | Meter basis | Paid instances dated after the latest purchase | Uses existing timestamps | User |
+| D12 | Meter basis | Paid instances used after the latest purchase (revised by D24: by session date, not insert time) | Uses existing data | User |
 | D13 | Contract | Mapping table as confirmed; `createShuttle({name, tube_price, per_tube, tubes})` | Money maths stays in the service | User |
 | D14 | Acceptance criteria | All four groups for each half | Confirmed | User |
 | D15 | Status/sort computed in service | `fetchShuttleStock` returns `status` and sorted `types[]` | One rule for tab, dot and Home (spec §7) | Claude — straightforward |
@@ -82,6 +84,12 @@ This backend half adds two columns to `shuttles`, two stock readers, a name chec
 | D21 | Backend touching screen files | Allowed as named exceptions only: insights route removal in `app/(tabs)/_layout.tsx`, stopgap call sites in the two shuttle dialogs | Removing a route needs its layout entry gone; signatures change here | User |
 | D22 | Error handling | Shared pattern: field errors under the field, save failures as an `AppToast` with the dialog kept open, load failures inline "Couldn't load. Pull to refresh.", tab dot keeps its last value | One behaviour across all shuttle writers and readers | User |
 | D23 | Restock unit | Add shuttle uses tubes (min 1); Buy again stays a plain shuttle count, no tubes | Restocks are often loose shuttles | User |
+| D24 | Meter date basis | A paid instance counts as "used since the latest purchase" when its session's `sessions.date` is after the purchase's `date` (via `shuttle_instances.session_id`), compared with `datetime()` on both sides | The session link gives the real play date; insert time doesn't | User |
+| D25 | Backdated purchases for the seed | `addShuttlePurchase` gains an optional `date`; only `services/seed.ts` passes it | The seed's past sessions need purchases dated before them so meters show use | Claude — straightforward |
+| D26 | Dev verification scenario | Deferred to a future ticket; AC checks use a temporary Metro log | Not needed to ship | User |
+| D27 | Price edited while a session is open | Allowed; the open session is charged the new price at close, as today | Charges are read at close | User |
+| D28 | "Uses ~X a session" when it rounds to 0 | Hide that part of the detail hint | "~0" reads as wrong | User |
+| D29 | Sessions Warn at for a type unused in the window | Status falls back to the club average: `runway = floor(remaining ÷ club_avg_per_session)` for the low check only; the row still shows no runway | Otherwise it can't warn until 0 | User |
 
 ## Overview
 A shuttle type (`shuttles`) has stock: purchases (`shuttle_purchases`) minus paid shuttles opened (`shuttle_instances` with that `shuttle_id`). Usage history comes from `shuttle_instances` joined to closed `sessions`. Warn at is two new nullable columns on the type. Everything else on the tab is derived when it's read.
@@ -137,7 +145,7 @@ Status is derived per type, never stored.
 |---|---|
 | `remaining ≤ 0` | `out` |
 | `warn_unit = 'shuttles'` and `remaining ≤ warn_at` | `low` |
-| `warn_unit = 'sessions'`, `runway_sessions` not null and `runway_sessions ≤ warn_at` | `low` |
+| `warn_unit = 'sessions'` and runway (type average, else club average, D29) `≤ warn_at` | `low` |
 | no Warn at and `remaining < 2` (i.e. 1 left) | `low` (D18) |
 | otherwise (incl. sessions Warn at with no history) | `ok` |
 
@@ -196,9 +204,10 @@ Status is derived per type, never stored.
 - Renaming to the same name with different case, e.g. "rsl classic" → "RSL Classic", is allowed because the type itself is excluded.
 - No upper limit on `warn_at` (D7).
 
-**Does not write:** purchases or instances. Open-session charges change with the price, as today (features §8, a known gap).
+**Does not write:** purchases or instances. A session still open when the price changes is charged the new price at close (D27); closed sessions keep their charges.
 
-### 3. Add to stock → `addShuttlePurchase` (unchanged)
+### 3. Add to stock → `addShuttlePurchase` (optional `date` added)
+**Signature:** `addShuttlePurchase({ shuttle_id, num_of_shuttles, date? }: { shuttle_id: number; num_of_shuttles: number; date?: string })`. When `date` is given it's stored in `shuttle_purchases.date`; otherwise the column default (`datetime('now')`) applies, as today. Only the seed passes it (D25). The app's Add to stock never does.
 
 ## Readers
 ### 1. `fetchShuttleStock` (new)
@@ -214,7 +223,8 @@ Status is derived per type, never stored.
 - **Stock:**
   - `remaining` = purchased − all instances of the type, open sessions included.
   - `runway_sessions` = `Math.floor(remaining / avg)` when `avg` is set and `remaining > 0`. It's 0 when `remaining ≤ 0` and `avg` is set, and null otherwise.
-  - `used_since_last_purchase` = instances of the type with `date >` the type's latest `shuttle_purchases.date`.
+  - For the **sessions Warn at check only**, when the type's `avg` is null but `club_avg_per_session` is set, use `Math.floor(remaining / club_avg_per_session)` (D29). `runway_sessions` in the result stays null.
+  - `used_since_last_purchase` = paid instances of the type whose session has `datetime(sessions.date) > datetime(latest shuttle_purchases.date)`, joined through `shuttle_instances.session_id` (D24).
   - `price_per_shuttle` = `total_price / num_of_shuttles`.
 - **Status and alert:** per the [State Machine](#state-machine).
 - **Sort:** out, then low, then ok. Within each group, by `runway_sessions` ascending with nulls last, then by name A–Z (case-insensitive).
@@ -383,6 +393,7 @@ fetchShuttleStock() with only an open session today
 - [ ] AC4: `fetchShuttleStock` uses only the last 8 closed sessions with a paid shuttle. It returns the averages, runway (rounded down), `used_since_last_purchase`, status and totals as in [Readers §1](#1-fetchshuttlestock-new), sorted out → low → ok, by runway with nulls last, then name.
 - [ ] AC5: With no closed sessions that used a paid shuttle, `club_avg_per_session` and every `avg_per_session` / `runway_sessions` are null. A sessions Warn at doesn't make a type low.
 - [ ] AC5b: A type with no Warn at is `low` at 1 left and `out` at 0, whatever its average, and its `alert` is false. `alert_count` counts only out/low types that have a Warn at.
+- [ ] AC5c: `used_since_last_purchase` counts paid instances from sessions dated after the latest purchase; after `npm run db:fresh` at least one seeded type has a partly used meter. A type with a sessions Warn at and no use in the window is judged against the club average.
 - [ ] AC6: `fetchShuttlesPerSession(8)` returns at most 8 rows, oldest first, closed sessions only, and leaves out sessions that used only free shuttles.
 - [ ] AC7: `isShuttleNameTaken` returns true or false correctly, with and without `excludeId`.
 - [ ] AC8: After `npm run db:fresh`, the `default` scenario gives at least one `low` type (with a Warn at) and one `out` type. `npm run db:fresh -- shuttles` gives 8+ closed sessions with paid shuttles and one type with no history. Both log `[dev-db] … done`.
@@ -396,6 +407,7 @@ fetchShuttleStock() with only an open session today
 - **Cleanup**: remove the usage queries, `InsightsSection` and the insights route plus its `_layout.tsx` entry (see [Readers → Removed](#removed)).
 - **Seed**:
   - Switch `createShuttle` calls to the tube arguments.
+  - Pass a `date` to `addShuttlePurchase` so restocks fall between past sessions and the meters show partial use (D25).
   - `default`: set a Warn at so one type is low, and use up another type completely.
   - Add a `shuttles` scenario: 8–10 closed sessions over recent weeks using two paid types plus some free shuttles, one type with a Warn at in sessions, and one newly added type with no use.
 - **Special exception, screen files (D21)**: this backend PRD may edit exactly these files under `app/` and `components/`, and only as described:
@@ -409,16 +421,11 @@ fetchShuttleStock() with only an open session today
 - **Extends**: #8 Shuttle inventory; #12 Home dashboard (low-stock data); #13 Insights (removed route)
 - **Closes known gaps**: "Planned (no PRD yet): an optional "Warn at: N" input with a Shuttle / Session toggle in the shuttle detail pop-up. It triggers Home's low-stock alert (PRD [7] D3, D4)." (data side)
 
-## Open Questions
-- [ ] Meter in the seed: `shuttle_instances.date` is the insert time, not the session date, and the seed inserts past sessions and purchases in the same second, so `used_since_last_purchase` is 0 and every seeded meter reads full. Use the session's date, or space out seed purchases?
-- [ ] How AC1–AC4 are verified without a raw-SQL tool: suggested a `verify-shuttles` dev scenario that calls the readers and writers and logs pass/fail to Metro.
-- [ ] Editing an old type's price re-saves it rounded (D9), which changes charges in any open session that used it. Accept, or block price edits while the type is used in an open session?
-
 ## Risks
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Rounded `total_price` confuses a later spend feature | Low | Low | D9 is documented here; record it in features §8 when shipped |
-| A purchase and a use in the same second mis-order the meter (`datetime('now')` text, 1 s resolution) | Low | Low | Use `>` and accept the edge case |
+| A purchase made on the same day as a session, before play, is compared with the session's date and start of day | Low | Low | Compare with `datetime()`; a same-day restock counts that session's use as before it. Accept |
 | The stopgap edit dialog clears a Warn at on Save before the frontend lands | Medium | Low | The frontend follows straight after; the seed sets Warn at directly |
 
 ---
