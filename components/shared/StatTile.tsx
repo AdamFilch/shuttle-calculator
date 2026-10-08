@@ -6,6 +6,7 @@ export function StatTile({
     label,
     value,
     subLine,
+    subLineTone = "muted",
     icon,
     onPress,
     accessibilityLabel,
@@ -14,6 +15,7 @@ export function StatTile({
     label: string,
     value: string,
     subLine?: string,
+    subLineTone?: "muted" | "warn",
     icon?: ReactNode,
     onPress?: () => void,
     accessibilityLabel?: string,
@@ -34,7 +36,7 @@ export function StatTile({
                 {value}
             </Text>
             {subLine ? (
-                <Text className="text-caption text-muted" style={{ fontVariant: ["tabular-nums"] }}>
+                <Text className={`text-caption ${subLineTone === "warn" ? "font-medium text-clay-strong" : "text-muted"}`} style={{ fontVariant: ["tabular-nums"] }}>
                     {subLine}
                 </Text>
             ) : null}
