@@ -92,7 +92,7 @@ Each area has a full entry in `features.md`.
 - **Matches and shuttle usage**: place players on a court diagram, add New / Reused / Free shuttles, and view each match on a read-only court with the shuttles it used (type, New / Reused / Free, price per shuttle), marking who won and the score on screen (not saved yet).
 - **Shuttle inventory**: add shuttle types, see remaining stock and price per shuttle (low stock highlighted), edit name and price, see purchase history, and "buy again" to restock.
 - **Payments**: pay everything a player owes, a session in full, or picked court shares and shuttle charges, each behind a confirmation.
-- **Home dashboard**: total outstanding across all players, shuttles used and remaining, recent sessions, and a shuttle-usage-over-time chart.
+- **Home dashboard**: start a session or jump into the open one (New match, live "≈ RM X so far", a warning when a session was left open from an earlier day), last-30-days activity, the players owing longest, and recent sessions; a setup checklist on first launch.
 
 ## Priorities (in order)
 

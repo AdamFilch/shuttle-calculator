@@ -19,7 +19,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 10 | [Player balance and payments](#10-player-balance-and-payments) | Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md), [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 11 | [Pay Early](#11-pay-early) | Planned |
-| 12 | [Home dashboard](#12-home-dashboard) | Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md) (readers for the redesign ready; the screen is unchanged until the frontend half ships) |
+| 12 | [Home dashboard](#12-home-dashboard) | Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md), [PRD 7 frontend](../prds/completed/7-frontend-home-redesign.prd.md) |
 | 13 | [Insights](#13-insights) | Planned (future improvement) |
 | 14 | [Player play history](#14-player-play-history) | Built: [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 15 | [Settings](#15-settings) | Built (developer tools only) |
@@ -75,7 +75,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 **Status**: Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md).
 
 **What it does**
-- Sessions tab lists all sessions newest first as SessionCards: the title (the session name, or the date when unnamed), "D Mon YYYY · N players", a clay feather icon with "N shuttles used" (every shuttle instance in the session, including free ones), and a StatusBadge. Open sessions show "Open session"; closed sessions show "Settled" when nothing is owed, or "RM N due" for the outstanding shuttle and court charges. Sessions with no matches use the same card.
+- Sessions tab lists all sessions newest first as SessionCards: the title (the session name, or the date when unnamed), "D Mon YYYY · N players", a clay feather icon with "N shuttles used" (every shuttle instance in the session, including free ones), and a StatusBadge. Open sessions show "Open session"; closed sessions show "Settled" when nothing is owed, or "RM N due" for the outstanding shuttle and court charges. Sessions with no matches use the same card. An open session dated before today shows a clay "Still open since {d Mon}" badge instead of "Open session" (PRD [7]).
 - "Add Session" modal fields: title (optional), date, start time, location (optional), and an optional "book courts" section (label, price, quantity, duration in hours). When booking courts, price, quantity, and duration are required.
 - Session detail (open), top to bottom: title, "D Mon YYYY · h:mm am · Location" (missing parts left out), "Open session" badge; an estimate card "≈ RM X" (court cost + paid shuttle cost, with a courts/shuttles split bar and legend); three stat tiles (Players "in N matches", Shuttles "N free", Courts with Σ price × quantity, which opens Book courts); Players with each player's estimated share (`≈ RM X`, highest first); Matches newest first (number, local start time, shuttle chip or "Free", teams per side, "N reused from match M · N free" note); a fixed bottom bar with Create match plus Close session (once a match exists) or a red Delete session (while there are no matches). The header ⋯ opens Session options: Book courts (count · RM total) and Delete session (disabled with "Sessions with matches can't be deleted" once a match exists).
 - Session detail (closed): "RM X due" or "Settled" badge; "Still owed RM X of RM {amount_due}" with a paid (sage) vs owed (clay) bar, "Paid RM Y · Owed RM X", "N of M players settled · closed D Mon YYYY"; players sorted by amount owed with Owes/Settled badges and settled players last; no bottom bar, no ⋯, and a closed note at the end.
@@ -256,26 +256,26 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 12. Home dashboard
 
-**Status**: Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md) (readers for the redesign ready; the screen is unchanged until the frontend half ships).
+**Status**: Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md), [PRD 7 frontend](../prds/completed/7-frontend-home-redesign.prd.md).
 
 **What it does**
-- "Total outstanding" across all active players.
-- "Total Shuttle Used" and "Remaining Shuttles" across all types.
-- "Recent Sessions": the 2 newest, tappable.
-- A shuttle-usage chart (shuttles used over time) with ranges 1W, 1M (daily), 6M (weekly), 12M (monthly).
+- Header "Home" with today's date ("Thursday 8 Oct"). Data reloads on focus and on pull to refresh; first load shows skeletons, later loads keep the old data; a section that fails shows "Couldn't load. Pull to refresh."
+- **Session card** (top). No open session: "No session open", "Last one: {name or date}, {today / yesterday / N days ago / d Mon}" and a full-width Start session, which opens `AddSessionModal` and, once saved, goes straight to the new session's detail. Open session (the newest by date): name with an "Open session" badge, "Started {time} · {location}", players / matches / shuttles and "≈ RM X so far" (court + paid shuttle cost from `previewSessionCharges`, same as session detail), or "No matches yet"; buttons Open session and New match (create-match). An open session dated before today shows a "Still open since {d Mon}" badge, "Started {Ddd d Mon}" and the caption "Still open. Close it to settle what everyone owes." With several open sessions, "+N more open session(s)" links to the Sessions tab.
+- **Low-stock alert** slot (`LowStockAlert`): built but always given an empty list, so it never shows yet.
+- **Last 30 days** (today and the 29 days before, local time), hidden while a session is open or when the window has no sessions: Sessions (+ matches), Shuttles used (paid instances, + per session), Players (distinct, + average players per session), Charged (closed sessions' `amount_due`, + "RM X still due" or "All paid"). Not tappable.
+- **Waiting on payment**, hidden when nobody owes: up to 3 owing players (oldest unpaid charge first, then largest), sub-line "{n} sessions · since {d Mon}" or "Since {d Mon}", prefixed "Playing tonight · " for players in today's open session; amount badge; footer "{N} player(s) owe RM X". Rows open the player; See all opens Players.
+- **Recent sessions**: up to 3 compact rows (2 while a session is open), excluding the card's session: "{d Mon} · {n} players · {m} matches · RM {total}" (closed: `amount_due`; open: "≈" estimate) with a due / Settled / Open session / Still open badge. Rows open the session; See all opens Sessions.
+- **No sessions at all**: title "Welcome", a 3-step checklist (Add your players, Add the shuttles you buy, Start your first session) with done steps from real counts ("3 players added"); each step opens its add modal; a hint below changes to the skip-shuttles note when players exist but no shuttle types.
 
-**Where**: `app/(tabs)/index.tsx`, `components/shared/StatCard.tsx`, `components/insights/InsightsSection.tsx`, `services/shuttle.ts` (`fetchShuttleUsageSummary`, `fetchShuttleUsageTimeSeries`). Redesign readers: `services/session.ts` (`fetchActivitySummary`), `services/player.ts` (`fetchTopOwers`); seed scenario `stale-open` in `services/seed.ts`. PRD: `.claude/prds/completed/7-backend-home-redesign.prd.md`.
+**Where**: `app/(tabs)/index.tsx`, `components/home/` (`HomeSessionCard`, `LowStockAlert`, `SetupChecklist`), `components/shared/` (`SessionCard` compact variant and `isStaleOpen`, `StatusBadge` `stale`, `PlayerRow` `inset`, `StatTile`, `Skeleton`), `components/session/modal.tsx` (`AddSessionModal` `onCreated`). Readers: `services/session.ts` (`fetchAllSessions`, `fetchActivitySummary`, `previewSessionCharges`, `fetchSessionById`), `services/player.ts` (`fetchTopOwers`, `fetchAllPlayers`), `services/shuttle.ts` (`fetchAllShuttles`); seed scenario `stale-open`. `components/insights/InsightsSection.tsx` and `fetchShuttleUsageSummary` / `fetchShuttleUsageTimeSeries` are kept for the move to the Shuttles tab. Spec: `.claude/design/specs/home.md`; PRDs: `.claude/prds/completed/7-backend-home-redesign.prd.md`, `.claude/prds/completed/7-frontend-home-redesign.prd.md`.
 
-**Readers for the redesign** (built, not yet used by a screen)
-- `fetchActivitySummary(from, to)`: sessions, matches, distinct players and paid (non-free) shuttles for sessions dated in the window, open or closed; `charged` (sum of `amount_due`) and `still_due` (sum of owed payment rows) count closed sessions only. Dates are compared with `datetime(...)` on both sides.
-- `fetchTopOwers(limit = 3)`: active players owing at least RM 0.01 (after rounding), oldest unpaid charge first, then largest owed, then name, with `sessions_owed` (distinct sessions with unpaid charges). `total_owed` and `owing_count` cover every ower, not just the first `limit`.
-
-**Planned redesign** (screen not built yet, PRD [7] frontend): spec `.claude/design/specs/home.md`, direction A approved 2026-10-08. Start session goes straight to the new session; a session left open from an earlier day is flagged on Home and on the Sessions tab. Order: session card (Start session, or Open session + New match), low-stock alert with runway, Last 30 days tiles (rolling), Waiting on payment (oldest debt first), Recent sessions (compact). The big Total outstanding figure, the shuttle StatCards and the usage chart leave Home.
+**Rules**
+- Nothing is charged while a session is open, so open-session money is always an estimate ("≈") and Charged counts closed sessions only.
+- Stale means `status = 'open'` and `date` before the start of today; Home and the Sessions tab share `isStaleOpen`.
 
 **Known gaps**
-- The usage chart is analytics and moves to the Shuttles tab (see [13](#13-insights)); addressed by the Home spec.
-- No quick action to start a session or match from Home; addressed by the Home spec's session card.
-- Low-stock alert will be built in PRD [7] but not triggered; needs the per-shuttle "Warn at" setting (see [8](#8-shuttle-inventory)).
+- The usage chart is no longer shown anywhere until it moves to the Shuttles tab (see [13](#13-insights)).
+- Low-stock alert built but not triggered; needs the per-shuttle "Warn at" setting (shuttle detail, see [8](#8-shuttle-inventory)).
 
 ## 13. Insights
 
