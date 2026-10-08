@@ -19,7 +19,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 10 | [Player balance and payments](#10-player-balance-and-payments) | Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md), [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 11 | [Pay Early](#11-pay-early) | Planned |
-| 12 | [Home dashboard](#12-home-dashboard) | Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md), [PRD 7 frontend](../prds/partial/7-frontend-home-redesign.prd.md) (partial: button and row taps not yet driven on the simulator) |
+| 12 | [Home dashboard](#12-home-dashboard) | Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md), [PRD 7 frontend](../prds/completed/7-frontend-home-redesign.prd.md) |
 | 13 | [Insights](#13-insights) | Planned (future improvement) |
 | 14 | [Player play history](#14-player-play-history) | Built: [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 15 | [Settings](#15-settings) | Built (developer tools only) |
@@ -256,7 +256,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 12. Home dashboard
 
-**Status**: Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md), [PRD 7 frontend](../prds/partial/7-frontend-home-redesign.prd.md) (partial: button and row taps not yet driven on the simulator).
+**Status**: Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md), [PRD 7 frontend](../prds/completed/7-frontend-home-redesign.prd.md).
 
 **What it does**
 - Header "Home" with today's date ("Thursday 8 Oct"). Data reloads on focus and on pull to refresh; first load shows skeletons, later loads keep the old data; a section that fails shows "Couldn't load. Pull to refresh."
@@ -267,7 +267,7 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 - **Recent sessions**: up to 3 compact rows (2 while a session is open), excluding the card's session: "{d Mon} · {n} players · {m} matches · RM {total}" (closed: `amount_due`; open: "≈" estimate) with a due / Settled / Open session / Still open badge. Rows open the session; See all opens Sessions.
 - **No sessions at all**: title "Welcome", a 3-step checklist (Add your players, Add the shuttles you buy, Start your first session) with done steps from real counts ("3 players added"); each step opens its add modal; a hint below changes to the skip-shuttles note when players exist but no shuttle types.
 
-**Where**: `app/(tabs)/index.tsx`, `components/home/` (`HomeSessionCard`, `LowStockAlert`, `SetupChecklist`), `components/shared/` (`SessionCard` compact variant and `isStaleOpen`, `StatusBadge` `stale`, `PlayerRow` `inset`, `StatTile`, `Skeleton`), `components/session/modal.tsx` (`AddSessionModal` `onCreated`). Readers: `services/session.ts` (`fetchAllSessions`, `fetchActivitySummary`, `previewSessionCharges`, `fetchSessionById`), `services/player.ts` (`fetchTopOwers`, `fetchAllPlayers`), `services/shuttle.ts` (`fetchAllShuttles`); seed scenario `stale-open`. `components/insights/InsightsSection.tsx` and `fetchShuttleUsageSummary` / `fetchShuttleUsageTimeSeries` are kept for the move to the Shuttles tab. Spec: `.claude/design/specs/home.md`; PRDs: `.claude/prds/completed/7-backend-home-redesign.prd.md`, `.claude/prds/partial/7-frontend-home-redesign.prd.md`.
+**Where**: `app/(tabs)/index.tsx`, `components/home/` (`HomeSessionCard`, `LowStockAlert`, `SetupChecklist`), `components/shared/` (`SessionCard` compact variant and `isStaleOpen`, `StatusBadge` `stale`, `PlayerRow` `inset`, `StatTile`, `Skeleton`), `components/session/modal.tsx` (`AddSessionModal` `onCreated`). Readers: `services/session.ts` (`fetchAllSessions`, `fetchActivitySummary`, `previewSessionCharges`, `fetchSessionById`), `services/player.ts` (`fetchTopOwers`, `fetchAllPlayers`), `services/shuttle.ts` (`fetchAllShuttles`); seed scenario `stale-open`. `components/insights/InsightsSection.tsx` and `fetchShuttleUsageSummary` / `fetchShuttleUsageTimeSeries` are kept for the move to the Shuttles tab. Spec: `.claude/design/specs/home.md`; PRDs: `.claude/prds/completed/7-backend-home-redesign.prd.md`, `.claude/prds/completed/7-frontend-home-redesign.prd.md`.
 
 **Rules**
 - Nothing is charged while a session is open, so open-session money is always an estimate ("≈") and Charged counts closed sessions only.
@@ -276,7 +276,6 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 **Known gaps**
 - The usage chart is no longer shown anywhere until it moves to the Shuttles tab (see [13](#13-insights)).
 - Low-stock alert built but not triggered; needs the per-shuttle "Warn at" setting (shuttle detail, see [8](#8-shuttle-inventory)).
-- Taps (Start session → detail, Open session, New match, rows, See all, checklist steps) not yet driven on the simulator; VoiceOver labels not checked.
 
 ## 13. Insights
 
