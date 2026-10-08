@@ -36,8 +36,9 @@ export function AddShuttleModal({
 
     const res = await createShuttle({
       name: shuttleName,
-      total_price: parseFloat(shuttlePrice),
-      num_of_shuttles: parseInt(shuttleAmount),
+      tube_price: parseFloat(shuttlePrice),
+      per_tube: parseInt(shuttleAmount),
+      tubes: 1,
     });
 
     if (res) {

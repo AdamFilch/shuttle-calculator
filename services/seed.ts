@@ -3,7 +3,7 @@ import { bookCourt } from "./court";
 import { createNewMatch } from "./match";
 import { createPlayer, deletePlayer, fetchAllPlayers } from "./player";
 import { closeSession, createNewSession, fetchAllSessions } from "./session";
-import { addShuttlePurchase, createShuttle, fetchAllShuttles } from "./shuttle";
+import { addShuttlePurchase, createShuttle, fetchAllShuttles, updateShuttle } from "./shuttle";
 import { paySessionInFull } from "./shuttle-payments";
 import { fetchShuttleInstancesBySessionId } from "./shuttle_instances";
 
@@ -16,9 +16,12 @@ async function seedDefault() {
     const retired = await createPlayer('Gina')
     await deletePlayer(retired)
 
-    const yonex = await createShuttle({ name: 'Yonex AS-30', total_price: 120, num_of_shuttles: 12 })
-    await addShuttlePurchase({ shuttle_id: yonex, num_of_shuttles: 12 })
-    const victor = await createShuttle({ name: 'Victor Master No.3', total_price: 72, num_of_shuttles: 12 })
+    const bought = subDays(new Date(), 14).toISOString()
+    const yonex = await createShuttle({ name: 'Yonex AS-30', tube_price: 120, per_tube: 12, tubes: 1, date: bought })
+    await addShuttlePurchase({ shuttle_id: yonex, num_of_shuttles: 12, date: subDays(new Date(), 10).toISOString() })
+    const victor = await createShuttle({ name: 'Victor Master No.3', tube_price: 72, per_tube: 12, tubes: 1, date: bought })
+    await updateShuttle({ shuttle_id: victor, name: 'Victor Master No.3', price_per_shuttle: 6, warn_at: 12, warn_unit: 'shuttles' })
+    const rsl = await createShuttle({ name: 'RSL Classic', tube_price: 54, per_tube: 6, tubes: 1, date: bought })
 
     const lastWeek = await createNewSession({
         name: 'Weekly Smash',
@@ -40,7 +43,10 @@ async function seedDefault() {
     await createNewMatch({
         sessionId: lastWeek,
         playersId: [chloe, daniel, elena, farid],
-        shuttleSelections: [{ mode: 'new', shuttleId: yonex, quantity: 1 }]
+        shuttleSelections: [
+            { mode: 'new', shuttleId: yonex, quantity: 1 },
+            { mode: 'new', shuttleId: rsl, quantity: 3 }
+        ]
     })
     await closeSession(String(lastWeek))
     await paySessionInFull({ sessionId: lastWeek, player_id: String(alice) })
@@ -69,7 +75,10 @@ async function seedDefault() {
     await createNewMatch({
         sessionId: today,
         playersId: [alice, elena],
-        shuttleSelections: [{ mode: 'new', shuttleId: yonex, quantity: 1 }]
+        shuttleSelections: [
+            { mode: 'new', shuttleId: yonex, quantity: 1 },
+            { mode: 'new', shuttleId: rsl, quantity: 3 }
+        ]
     })
     await createNewMatch({
         sessionId: today,
@@ -123,12 +132,12 @@ async function seedShuttlePicker() {
     for (const name of ['Alice', 'Ben', 'Chloe', 'Daniel']) ids.push(await createPlayer(name))
     const [alice, ben, chloe, daniel] = ids
 
-    const yonex = await createShuttle({ name: 'Yonex AS-50', total_price: 150, num_of_shuttles: 12 })
-    const rsl = await createShuttle({ name: 'RSL Classic', total_price: 60, num_of_shuttles: 6 })
-    const liNing = await createShuttle({ name: 'Li-Ning A+60', total_price: 96, num_of_shuttles: 12 })
-    const victor = await createShuttle({ name: 'Victor Gold', total_price: 48, num_of_shuttles: 4 })
-    await createShuttle({ name: 'Apacs Feather', total_price: 84, num_of_shuttles: 12 })
-    await createShuttle({ name: 'Kawasaki King', total_price: 90, num_of_shuttles: 12 })
+    const yonex = await createShuttle({ name: 'Yonex AS-50', tube_price: 150, per_tube: 12, tubes: 1 })
+    const rsl = await createShuttle({ name: 'RSL Classic', tube_price: 60, per_tube: 6, tubes: 1 })
+    const liNing = await createShuttle({ name: 'Li-Ning A+60', tube_price: 96, per_tube: 12, tubes: 1 })
+    const victor = await createShuttle({ name: 'Victor Gold', tube_price: 48, per_tube: 4, tubes: 1 })
+    await createShuttle({ name: 'Apacs Feather', tube_price: 84, per_tube: 12, tubes: 1 })
+    await createShuttle({ name: 'Kawasaki King', tube_price: 90, per_tube: 12, tubes: 1 })
 
     const lastWeek = await createNewSession({
         name: 'Weekly Smash',
@@ -173,6 +182,55 @@ async function seedShuttlePicker() {
     })
 }
 
+async function seedShuttles() {
+    const ids: number[] = []
+    for (const name of ['Alice', 'Ben', 'Chloe', 'Daniel']) ids.push(await createPlayer(name))
+    const [alice, ben, chloe, daniel] = ids
+    const daysAgo = (days: number) => subDays(new Date(), days).toISOString()
+
+    const yonex = await createShuttle({ name: 'Yonex AS-50', tube_price: 150, per_tube: 12, tubes: 4, date: daysAgo(70) })
+    await addShuttlePurchase({ shuttle_id: yonex, num_of_shuttles: 24, date: daysAgo(30) })
+    const rsl = await createShuttle({ name: 'RSL Classic', tube_price: 66, per_tube: 12, tubes: 1, date: daysAgo(70) })
+    await addShuttlePurchase({ shuttle_id: rsl, num_of_shuttles: 6, date: daysAgo(24) })
+    await updateShuttle({ shuttle_id: rsl, name: 'RSL Classic', price_per_shuttle: 5.5, warn_at: 3, warn_unit: 'sessions' })
+    const aeroplane = await createShuttle({ name: 'Aeroplane Gold', tube_price: 54, per_tube: 12, tubes: 1 })
+    await updateShuttle({ shuttle_id: aeroplane, name: 'Aeroplane Gold', price_per_shuttle: 4.5, warn_at: 2, warn_unit: 'sessions' })
+
+    const usage = [[3, 2], [4, 1], [2, 2], [5, 1], [3, 2], [4, 2], [3, 1], [2, 2], [4, 1]]
+    for (const [i, [yonexUsed, rslUsed]] of usage.entries()) {
+        const session = await createNewSession({
+            name: 'Weekly Smash',
+            date: daysAgo(7 * (usage.length - i)),
+            startTime: '20:00',
+            location: 'Sports Hall A'
+        })
+        await createNewMatch({
+            sessionId: session,
+            playersId: [alice, ben, chloe, daniel],
+            shuttleSelections: [{ mode: 'new', shuttleId: yonex, quantity: yonexUsed }, { mode: 'free' }]
+        })
+        await createNewMatch({
+            sessionId: session,
+            playersId: [chloe, alice, daniel, ben],
+            shuttleSelections: [{ mode: 'new', shuttleId: rsl, quantity: rslUsed }]
+        })
+        await closeSession(String(session))
+    }
+
+    const freeOnly = await createNewSession({
+        name: 'Holiday Social',
+        date: daysAgo(25),
+        startTime: '10:00',
+        location: 'Community Centre'
+    })
+    await createNewMatch({
+        sessionId: freeOnly,
+        playersId: [alice, ben, chloe, daniel],
+        shuttleSelections: [{ mode: 'free' }]
+    })
+    await closeSession(String(freeOnly))
+}
+
 async function seedNoShuttles() {
     for (const name of ['Alice', 'Ben', 'Chloe', 'Daniel']) await createPlayer(name)
     await createNewSession({
@@ -188,6 +246,7 @@ export const scenarios: Record<string, () => Promise<void>> = {
     empty: async () => { },
     'shuttle-picker': seedShuttlePicker,
     'no-shuttles': seedNoShuttles,
+    shuttles: seedShuttles,
     'closed-today': seedClosedToday,
     'empty-session': seedEmptySession,
     'stale-open': seedStaleOpen,

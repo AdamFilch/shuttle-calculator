@@ -1,13 +1,6 @@
 import { openDatabaseSync } from "expo-sqlite"
 import { Float } from "react-native/Libraries/Types/CodegenTypes"
-import {
-    eachDayOfInterval,
-    endOfMonth,
-    format,
-    startOfMonth,
-    subDays,
-    subMonths,
-} from "date-fns"
+import { roundToCents } from "./session"
 
 const db = openDatabaseSync('db.db')
 
@@ -18,43 +11,72 @@ export type Shuttle = {
     num_of_shuttles: number
 }
 
+export type WarnUnit = 'shuttles' | 'sessions'
+export type StockStatus = 'out' | 'low' | 'ok'
+
+export async function isShuttleNameTaken(name: string, excludeId?: number): Promise<boolean> {
+    const row = await db.getFirstAsync(
+        `SELECT 1 FROM shuttles WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND shuttle_id IS NOT ?`,
+        [name, excludeId ?? null]
+    )
+
+    return row !== null
+}
+
+async function validateShuttleName(name: string, excludeId?: number) {
+    if (name.length === 0) throw new Error('Name is required')
+    if (await isShuttleNameTaken(name, excludeId)) throw new Error('A shuttle with this name already exists')
+}
+
 export async function createShuttle({
     name,
-    total_price,
-    num_of_shuttles
+    tube_price,
+    per_tube,
+    tubes,
+    date
 }: {
     name: string,
-    total_price: number,
-    num_of_shuttles: number
-}) {
-    await db.execAsync("BEGIN TRANSACTION")
+    tube_price: number,
+    per_tube: number,
+    tubes: number,
+    date?: string
+}): Promise<number> {
+    const trimmed = name.trim()
+    await validateShuttleName(trimmed)
+    if (!Number.isInteger(per_tube) || per_tube < 1 || !Number.isInteger(tubes) || tubes < 1) {
+        throw new Error('Shuttles per tube and tubes must be at least 1')
+    }
+    if (!(tube_price > 0)) throw new Error('Tube price must be more than 0')
 
-    const res = await db.runAsync(
-        `INSERT into shuttles (name, total_price, num_of_shuttles) VALUES (?, ?, ?)`,
-        [name, total_price, num_of_shuttles]
-    )
-    const shuttleId = res.lastInsertRowId
+    const num_of_shuttles = per_tube * tubes
+    const total_price = roundToCents(roundToCents(tube_price / per_tube) * num_of_shuttles)
 
-    await db.runAsync(
-        `INSERT INTO shuttle_purchases (shuttle_id, num_of_shuttles) VALUES (?, ?)`,
-        [shuttleId, num_of_shuttles]
-    )
+    let shuttleId = 0
+    await db.withTransactionAsync(async () => {
+        const res = await db.runAsync(
+            `INSERT into shuttles (name, total_price, num_of_shuttles) VALUES (?, ?, ?)`,
+            [trimmed, total_price, num_of_shuttles]
+        )
+        shuttleId = res.lastInsertRowId
 
-    await db.execAsync("COMMIT")
+        await addShuttlePurchase({ shuttle_id: shuttleId, num_of_shuttles, date })
+    })
 
     return shuttleId
 }
 
 export async function addShuttlePurchase({
     shuttle_id,
-    num_of_shuttles
+    num_of_shuttles,
+    date
 }: {
     shuttle_id: number,
-    num_of_shuttles: number
+    num_of_shuttles: number,
+    date?: string
 }) {
     const res = await db.runAsync(
-        `INSERT INTO shuttle_purchases (shuttle_id, num_of_shuttles) VALUES (?, ?)`,
-        [shuttle_id, num_of_shuttles]
+        `INSERT INTO shuttle_purchases (shuttle_id, num_of_shuttles, date) VALUES (?, ?, COALESCE(?, datetime('now')))`,
+        [shuttle_id, num_of_shuttles, date ?? null]
     )
 
     return res.lastInsertRowId
@@ -63,15 +85,26 @@ export async function addShuttlePurchase({
 export async function updateShuttle({
     shuttle_id,
     name,
-    price_per_shuttle
+    price_per_shuttle,
+    warn_at,
+    warn_unit
 }: {
     shuttle_id: number,
     name: string,
-    price_per_shuttle: number
-}) {
+    price_per_shuttle: number,
+    warn_at: number | null,
+    warn_unit: WarnUnit | null
+}): Promise<void> {
+    const trimmed = name.trim()
+    await validateShuttleName(trimmed, shuttle_id)
+    if (!(price_per_shuttle > 0)) throw new Error('Price must be more than 0')
+    if (warn_at !== null && (!Number.isInteger(warn_at) || warn_at < 1 || warn_unit === null)) {
+        throw new Error('Warn at must be a whole number of at least 1')
+    }
+
     await db.runAsync(
-        `UPDATE shuttles SET name = ?, total_price = ? * num_of_shuttles WHERE shuttle_id = ?`,
-        [name, price_per_shuttle, shuttle_id]
+        `UPDATE shuttles SET name = ?, total_price = ROUND(? * num_of_shuttles, 2), warn_at = ?, warn_unit = ? WHERE shuttle_id = ?`,
+        [trimmed, roundToCents(price_per_shuttle), warn_at, warn_at === null ? null : warn_unit, shuttle_id]
     )
 }
 
@@ -127,19 +160,78 @@ export async function fetchAllShuttlesWithInventory(): Promise<ShuttleWithInvent
     return res
 }
 
-export type ShuttleUsageSummary = {
-    totalUsed: number,
-    totalRemaining: number
+export type ShuttleStockType = {
+    shuttle_id: number,
+    name: string,
+    price_per_shuttle: number,
+    remaining: number,
+    used_since_last_purchase: number,
+    avg_per_session: number | null,
+    runway_sessions: number | null,
+    warn_at: number | null,
+    warn_unit: WarnUnit | null,
+    status: StockStatus,
+    alert: boolean
 }
 
-export async function fetchShuttleUsageSummary(): Promise<ShuttleUsageSummary> {
-    const res: ShuttleUsageSummary[] = await db.getAllAsync(`
+export type ShuttleStock = {
+    types: ShuttleStockType[],
+    totals: {
+        total_remaining: number,
+        type_count: number,
+        out_count: number,
+        low_count: number,
+        alert_count: number,
+        club_avg_per_session: number | null,
+        window_sessions: number
+    }
+}
+
+const STOCK_WINDOW_SELECT = `
+        SELECT se.session_id, se.date, COUNT(*) AS count
+        FROM sessions se
+        JOIN shuttle_instances si ON si.session_id = se.session_id AND si.shuttle_id IS NOT NULL
+        WHERE se.status = 'closed'
+        GROUP BY se.session_id
+        ORDER BY se.date DESC, se.session_id DESC
+        LIMIT ?
+`
+
+export async function fetchShuttlesPerSession(limit: number = 8): Promise<{ session_id: number, date: string, count: number }[]> {
+    const res: { session_id: number, date: string, count: number }[] = await db.getAllAsync(STOCK_WINDOW_SELECT, [limit])
+
+    return res.reverse()
+}
+
+const STATUS_RANK: Record<StockStatus, number> = { out: 0, low: 1, ok: 2 }
+
+export async function fetchShuttleStock(): Promise<ShuttleStock> {
+    const windowRows = await fetchShuttlesPerSession(8)
+    const windowSessions = windowRows.length
+    const clubUsed = windowRows.reduce((acc, row) => acc + row.count, 0)
+
+    const rows: any[] = await db.getAllAsync(`
         SELECT
-        COALESCE(SUM(used.total_used), 0) AS totalUsed,
-        COALESCE(SUM(purchased.total_purchased), 0) - COALESCE(SUM(used.total_used), 0) AS totalRemaining
+        s.shuttle_id,
+        s.name,
+        s.total_price,
+        s.num_of_shuttles,
+        s.warn_at,
+        s.warn_unit,
+        COALESCE(purchased.total_purchased, 0) - COALESCE(used.total_used, 0) AS remaining,
+        (
+            SELECT COUNT(*) FROM shuttle_instances si
+            JOIN sessions se ON se.session_id = si.session_id
+            WHERE si.shuttle_id = s.shuttle_id AND datetime(se.date) > purchased.last_purchase
+        ) AS used_since_last_purchase,
+        (
+            SELECT COUNT(*) FROM shuttle_instances si
+            WHERE si.shuttle_id = s.shuttle_id
+            AND si.session_id IN (SELECT session_id FROM (${STOCK_WINDOW_SELECT}))
+        ) AS window_used
         FROM shuttles s
         LEFT JOIN (
-            SELECT shuttle_id, SUM(num_of_shuttles) AS total_purchased
+            SELECT shuttle_id, SUM(num_of_shuttles) AS total_purchased, MAX(datetime(date)) AS last_purchase
             FROM shuttle_purchases
             GROUP BY shuttle_id
         ) purchased ON purchased.shuttle_id = s.shuttle_id
@@ -149,95 +241,54 @@ export async function fetchShuttleUsageSummary(): Promise<ShuttleUsageSummary> {
             WHERE shuttle_id IS NOT NULL
             GROUP BY shuttle_id
         ) used ON used.shuttle_id = s.shuttle_id
-        `)
+        `, [8])
 
-    return res[0] ?? { totalUsed: 0, totalRemaining: 0 }
-}
+    const runwayFor = (remaining: number, used: number) =>
+        windowSessions > 0 && used > 0 ? (remaining > 0 ? Math.floor(remaining * windowSessions / used) : 0) : null
 
-export async function fetchEarliestShuttleUsageDate(): Promise<string | null> {
-    const res: any = await db.getFirstAsync(`
-        SELECT MIN(date) as earliest FROM shuttle_instances WHERE shuttle_id IS NOT NULL
-        `)
+    const types: ShuttleStockType[] = rows.map((row) => {
+        const remaining: number = row.remaining
+        const runway = runwayFor(remaining, row.window_used)
+        const warnRunway = runway ?? runwayFor(remaining, clubUsed)
+        const status: StockStatus =
+            remaining <= 0 ? 'out'
+                : row.warn_unit === 'shuttles' ? (remaining <= row.warn_at ? 'low' : 'ok')
+                    : row.warn_unit === 'sessions' ? (warnRunway !== null && warnRunway <= row.warn_at ? 'low' : 'ok')
+                        : remaining < 2 ? 'low' : 'ok'
 
-    return res?.earliest ?? null
-}
-
-export type ShuttleUsageRange = '1w' | '1m' | '6m' | '12m'
-
-export type ShuttleUsagePoint = {
-    label: string,
-    value: number
-}
-
-function shuttleUsageRangeStart(range: ShuttleUsageRange, now: Date): Date {
-    switch (range) {
-        case '1w': return subDays(now, 6)
-        case '1m': return subDays(now, 29)
-        case '6m': return subDays(now, 181)
-        case '12m': return startOfMonth(subMonths(now, 11))
-    }
-}
-
-// Buckets are built in JS (not via SQLite's strftime) so week/month grouping
-// stays consistent with date-fns' own interval math rather than needing to
-// reconcile two different week/month numbering schemes.
-export async function fetchShuttleUsageTimeSeries(range: ShuttleUsageRange): Promise<ShuttleUsagePoint[]> {
-    const now = new Date()
-    const start = shuttleUsageRangeStart(range, now)
-
-    const rows: any = await db.getAllAsync(`
-        SELECT date(date) as day, COUNT(*) as count
-        FROM shuttle_instances
-        WHERE shuttle_id IS NOT NULL AND date(date) >= date(?)
-        GROUP BY day
-        `, [format(start, 'yyyy-MM-dd')])
-
-    const countsByDay: Record<string, number> = {}
-    for (const row of rows) countsByDay[row.day] = row.count
-
-    const countForDay = (day: Date) => countsByDay[format(day, 'yyyy-MM-dd')] ?? 0
-
-    if (range === '1w' || range === '1m') {
-        return eachDayOfInterval({ start, end: now }).map((day) => ({
-            label: format(day, range === '1w' ? 'EEE' : 'd MMM'),
-            value: countForDay(day)
-        }))
-    }
-
-    if (range === '6m') {
-        const weeks: { start: Date, end: Date }[] = []
-        let weekStart = start
-        while (weekStart <= now) {
-            const weekEnd = subDays(weekStart, -6) < now ? subDays(weekStart, -6) : now
-            weeks.push({ start: weekStart, end: weekEnd })
-            weekStart = subDays(weekStart, -7)
-        }
-
-        return weeks.map(({ start: weekStart, end: weekEnd }) => ({
-            label: format(weekStart, 'd MMM'),
-            value: eachDayOfInterval({ start: weekStart, end: weekEnd }).reduce(
-                (sum, day) => sum + countForDay(day), 0
-            )
-        }))
-    }
-
-    // 12m
-    const months = []
-    let monthStart = start
-    while (monthStart <= now) {
-        months.push(monthStart)
-        monthStart = startOfMonth(subMonths(monthStart, -1))
-    }
-
-    return months.map((monthStart) => {
-        const monthEnd = endOfMonth(monthStart) < now ? endOfMonth(monthStart) : now
         return {
-            label: format(monthStart, 'MMM yyyy'),
-            value: eachDayOfInterval({ start: monthStart, end: monthEnd }).reduce(
-                (sum, day) => sum + countForDay(day), 0
-            )
+            shuttle_id: row.shuttle_id,
+            name: row.name,
+            price_per_shuttle: row.total_price / row.num_of_shuttles,
+            remaining,
+            used_since_last_purchase: row.used_since_last_purchase,
+            avg_per_session: windowSessions > 0 && row.window_used > 0 ? row.window_used / windowSessions : null,
+            runway_sessions: runway,
+            warn_at: row.warn_at,
+            warn_unit: row.warn_unit,
+            status,
+            alert: row.warn_at !== null && status !== 'ok'
         }
     })
+
+    types.sort((a, b) =>
+        STATUS_RANK[a.status] - STATUS_RANK[b.status]
+        || (a.runway_sessions ?? Infinity) - (b.runway_sessions ?? Infinity)
+        || a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    )
+
+    return {
+        types,
+        totals: {
+            total_remaining: types.reduce((acc, t) => acc + Math.max(t.remaining, 0), 0),
+            type_count: types.length,
+            out_count: types.filter((t) => t.status === 'out').length,
+            low_count: types.filter((t) => t.status === 'low').length,
+            alert_count: types.filter((t) => t.alert).length,
+            club_avg_per_session: windowSessions > 0 ? clubUsed / windowSessions : null,
+            window_sessions: windowSessions
+        }
+    }
 }
 
 export async function fetchAllShuttles(): Promise<Shuttle[]> {

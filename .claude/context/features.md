@@ -15,12 +15,12 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 | 5 | [Creating a match](#5-creating-a-match) | Built |
 | 6 | [Shuttle usage in a match (New / Reused / Free)](#6-shuttle-usage-in-a-match-new--reused--free) | Built |
 | 7 | [Match detail](#7-match-detail) | Built: [PRD 6 backend](../prds/completed/6-backend-match-detail-redesign.prd.md), [PRD 6 frontend](../prds/partial/6-frontend-match-detail-redesign.prd.md) (partial: typing into the score inputs not driven on the simulator) |
-| 8 | [Shuttle inventory](#8-shuttle-inventory) | Built (manual verification pending) |
+| 8 | [Shuttle inventory](#8-shuttle-inventory) | Built: [PRD 8 backend](../prds/completed/8-backend-shuttles-redesign.prd.md) (partial: redesigned screen pending, [PRD 8 frontend](../prds/8-frontend-shuttles-redesign.prd.md)) |
 | 9 | [Closing a session (settlement)](#9-closing-a-session-settlement) | Built: [PRD 3](../prds/completed/3-session-detail-redesign.prd.md) |
 | 10 | [Player balance and payments](#10-player-balance-and-payments) | Built: [PRD 5](../prds/partial/5-player-payments-backend.prd.md), [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 11 | [Pay Early](#11-pay-early) | Planned |
 | 12 | [Home dashboard](#12-home-dashboard) | Built: [PRD 7 backend](../prds/completed/7-backend-home-redesign.prd.md), [PRD 7 frontend](../prds/completed/7-frontend-home-redesign.prd.md) |
-| 13 | [Insights](#13-insights) | Planned (future improvement) |
+| 13 | [Insights](#13-insights) | Removed: [PRD 8 backend](../prds/completed/8-backend-shuttles-redesign.prd.md) (insights live on the screens that own their data) |
 | 14 | [Player play history](#14-player-play-history) | Built: [PRD 4](../prds/partial/4-player-detail-redesign.prd.md) (partial: tap-driven checks pending) |
 | 15 | [Settings](#15-settings) | Built (developer tools only) |
 | 16 | [Currency](#16-currency) | Gap |
@@ -173,23 +173,32 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 
 ## 8. Shuttle inventory
 
+**Status**: Built: [PRD 8 backend](../prds/completed/8-backend-shuttles-redesign.prd.md) (partial: redesigned screen pending, [PRD 8 frontend](../prds/8-frontend-shuttles-redesign.prd.md)).
+
 **What it does**
 - Shuttles tab shows a grid of cards, one per shuttle type: name, price per shuttle, remaining stock. Cards turn warning-coloured at 2 remaining and error-coloured at 1 or fewer.
-- "Add Shuttle" modal: name, total price, number of shuttles (price and number must be > 0). This creates the type and records the first purchase.
-- Tapping a card opens the edit modal: change name and price per shuttle, see recent purchases (quantity and date), and "Buy Again" with a quantity to add stock.
+- "Add Shuttle" modal: name, total price, number of shuttles (price and number must be > 0). This creates the type and records the first purchase. Until the frontend redesign it passes the total as the tube price, the count as shuttles per tube and 1 tube.
+- Tapping a card opens the edit modal: change name and price per shuttle, see recent purchases (quantity and date), and "Buy Again" with a quantity to add stock. Until the frontend redesign, Save clears any Warn at.
+- Data ready for the redesigned tab (PRD [8]): `fetchShuttleStock()` returns each type's remaining, average per session, runway in sessions, shuttles used since the latest purchase (meter), Warn at, `status` (`out` / `low` / `ok`) and `alert`, already sorted, plus totals (shuttles left, type / out / low / alert counts, club average and window size). `fetchShuttlesPerSession(8)` gives the per-session chart data.
 
-**Where**: `app/(tabs)/shuttles/index.tsx`, `components/shuttle/ShuttleCard.tsx`, `components/shuttle/modal.tsx`, `components/shuttle/editShuttleModal.tsx`, `services/shuttle.ts` (`createShuttle`, `addShuttlePurchase`, `updateShuttle`, `fetchAllShuttlesWithInventory`, `fetchShuttlePurchaseHistory`). Spec: `specs/shuttle-inventory-tracking.md`.
+**Where**: `app/(tabs)/shuttles/index.tsx`, `components/shuttle/ShuttleCard.tsx`, `components/shuttle/modal.tsx`, `components/shuttle/editShuttleModal.tsx`, `services/shuttle.ts` (`createShuttle`, `addShuttlePurchase`, `updateShuttle`, `isShuttleNameTaken`, `fetchShuttleStock`, `fetchShuttlesPerSession`, `fetchAllShuttlesWithInventory`, `fetchShuttlePurchaseHistory`), `services/database.js` (`shuttles.warn_at`, `warn_unit`); seed scenario `shuttles`. Spec: `specs/shuttle-inventory-tracking.md`, `.claude/design/specs/shuttles.md`; PRD: `.claude/prds/completed/8-backend-shuttles-redesign.prd.md`.
 
 **Rules**
-- Remaining = total purchased − New shuttles used (Free shuttles don't count).
+- Remaining = total purchased − New shuttles used (Free shuttles don't count), open sessions included.
 - Each type has one fixed reference price per shuttle; purchases add quantity only, not a new price.
+- `createShuttle` takes tube price, shuttles per tube and tubes. The unit price is rounded to 2 dp and stored as `total_price = round2(unit) × count`, so charges match the price shown; `total_price` no longer equals the receipt (RM 50 / 12 → 4.17 × 12 = 50.04). A price edit is stored the same way. Existing types are not re-priced.
+- Names are trimmed and unique ignoring case; both writers throw `A shuttle with this name already exists` (renaming a type to its own name in another case is allowed). Writers validate before writing and throw the messages listed in PRD [8].
+- Averages use the last 8 closed sessions with at least one paid shuttle. Runway = floor(remaining ÷ type average).
+- Warn at is optional per type: N shuttles or N sessions (`warn_at` ≥ 1, both columns set or both NULL, enforced by CHECKs). Status: `out` at 0; `low` at or under Warn at (a sessions Warn at with no use in the window is judged against the club average); with no Warn at, `low` at 1 left. Only types with a Warn at alert (`alert`), which drives the tab dot and Home's alert.
+- The meter counts paid shuttles from sessions dated after the type's latest purchase.
 
 **Known gaps**
 - Editing the price changes the charges of any session that is still open, because prices are read at close. Closed sessions are unaffected.
 - A purchase doesn't record what was paid for it, so inventory spend can't be tracked.
 - Shuttle types can't be deleted or archived.
 - The spec's manual verification on a simulator hasn't been run.
-- Planned (no PRD yet): an optional "Warn at: N" input with a Shuttle / Session toggle in the shuttle detail pop-up. It triggers Home's low-stock alert (PRD [7] D3, D4).
+- The redesigned Shuttles tab (stock list, tiles, chart, Warn at field, tab dot, Create match stepper cap) isn't built yet: [PRD 8 frontend](../prds/8-frontend-shuttles-redesign.prd.md). The data side is done.
+- `createNewMatch` doesn't check stock, so remaining can go negative until the Create match stepper caps it (PRD [8] D20, frontend).
 
 ## 9. Closing a session (settlement)
 
@@ -267,21 +276,21 @@ Each entry has the same shape: **What it does** (user flow, fields, validation, 
 - **Recent sessions**: up to 3 compact rows (2 while a session is open), excluding the card's session: "{d Mon} · {n} players · {m} matches · RM {total}" (closed: `amount_due`; open: "≈" estimate) with a due / Settled / Open session / Still open badge. Rows open the session; See all opens Sessions.
 - **No sessions at all**: title "Welcome", a 3-step checklist (Add your players, Add the shuttles you buy, Start your first session) with done steps from real counts ("3 players added"); each step opens its add modal; a hint below changes to the skip-shuttles note when players exist but no shuttle types.
 
-**Where**: `app/(tabs)/index.tsx`, `components/home/` (`HomeSessionCard`, `LowStockAlert`, `SetupChecklist`), `components/shared/` (`SessionCard` compact variant and `isStaleOpen`, `StatusBadge` `stale`, `PlayerRow` `inset`, `StatTile`, `Skeleton`), `components/session/modal.tsx` (`AddSessionModal` `onCreated`). Readers: `services/session.ts` (`fetchAllSessions`, `fetchActivitySummary`, `previewSessionCharges`, `fetchSessionById`), `services/player.ts` (`fetchTopOwers`, `fetchAllPlayers`), `services/shuttle.ts` (`fetchAllShuttles`); seed scenario `stale-open`. `components/insights/InsightsSection.tsx` and `fetchShuttleUsageSummary` / `fetchShuttleUsageTimeSeries` are kept for the move to the Shuttles tab. Spec: `.claude/design/specs/home.md`; PRDs: `.claude/prds/completed/7-backend-home-redesign.prd.md`, `.claude/prds/completed/7-frontend-home-redesign.prd.md`.
+**Where**: `app/(tabs)/index.tsx`, `components/home/` (`HomeSessionCard`, `LowStockAlert`, `SetupChecklist`), `components/shared/` (`SessionCard` compact variant and `isStaleOpen`, `StatusBadge` `stale`, `PlayerRow` `inset`, `StatTile`, `Skeleton`), `components/session/modal.tsx` (`AddSessionModal` `onCreated`). Readers: `services/session.ts` (`fetchAllSessions`, `fetchActivitySummary`, `previewSessionCharges`, `fetchSessionById`), `services/player.ts` (`fetchTopOwers`, `fetchAllPlayers`), `services/shuttle.ts` (`fetchAllShuttles`; `fetchShuttleStock` provides the low-stock data, PRD [8]); seed scenario `stale-open`. Spec: `.claude/design/specs/home.md`; PRDs: `.claude/prds/completed/7-backend-home-redesign.prd.md`, `.claude/prds/completed/7-frontend-home-redesign.prd.md`.
 
 **Rules**
 - Nothing is charged while a session is open, so open-session money is always an estimate ("≈") and Charged counts closed sessions only.
 - Stale means `status = 'open'` and `date` before the start of today; Home and the Sessions tab share `isStaleOpen`.
 
 **Known gaps**
-- The usage chart is no longer shown anywhere until it moves to the Shuttles tab (see [13](#13-insights)).
-- Low-stock alert built but not triggered; needs the per-shuttle "Warn at" setting (shuttle detail, see [8](#8-shuttle-inventory)).
+- The usage chart is no longer shown anywhere until the Shuttles tab redesign adds the per-session chart (PRD [8] frontend).
+- Low-stock alert built but not triggered yet. The data is ready (`fetchShuttleStock()` types with `alert`, PRD [8] backend); wiring it up is in the PRD [8] frontend.
 
 ## 13. Insights
 
-**Status**: Future improvement, not available yet. The Insights tab exists but is an empty placeholder (`app/(tabs)/insights/index.jsx`).
+**Status**: Removed: [PRD 8 backend](../prds/completed/8-backend-shuttles-redesign.prd.md). The hidden `app/(tabs)/insights/` route, `components/insights/InsightsSection.tsx` and the unused usage queries (`fetchShuttleUsageTimeSeries`, `fetchEarliestShuttleUsageDate`, `fetchShuttleUsageSummary`) are gone.
 
-**Direction changed 2026-10-08**: no separate Insights page. Each insight lives on the screen that owns its data: shuttle usage over time on the Shuttles tab, attendance and spend on Sessions, per-player activity on Players and player detail, collection rate with the money it describes. Follow-up work; the hidden `app/(tabs)/insights/` route can be removed afterwards.
+**Direction changed 2026-10-08**: no separate Insights page. Each insight lives on the screen that owns its data: shuttle usage over time on the Shuttles tab, attendance and spend on Sessions, per-player activity on Players and player detail, collection rate with the money it describes. Follow-up work.
 
 **Intended content**
 - Shuttle usage over time (move or extend the Home chart), per type.
