@@ -111,7 +111,6 @@ Most important known gaps (full list per feature in `features.md`):
 - Sessions, matches, and court bookings cannot be edited or deleted (except deleting an open session with no matches); payments and session closes cannot be undone.
 - Players cannot pay before the session is closed.
 - Rounding each share to 2 decimals can make a split a cent off (RM10 ÷ 3 = RM3.33 × 3 = RM9.99).
-- The Insights tab is an empty placeholder.
 
 ## Roadmap / future improvements
 

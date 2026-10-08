@@ -2,7 +2,7 @@
 
 The Shuttles tab (`app/(tabs)/shuttles/index.tsx`) is being rebuilt to the approved [Shuttles mockup](https://claude.ai/artifact/SpNQs6c9XTShD7LpsTSPGt) and [spec](../design/specs/shuttles.md). It answers one question before the next session: *do I need to buy shuttles, and which type?* It shows a stock list sorted by urgency, with each type's runway in sessions and a restock meter, two tiles (shuttles left, average per session) and a per-session usage chart. A per-type, optional **Warn at** (N shuttles or N sessions) decides when a type is low. One query drives the tab, a dot on the Shuttles tab icon and Home's low-stock alert.
 
-This backend half adds two columns to `shuttles`, two stock readers, a name check, and changes `createShuttle` / `updateShuttle` so the money maths and the duplicate-name rule live in the service. It also updates the seed and removes the dead Insights usage queries. The frontend half, [[8]: Frontend — Shuttles Redesign](8-frontend-shuttles-redesign.prd.md), is built on the [Contract for frontend](#contract-for-frontend) once this is merged.
+This backend half adds two columns to `shuttles`, two stock readers, a name check, and changes `createShuttle` / `updateShuttle` so the money maths and the duplicate-name rule live in the service. It also updates the seed and removes the dead Insights usage queries. The frontend half, [[8]: Frontend — Shuttles Redesign](../8-frontend-shuttles-redesign.prd.md), is built on the [Contract for frontend](#contract-for-frontend) once this is merged.
 
 ## Summary
 - **Schema:** `shuttles` gains `warn_at` and `warn_unit`, both nullable, with CHECK constraints. A database reset is needed.
@@ -387,18 +387,18 @@ fetchShuttleStock() with only an open session today
 ---
 
 ## Acceptance Criteria
-- [ ] AC1: After `npm run db:fresh`, `shuttles` has `warn_at` and `warn_unit`. Inserting `warn_at = 0`, `warn_unit = 'days'`, or only one of the two set fails on the CHECK.
-- [ ] AC2: `createShuttle({ name: ' X ', tube_price: 50, per_tube: 12, tubes: 2 })` stores name `X`, `num_of_shuttles` 24, `total_price` 100.08, and one purchase of 24. A unit price read from it is 4.17.
-- [ ] AC3: `createShuttle` and `updateShuttle` throw `A shuttle with this name already exists` for a name matching another type, trimmed and case-insensitive. `updateShuttle` allows a type's own name in a different case. `updateShuttle` saves Warn at, and clears both columns when `warn_at` is null.
-- [ ] AC4: `fetchShuttleStock` uses only the last 8 closed sessions with a paid shuttle. It returns the averages, runway (rounded down), `used_since_last_purchase`, status and totals as in [Readers §1](#1-fetchshuttlestock-new), sorted out → low → ok, by runway with nulls last, then name.
-- [ ] AC5: With no closed sessions that used a paid shuttle, `club_avg_per_session` and every `avg_per_session` / `runway_sessions` are null. A sessions Warn at doesn't make a type low.
-- [ ] AC5b: A type with no Warn at is `low` at 1 left and `out` at 0, whatever its average, and its `alert` is false. `alert_count` counts only out/low types that have a Warn at.
-- [ ] AC5c: `used_since_last_purchase` counts paid instances from sessions dated after the latest purchase; after `npm run db:fresh` at least one seeded type has a partly used meter. A type with a sessions Warn at and no use in the window is judged against the club average.
-- [ ] AC6: `fetchShuttlesPerSession(8)` returns at most 8 rows, oldest first, closed sessions only, and leaves out sessions that used only free shuttles.
-- [ ] AC7: `isShuttleNameTaken` returns true or false correctly, with and without `excludeId`.
-- [ ] AC8: After `npm run db:fresh`, the `default` scenario gives at least one `low` type (with a Warn at) and one `out` type. `npm run db:fresh -- shuttles` gives 8+ closed sessions with paid shuttles and one type with no history. Both log `[dev-db] … done`.
-- [ ] AC9: `fetchShuttleUsageTimeSeries`, `fetchEarliestShuttleUsageDate`, `fetchShuttleUsageSummary`, `InsightsSection` and `app/(tabs)/insights/` are gone, and nothing references them.
-- [ ] AC10: `npm run lint` and `npx tsc --noEmit` pass. The readers are checked on the iOS Simulator after `npm run db:fresh` (a temporary dev log of the reader output, removed before commit). Never checked on web.
+- [x] AC1: After `npm run db:fresh`, `shuttles` has `warn_at` and `warn_unit`. Inserting `warn_at = 0`, `warn_unit = 'days'`, or only one of the two set fails on the CHECK.
+- [x] AC2: `createShuttle({ name: ' X ', tube_price: 50, per_tube: 12, tubes: 2 })` stores name `X`, `num_of_shuttles` 24, `total_price` 100.08, and one purchase of 24. A unit price read from it is 4.17.
+- [x] AC3: `createShuttle` and `updateShuttle` throw `A shuttle with this name already exists` for a name matching another type, trimmed and case-insensitive. `updateShuttle` allows a type's own name in a different case. `updateShuttle` saves Warn at, and clears both columns when `warn_at` is null.
+- [x] AC4: `fetchShuttleStock` uses only the last 8 closed sessions with a paid shuttle. It returns the averages, runway (rounded down), `used_since_last_purchase`, status and totals as in [Readers §1](#1-fetchshuttlestock-new), sorted out → low → ok, by runway with nulls last, then name.
+- [x] AC5: With no closed sessions that used a paid shuttle, `club_avg_per_session` and every `avg_per_session` / `runway_sessions` are null. A sessions Warn at doesn't make a type low.
+- [x] AC5b: A type with no Warn at is `low` at 1 left and `out` at 0, whatever its average, and its `alert` is false. `alert_count` counts only out/low types that have a Warn at.
+- [x] AC5c: `used_since_last_purchase` counts paid instances from sessions dated after the latest purchase; after `npm run db:fresh` at least one seeded type has a partly used meter. A type with a sessions Warn at and no use in the window is judged against the club average.
+- [x] AC6: `fetchShuttlesPerSession(8)` returns at most 8 rows, oldest first, closed sessions only, and leaves out sessions that used only free shuttles.
+- [x] AC7: `isShuttleNameTaken` returns true or false correctly, with and without `excludeId`.
+- [x] AC8: After `npm run db:fresh`, the `default` scenario gives at least one `low` type (with a Warn at) and one `out` type. `npm run db:fresh -- shuttles` gives 8+ closed sessions with paid shuttles and one type with no history. Both log `[dev-db] … done`.
+- [x] AC9: `fetchShuttleUsageTimeSeries`, `fetchEarliestShuttleUsageDate`, `fetchShuttleUsageSummary`, `InsightsSection` and `app/(tabs)/insights/` are gone, and nothing references them.
+- [x] AC10: `npm run lint` and `npx tsc --noEmit` pass. The readers are checked on the iOS Simulator after `npm run db:fresh` (a temporary dev log of the reader output, removed before commit). Never checked on web.
 
 ## Required Changes
 - **Schema**: [Data Model](#data-model) columns and CHECKs in `setupDatabase()`.
@@ -429,4 +429,4 @@ fetchShuttleStock() with only an open session today
 | The stopgap edit dialog clears a Warn at on Save before the frontend lands | Medium | Low | The frontend follows straight after; the seed sets Warn at directly |
 
 ---
-*Status: READY — ticket [8]*
+*Status: COMPLETED — PR #TBD*
