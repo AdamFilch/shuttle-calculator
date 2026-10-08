@@ -32,7 +32,8 @@ This backend half adds two columns to `shuttles`, two stock readers, a name chec
 - Removal of `fetchShuttleUsageTimeSeries`, `fetchEarliestShuttleUsageDate`, `fetchShuttleUsageSummary`, `components/insights/InsightsSection.tsx` and `app/(tabs)/insights/`.
 
 **Out of scope**
-- Any screen or component redesign. That's in the frontend PRD. The only exception is the stopgap call-site edits in [Required Changes](#required-changes).
+- Any screen or component redesign. That's in the frontend PRD. The only exceptions are the named files in [Required Changes → Special exception](#required-changes) (D21).
+- A stock check inside `createNewMatch`. The cap lives in the Create match stepper (D20, frontend).
 - Recording what a purchase cost. This is a known gap in features §8, and nothing on screen needs it.
 - Deleting or archiving shuttle types. Not in the mockup.
 - Re-pricing existing types to 2 dp. Only new types and edited prices are stored rounded.
@@ -75,6 +76,12 @@ This backend half adds two columns to `shuttles`, two stock readers, a name chec
 | D15 | Status/sort computed in service | `fetchShuttleStock` returns `status` and sorted `types[]` | One rule for tab, dot and Home (spec §7) | Claude — straightforward |
 | D16 | Remove unused readers | Drop `fetchShuttleUsageTimeSeries`, `fetchEarliestShuttleUsageDate`, `fetchShuttleUsageSummary` (no callers besides `InsightsSection`/none); keep `fetchAllShuttlesWithInventory` (used by `selectShuttleModal.tsx`) | Grep shows callers | Claude — straightforward |
 | D17 | Shared refresh between screen and tab layout | Small module-level subscribe/notify in `components/shuttle/` | Frontend-only; no service change | Claude — straightforward |
+| D18 | Type with no Warn at | Row shows `low` at fewer than 2 left (1) and `out` at 0, regardless of average; it never lights the tab dot or Home's alert (`alert = false`) | Warnings are opt-in per type; the row still tells the truth | User |
+| D19 | Only types with a Warn at alert | `alert = warn_at IS NOT NULL AND status !== 'ok'`; tab dot and Home read `alert`, not `status` | Follows D18 | User |
+| D20 | Create match over-picking stock | The New-shuttle stepper stops at the type's remaining count (frontend) | `createNewMatch` doesn't check stock, so remaining could go negative | User |
+| D21 | Backend touching screen files | Allowed as named exceptions only: insights route removal in `app/(tabs)/_layout.tsx`, stopgap call sites in the two shuttle dialogs | Removing a route needs its layout entry gone; signatures change here | User |
+| D22 | Error handling | Shared pattern: field errors under the field, save failures as an `AppToast` with the dialog kept open, load failures inline "Couldn't load. Pull to refresh.", tab dot keeps its last value | One behaviour across all shuttle writers and readers | User |
+| D23 | Restock unit | Add shuttle uses tubes (min 1); Buy again stays a plain shuttle count, no tubes | Restocks are often loose shuttles | User |
 
 ## Overview
 A shuttle type (`shuttles`) has stock: purchases (`shuttle_purchases`) minus paid shuttles opened (`shuttle_instances` with that `shuttle_id`). Usage history comes from `shuttle_instances` joined to closed `sessions`. Warn at is two new nullable columns on the type. Everything else on the tab is derived when it's read.
@@ -131,7 +138,10 @@ Status is derived per type, never stored.
 | `remaining ≤ 0` | `out` |
 | `warn_unit = 'shuttles'` and `remaining ≤ warn_at` | `low` |
 | `warn_unit = 'sessions'`, `runway_sessions` not null and `runway_sessions ≤ warn_at` | `low` |
-| otherwise (incl. no Warn at, or sessions with no history) | `ok` |
+| no Warn at and `remaining < 2` (i.e. 1 left) | `low` (D18) |
+| otherwise (incl. sessions Warn at with no history) | `ok` |
+
+**Alert** (derived, separate from status): `alert = warn_at IS NOT NULL AND status !== 'ok'`. Only alerting types light the tab dot and appear in Home's alert (D19). A type with no Warn at shows low/out on its row only.
 
 ## Writers
 ### 1. Add shuttle → `createShuttle` (changed)
@@ -206,11 +216,11 @@ Status is derived per type, never stored.
   - `runway_sessions` = `Math.floor(remaining / avg)` when `avg` is set and `remaining > 0`. It's 0 when `remaining ≤ 0` and `avg` is set, and null otherwise.
   - `used_since_last_purchase` = instances of the type with `date >` the type's latest `shuttle_purchases.date`.
   - `price_per_shuttle` = `total_price / num_of_shuttles`.
-- **Status:** per the [State Machine](#state-machine).
+- **Status and alert:** per the [State Machine](#state-machine).
 - **Sort:** out, then low, then ok. Within each group, by `runway_sessions` ascending with nulls last, then by name A–Z (case-insensitive).
 - **Totals:**
   - `total_remaining` = sum of `max(remaining, 0)`.
-  - `type_count`, plus `out_count` and `low_count`.
+  - `type_count`, plus `out_count` and `low_count` (all types, for the tile sub-line), and `alert_count` (types with `alert`, for the tab dot).
   - `club_avg_per_session` and `window_sessions`.
 
 One or two SQL queries plus a small TS pass is fine. Match the style of `fetchAllShuttlesWithInventory`.
@@ -255,8 +265,8 @@ Screen → data mapping (confirmed, D13):
 | Detail hint "uses ~X a session" | `types[].avg_per_session` |
 | Detail price field | `types[].price_per_shuttle` |
 | Chart bars | `fetchShuttlesPerSession(8)` |
-| Tab dot + a11y count | `totals.out_count + totals.low_count` |
-| Home alert (≤ 2 rows) | `types[]` where `status !== 'ok'`, same order |
+| Tab dot + a11y count | `totals.alert_count` |
+| Home alert (≤ 2 rows) | `types[]` where `alert`, same order |
 | Add shuttle | `createShuttle({ name, tube_price, per_tube, tubes })` |
 | Live duplicate error | `isShuttleNameTaken(name, excludeId?)` |
 | Detail Save | `updateShuttle({ shuttle_id, name, price_per_shuttle, warn_at, warn_unit })` |
@@ -276,7 +286,8 @@ export type ShuttleStockType = {
     runway_sessions: number | null,
     warn_at: number | null,
     warn_unit: WarnUnit | null,
-    status: StockStatus
+    status: StockStatus,
+    alert: boolean
 }
 
 export type ShuttleStock = {
@@ -286,6 +297,7 @@ export type ShuttleStock = {
         type_count: number,
         out_count: number,
         low_count: number,
+        alert_count: number,
         club_avg_per_session: number | null,
         window_sessions: number
     }
@@ -298,7 +310,15 @@ export function createShuttle(args: { name: string, tube_price: number, per_tube
 export function updateShuttle(args: { shuttle_id: number, name: string, price_per_shuttle: number, warn_at: number | null, warn_unit: WarnUnit | null }): Promise<void>
 ```
 
-Writers throw `Error` with the messages in [Writers](#writers). The frontend shows `error.message`.
+**Errors (D22):** writers throw `Error` with the exact messages in [Writers](#writers), and validate before any write, so a thrown error leaves nothing written. Readers don't catch: a failed query rejects the promise and the caller decides what to show. The frontend maps messages to fields:
+
+| Message | Shown |
+|---|---|
+| `Name is required`, `A shuttle with this name already exists` | under Name |
+| `Tube price must be more than 0`, `Price must be more than 0` | under the price field |
+| `Shuttles per tube and tubes must be at least 1` | under Shuttles per tube |
+| `Warn at must be a whole number of at least 1` | under Warn at |
+| anything else (SQLite failure) | `AppToast` "Couldn't save. Try again.", dialog stays open |
 
 ## End-to-End Flows
 ### Happy path: manager restocks a low type
@@ -362,6 +382,7 @@ fetchShuttleStock() with only an open session today
 - [ ] AC3: `createShuttle` and `updateShuttle` throw `A shuttle with this name already exists` for a name matching another type, trimmed and case-insensitive. `updateShuttle` allows a type's own name in a different case. `updateShuttle` saves Warn at, and clears both columns when `warn_at` is null.
 - [ ] AC4: `fetchShuttleStock` uses only the last 8 closed sessions with a paid shuttle. It returns the averages, runway (rounded down), `used_since_last_purchase`, status and totals as in [Readers §1](#1-fetchshuttlestock-new), sorted out → low → ok, by runway with nulls last, then name.
 - [ ] AC5: With no closed sessions that used a paid shuttle, `club_avg_per_session` and every `avg_per_session` / `runway_sessions` are null. A sessions Warn at doesn't make a type low.
+- [ ] AC5b: A type with no Warn at is `low` at 1 left and `out` at 0, whatever its average, and its `alert` is false. `alert_count` counts only out/low types that have a Warn at.
 - [ ] AC6: `fetchShuttlesPerSession(8)` returns at most 8 rows, oldest first, closed sessions only, and leaves out sessions that used only free shuttles.
 - [ ] AC7: `isShuttleNameTaken` returns true or false correctly, with and without `excludeId`.
 - [ ] AC8: After `npm run db:fresh`, the `default` scenario gives at least one `low` type (with a Warn at) and one `out` type. `npm run db:fresh -- shuttles` gives 8+ closed sessions with paid shuttles and one type with no history. Both log `[dev-db] … done`.
@@ -377,11 +398,21 @@ fetchShuttleStock() with only an open session today
   - Switch `createShuttle` calls to the tube arguments.
   - `default`: set a Warn at so one type is low, and use up another type completely.
   - Add a `shuttles` scenario: 8–10 closed sessions over recent weeks using two paid types plus some free shuttles, one type with a Warn at in sessions, and one newly added type with no use.
-- **Stopgaps**: minimal call-site updates in the two shuttle modals so tsc passes and they keep working (see [Blast Radius](#blast-radius)). No UI changes.
+- **Special exception, screen files (D21)**: this backend PRD may edit exactly these files under `app/` and `components/`, and only as described:
+  - `app/(tabs)/_layout.tsx`: remove the `insights/index` screen entry.
+  - `app/(tabs)/insights/`, `components/insights/`: delete.
+  - `components/shuttle/modal.tsx`, `components/shuttle/editShuttleModal.tsx`: stopgap call-site updates so tsc passes and they keep working (see [Blast Radius](#blast-radius)). No UI changes.
+
+  Any other screen change belongs to the frontend PRD.
 
 ## Features Catalog
 - **Extends**: #8 Shuttle inventory; #12 Home dashboard (low-stock data); #13 Insights (removed route)
 - **Closes known gaps**: "Planned (no PRD yet): an optional "Warn at: N" input with a Shuttle / Session toggle in the shuttle detail pop-up. It triggers Home's low-stock alert (PRD [7] D3, D4)." (data side)
+
+## Open Questions
+- [ ] Meter in the seed: `shuttle_instances.date` is the insert time, not the session date, and the seed inserts past sessions and purchases in the same second, so `used_since_last_purchase` is 0 and every seeded meter reads full. Use the session's date, or space out seed purchases?
+- [ ] How AC1–AC4 are verified without a raw-SQL tool: suggested a `verify-shuttles` dev scenario that calls the readers and writers and logs pass/fail to Metro.
+- [ ] Editing an old type's price re-saves it rounded (D9), which changes charges in any open session that used it. Accept, or block price edits while the type is used in an open session?
 
 ## Risks
 | Risk | Likelihood | Impact | Mitigation |

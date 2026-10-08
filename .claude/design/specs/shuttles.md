@@ -100,8 +100,8 @@ Data reloads on focus and after either dialog closes (as today).
 - **Out** (remaining ≤ 0): status "Out of stock", note "Buy again to restock", both in Gluestack `error` (the red Create match already uses for out-of-stock rows; decision 2026-10-06). Meter empty.
 - **Low**: status and note in `clay-strong`, meter fill `clay`. Note "Low · warns at {N} shuttles" or "Low · warns at {N} sessions".
 - **OK**: status `ink`, meter fill `primary`, no note.
-- A type with no Warn at is never low; it only shows as out at 0.
-- **Tab dot**: while any type is out or low, an 8pt `clay` dot with a 2pt `surface-raised` ring sits at the top-right of the Shuttles tab icon, on every tab. Screen-reader label "Shuttles, {n} type(s) need restocking".
+- A type with no Warn at shows low at 1 left and out at 0 on its row only; it never lights the tab dot or Home's alert (PRD [8] D18, D19).
+- **Tab dot**: while any type *with a Warn at* is out or low, an 8pt `clay` dot with a 2pt `surface-raised` ring sits at the top-right of the Shuttles tab icon, on every tab. Screen-reader label "Shuttles, {n} type(s) need restocking".
 - **Home alert**: the same out/low types, out first then lowest runway, at most 2 `LowStockAlert` rows (Home already slices to 2). This replaces home.md's interim rule ("runway 2 sessions or fewer, else 2 or fewer left"): Home now follows each type's Warn at.
 
 ### 4c. No usage history (mockup state 3)
@@ -248,7 +248,7 @@ The dialog stays as it is today, titled with the type's name. Changes:
 - *Club average* = paid shuttles used in the window ÷ sessions in the window.
 - *Type average* = paid shuttles of that type used in the window ÷ sessions in the window. If 0 (type unused in the window), the type has no runway.
 - *Runway* = floor(remaining ÷ type average); null with no history or a zero average.
-- *Status*: `out` if remaining ≤ 0; else `low` if Warn at is in shuttles and remaining ≤ N, or Warn at is in sessions, runway is not null and runway ≤ N; else `ok`.
+- *Status*: `out` if remaining ≤ 0; else `low` if Warn at is in shuttles and remaining ≤ N, or Warn at is in sessions, runway is not null and runway ≤ N, or there is no Warn at and remaining < 2; else `ok`. Only types with a Warn at alert (tab dot, Home).
 
 ## 8. Accessibility
 
