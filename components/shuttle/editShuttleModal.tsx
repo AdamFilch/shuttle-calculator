@@ -56,7 +56,9 @@ export function EditShuttleModal({
         await updateShuttle({
             shuttle_id: shuttle.shuttle_id,
             name: name.trim(),
-            price_per_shuttle: parseFloat(pricePerShuttle)
+            price_per_shuttle: parseFloat(pricePerShuttle),
+            warn_at: null,
+            warn_unit: null
         })
 
         onClose()

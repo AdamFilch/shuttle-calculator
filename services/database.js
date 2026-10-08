@@ -84,7 +84,10 @@ export async function setupDatabase() {
         shuttle_id INTEGER PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
         total_price REAL NOT NULL,
-        num_of_shuttles INTEGER NOT NULL
+        num_of_shuttles INTEGER NOT NULL,
+        warn_at INTEGER CHECK (warn_at >= 1),
+        warn_unit TEXT CHECK (warn_unit IN ('shuttles', 'sessions')),
+        CHECK ((warn_at IS NULL) = (warn_unit IS NULL))
       );
     `);
 

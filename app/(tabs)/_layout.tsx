@@ -60,15 +60,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="insights/index"
-        options={{
-          href: null,
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name={"leaderboard"} size={29} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="shuttles/index"
         options={{
           tabBarIcon: ({ color }) => (
