@@ -13,6 +13,7 @@ export function PlayerRow({
     subLine,
     badge,
     accessibilityLabel,
+    inset = false,
 }: {
     name: string,
     avatarColour: AvatarColour | null,
@@ -21,7 +22,8 @@ export function PlayerRow({
     onPress?: () => void,
     subLine?: string,
     badge?: ReactNode,
-    accessibilityLabel?: string
+    accessibilityLabel?: string,
+    inset?: boolean
 }) {
     const defaultSubLine = `${sessionCount ?? 0} ${sessionCount === 1 ? "session" : "sessions"}`
     const defaultBadge = isOwed(owedAmount ?? 0) ? (
@@ -32,6 +34,7 @@ export function PlayerRow({
 
     const { fontScale } = useWindowDimensions()
     const stacked = badge !== undefined && fontScale >= 1.5
+    const frame = inset ? "" : "rounded-xl border border-border-subtle"
 
     return (
         <Pressable
@@ -42,7 +45,7 @@ export function PlayerRow({
         >
             {({ pressed }) => stacked ? (
                 <View
-                    className={`gap-2 rounded-xl border border-border-subtle px-4 py-3 ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
+                    className={`gap-2 ${frame} px-4 py-3 ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
                 >
                     <View className="flex-row items-center gap-3">
                         <Avatar name={name} colour={avatarColour} />
@@ -53,7 +56,7 @@ export function PlayerRow({
                 </View>
             ) : (
                 <View
-                    className={`flex-row items-center rounded-xl border border-border-subtle px-4 py-3 ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
+                    className={`flex-row items-center ${frame} px-4 py-3 ${pressed ? "bg-primary-tint" : "bg-surface-raised"}`}
                 >
                     <Avatar name={name} colour={avatarColour} />
                     <View className="flex-1 ml-3 mr-3">

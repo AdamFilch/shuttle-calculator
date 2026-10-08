@@ -36,9 +36,11 @@ import { VStack } from "../ui/vstack";
 export function AddSessionModal({
   open,
   onClose,
+  onCreated,
 }: {
   open: boolean;
   onClose: () => void;
+  onCreated?: (sessionId: number) => void;
 }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(new Date());
@@ -96,6 +98,7 @@ export function AddSessionModal({
     }
 
     resetForm();
+    onCreated?.(sessionId);
     onClose();
   }
 

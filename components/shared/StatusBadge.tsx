@@ -1,4 +1,5 @@
 import { formatRM } from "@/services/money-display"
+import { format } from "date-fns"
 import { Text, View } from "react-native"
 
 export type StatusBadgeProps =
@@ -7,6 +8,7 @@ export type StatusBadgeProps =
     | { variant: "owes", amount: number, format?: "owes" | "due" | "amount" }
     | { variant: "estimate", amount: number }
     | { variant: "waived" }
+    | { variant: "stale", since: string }
 
 const STYLES = {
     settled: { container: "bg-settled-tint", text: "text-settled" },
@@ -14,6 +16,7 @@ const STYLES = {
     owes: { container: "bg-clay-tint", text: "text-clay" },
     estimate: { container: "bg-clay-tint", text: "text-clay-strong" },
     waived: { container: "bg-neutral-tint", text: "text-muted" },
+    stale: { container: "bg-clay-tint", text: "text-clay-strong" },
 }
 
 function labelFor(props: StatusBadgeProps): string {
@@ -30,6 +33,8 @@ function labelFor(props: StatusBadgeProps): string {
             return `≈ ${formatRM(props.amount)}`
         case "waived":
             return "Waived"
+        case "stale":
+            return `Still open since ${format(new Date(props.since), "d MMM")}`
     }
 }
 
