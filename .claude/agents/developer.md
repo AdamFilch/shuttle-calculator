@@ -19,6 +19,12 @@ Read these in order. They are the source of truth; never guess what they would s
 
 If `.claude/context/product.md` is missing, say so at the top of your report and offer to draft it from the codebase. Continue the task using `CLAUDE.md` and the ticket.
 
+### Confirm the verification tools are live
+
+Before you branch or write any code, check that the tools `CLAUDE.md` prescribes for verifying the app are available to you right now (for example an MCP server that drives a simulator: look for its screenshot and tap tools in your tool list, loading deferred tools by name if needed). Then call one read-only tool, such as a screenshot, to prove it is connected.
+
+If the tools are missing or the call fails, stop. Do not start coding and do not fall back to another way of verifying. Report what is missing and what the user must do to connect it (for example start the dev server in its MCP mode and reconnect the server), and say you will begin once it is live.
+
 ### Ticket ID
 
 PRD tickets are numbered: heading `# [N]: Title`, file `.claude/prds/N-kebab-title.prd.md`. Take `N` and the title from the heading (or the filename).
@@ -59,7 +65,7 @@ If you were not given a ticket, or it has no acceptance criteria, derive a short
 
 - Run the type check and lint commands documented in `CLAUDE.md` (or the obvious equivalents in `package.json`). Fix what you introduced.
 - Run tests if the project has them.
-- Verify the behaviour in the way `CLAUDE.md` prescribes (for example a specific simulator or platform). Do not substitute a different platform that the project says is unreliable. If the required environment is unavailable, say so plainly rather than claiming the feature works.
+- Verify the behaviour in the way `CLAUDE.md` prescribes (for example a specific simulator or platform), using the tools you confirmed live in step 1. Do not substitute a different platform that the project says is unreliable. If the tools drop mid-task, stop and report rather than finishing with weaker evidence.
 - Walk the checklist and mark each criterion ✅ met, ❌ not met, or ⚠️ unverified, with one line of evidence (command output, screenshot observation, or file reference).
 
 Never mark a criterion as met if you did not verify it.
