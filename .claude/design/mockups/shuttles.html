@@ -1,0 +1,446 @@
+<title>Shuttles Redesign</title>
+<style>
+/* Layout: board header with priorities, then a grid of phone frames (one per state) with captions, then a data note for the backend PRD. App screens use the fixed light design-system tokens; the board follows the viewer's theme. */
+:root {
+  --page-bg: #eef1f4;
+  --page-fg: #002b5b;
+  --page-muted: #56616c;
+  --page-line: #d5dbe1;
+  --page-frame: #1d2733;
+  --page-accent: #004e89;
+  --page-accent-tint: #e2ebf3;
+
+  --surface: #f8f9fa;
+  --surface-raised: #ffffff;
+  --ink: #002b5b;
+  --muted: #6c757d;
+  --border: #c7cdd2;
+  --border-subtle: #e4e6e9;
+  --border-dashed: #b8bec4;
+  --primary: #004e89;
+  --primary-tint: #eaf0f5;
+  --clay: #a97155;
+  --clay-tint: #fbefe8;
+  --clay-strong: #8a5640;
+  --neutral-tint: #edeeef;
+  --error: #dc2626;
+  --error-tint: #fee2e2;
+  --disabled: #e9ecef;
+  --scrim: rgba(0, 43, 91, 0.45);
+  --shadow-modal: 0 12px 32px rgba(0, 43, 91, 0.18);
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #0c1520; --page-fg: #e3eaf2; --page-muted: #98a6b5; --page-line: #233242;
+    --page-frame: #050a10; --page-accent: #8fbbe3; --page-accent-tint: #18293b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #0c1520; --page-fg: #e3eaf2; --page-muted: #98a6b5; --page-line: #233242;
+  --page-frame: #050a10; --page-accent: #8fbbe3; --page-accent-tint: #18293b; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--page-bg); color: var(--page-fg); font-family: var(--sans); padding-inline: 16px; padding-block: 32px 56px; }
+code { font-size: 0.92em; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+.board-head { display: grid; gap: 8px; }
+.board-head h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.board-head p { margin: 0; color: var(--page-muted); font-size: 15px; line-height: 22px; max-width: 72ch; }
+.priorities { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.priorities li { font-size: 12px; line-height: 16px; font-weight: 500; border: 1px solid var(--page-line); border-radius: 999px; padding: 5px 10px; color: var(--page-muted); }
+.priorities b { color: var(--page-fg); font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+.board { display: grid; gap: 40px 28px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); justify-items: center; align-items: start; }
+figure { margin: 0; display: grid; gap: 14px; width: 100%; max-width: 360px; }
+figcaption { display: grid; gap: 4px; }
+figcaption strong { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+figcaption span { font-size: 13px; line-height: 19px; color: var(--page-muted); }
+.queries { border: 1px dashed var(--page-line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; font-size: 14px; line-height: 20px; }
+.queries h3 { margin: 0; font-size: 12px; line-height: 16px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--page-muted); font-weight: 600; }
+.queries ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.queries li span { color: var(--page-muted); }
+
+.phone { width: 100%; border-radius: 40px; background: var(--page-frame); padding: 10px; }
+.screen { position: relative; border-radius: 31px; overflow: hidden; background: var(--surface); color: var(--ink); font-size: 14px; line-height: 20px; display: flex; flex-direction: column; min-height: 720px; }
+.status-bar { height: 40px; display: flex; align-items: center; justify-content: space-between; padding-inline: 26px; font-size: 14px; font-weight: 600; }
+.status-bar .dots { display: flex; gap: 4px; align-items: center; }
+.status-bar .dots i { width: 16px; height: 9px; border-radius: 2px; background: var(--ink); display: block; }
+.status-bar .dots i:first-child { width: 12px; opacity: .55; }
+.page-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 4px; gap: 8px; }
+.screen-title { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.hbtn { height: 40px; padding: 0 12px; border-radius: 8px; background: var(--primary); color: var(--surface); display: inline-flex; align-items: center; gap: 4px; font: 500 14px/20px var(--sans); flex: none; }
+
+.content { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 24px; flex: 1; }
+.card { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: 12px; }
+.section { display: grid; gap: 8px; }
+.section-label { font-size: 13px; line-height: 18px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tile { padding: 12px; display: grid; gap: 2px; }
+.tile .k { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.tile .k svg { color: var(--clay); }
+.tile .v { font-size: 22px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 12px; line-height: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tile .s.warn { color: var(--clay-strong); font-weight: 500; }
+
+.list { display: grid; }
+.list > * + * { border-top: 1px solid var(--border-subtle); }
+.stock { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 10px; padding: 10px 10px 12px 14px; min-height: 56px; }
+.stock .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
+.stock .nm { font-size: 16px; line-height: 22px; font-weight: 500; min-width: 0; }
+.stock .amt { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stock .note { font-size: 12px; line-height: 16px; margin-top: 4px; }
+.stock > svg { color: var(--muted); grid-row: 1; grid-column: 2; }
+.stock.low .amt, .stock.low .note { color: var(--clay-strong); }
+.stock.out .amt, .stock.out .note { color: var(--error); }
+.meter { height: 6px; border-radius: 999px; background: var(--neutral-tint); overflow: hidden; margin-top: 6px; }
+.meter i { display: block; height: 100%; border-radius: 999px; background: var(--primary); }
+.stock.low .meter i { background: var(--clay); }
+
+.chart { padding: 14px; display: grid; gap: 8px; }
+.chart .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.chart .head span { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chart svg text { font: 500 10px var(--sans); fill: var(--muted); }
+.chart-empty { border: 1px dashed var(--border-dashed); border-radius: 10px; padding: 18px 14px; display: grid; gap: 4px; justify-items: center; text-align: center; }
+.chart-empty b { font-weight: 500; font-size: 15px; }
+.chart-empty span { font-size: 13px; line-height: 18px; color: var(--muted); }
+
+.empty { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 24px 20px; border: 1px dashed var(--border-dashed); border-radius: 12px; background: var(--surface-raised); }
+.empty svg { color: var(--clay); }
+.empty b { font-size: 16px; font-weight: 500; }
+.empty span { font-size: 13px; line-height: 18px; color: var(--muted); }
+
+.btn { height: 44px; border-radius: 8px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 500 15px/20px var(--sans); }
+.btn.primary { background: var(--primary); color: var(--surface); }
+.btn.secondary { background: var(--surface-raised); color: var(--ink); border: 1px solid var(--border); }
+.btn.outline { background: var(--surface-raised); color: var(--primary); border: 1px solid var(--primary); }
+.btn.is-disabled { background: var(--disabled); color: var(--muted); }
+.btn.full { width: 100%; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.tabbar { display: flex; justify-content: space-around; border-top: 1px solid var(--border-subtle); background: var(--surface-raised); padding: 6px 8px 26px; position: relative; }
+.tabbar span { width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); position: relative; }
+.tabbar span.on { color: var(--primary); }
+.tabbar span.dot::after { content: ""; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 999px; background: var(--clay); box-shadow: 0 0 0 2px var(--surface-raised); }
+.home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 5px; border-radius: 999px; background: var(--ink); opacity: .85; }
+
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.dialog { position: absolute; left: 14px; right: 14px; top: 52px; background: var(--surface-raised); border-radius: 16px; box-shadow: var(--shadow-modal); padding: 18px; display: grid; gap: 14px; }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.modal-title { font-size: 20px; line-height: 26px; font-weight: 600; margin: 0; }
+.x { width: 44px; height: 44px; margin: -10px -10px -10px 0; display: grid; place-items: center; color: var(--muted); }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field .lbl { font-size: 12px; line-height: 16px; color: var(--muted); }
+.input { height: 44px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; display: flex; align-items: center; background: var(--surface-raised); font-variant-numeric: tabular-nums; font-size: 16px; }
+.input .pre { color: var(--muted); margin-right: 6px; }
+.input.focus { border: 2px solid var(--primary); padding: 0 11px; }
+.input.err { border: 2px solid var(--error); padding: 0 11px; }
+.ferr { font-size: 12px; line-height: 16px; color: var(--error); display: flex; gap: 4px; align-items: center; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.qty { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 52px; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 0 4px 0 12px; }
+.qty .ctl { display: flex; align-items: center; gap: 2px; background: var(--surface); border-radius: 8px; padding: 2px; }
+.qty .ctl i { width: 44px; height: 40px; border-radius: 6px; display: grid; place-items: center; background: var(--surface-raised); color: var(--ink); font-style: normal; }
+.qty .ctl i.plus { background: var(--primary); color: var(--surface); }
+.qty .ctl b { min-width: 30px; text-align: center; font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.live { background: var(--surface); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.live b { color: var(--ink); font-weight: 600; }
+.hint { font-size: 12px; line-height: 17px; color: var(--muted); margin: 0; }
+.hint.clay { color: var(--clay-strong); }
+.warn-row { display: grid; grid-template-columns: 84px 1fr; gap: 8px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 2px; height: 44px; }
+.seg span { display: grid; place-items: center; border-radius: 6px; font-size: 14px; color: var(--muted); font-weight: 500; }
+.seg span.on { background: var(--surface-raised); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 43, 91, 0.12); }
+.divider { height: 1px; background: var(--border-subtle); }
+.sub-h { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0; }
+.purchases { display: grid; gap: 2px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.buy { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.buy .btn { padding: 0 14px; font-size: 14px; }
+.optional { color: var(--muted); font-weight: 400; }
+
+svg { display: block; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-feather" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l10-10"/><path d="M14 5v5h5"/><path d="M10 9v5h5"/><path d="M20.2 7.8a4 4 0 0 0-5.7-5.6L8 8.7V16h7.3z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+    <symbol id="i-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c1.8.8 3 2.8 3 6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+  </defs>
+</svg>
+
+<main class="wrap">
+  <header class="board-head">
+    <h1>Shuttles tab redesign</h1>
+    <p>The Shuttles tab answers one question before the next session: do I need to buy shuttles, and which type? Two tiles give the total left and the club's average use. The stock list puts the type that runs out first at the top, and shows each type's runway in sessions. The per-session chart from the Home exploration sits at the bottom. Averages count only paid shuttles, over the last 8 sessions that used at least one paid shuttle.</p>
+    <ul class="priorities">
+      <li><b>1</b>How many are left</li>
+      <li><b>2</b>How long they will last</li>
+      <li><b>3</b>Restock in two taps</li>
+    </ul>
+  </header>
+
+  <div class="board">
+
+    <!-- 1 Stocked -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Shuttles tab, all stocked">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2><span class="hbtn" role="button"><svg width="16" height="16"><use href="#i-plus"/></svg>Add shuttle</span></div>
+        <div class="content">
+          <div class="tiles">
+            <div class="card tile"><span class="k">Shuttles left</span><span class="v">46</span><span class="s">Across 3 types</span></div>
+            <div class="card tile"><span class="k"><svg width="14" height="14"><use href="#i-feather"/></svg>Avg per session</span><span class="v">9.3</span><span class="s">Last 8 sessions</span></div>
+          </div>
+          <section class="section" aria-label="Stock">
+            <p class="section-label">Stock</p>
+            <div class="card list">
+              <div class="stock" role="button"><div><div class="top"><span class="nm">RSL Classic</span><span class="amt">22 left · ~4 sessions</span></div><div class="meter"><i style="width:61%"></i></div></div><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+              <div class="stock" role="button"><div><div class="top"><span class="nm">Victor Gold</span><span class="amt">6 left · ~4 sessions</span></div><div class="meter"><i style="width:60%"></i></div></div><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+              <div class="stock" role="button"><div><div class="top"><span class="nm">Yonex AS-50</span><span class="amt">18 left · ~6 sessions</span></div><div class="meter"><i style="width:75%"></i></div></div><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+            </div>
+          </section>
+          <section class="card chart" aria-label="Shuttles per session, last 8 sessions: 8, 9, 10, 9, 11, 8, 10, 9. Latest 9 on 6 October.">
+            <div class="head"><p class="section-label">Shuttles per session</p><span>Paid only</span></div>
+            <svg viewBox="0 0 280 96" width="100%" aria-hidden="true">
+              <line x1="0" y1="76" x2="280" y2="76" stroke="var(--border-subtle)" stroke-width="1"/>
+              <g fill="var(--clay-tint)">
+                <rect x="6" y="36" width="24" height="40" rx="3"/><rect x="40" y="31" width="24" height="45" rx="3"/><rect x="74" y="26" width="24" height="50" rx="3"/><rect x="108" y="31" width="24" height="45" rx="3"/><rect x="142" y="21" width="24" height="55" rx="3"/><rect x="176" y="36" width="24" height="40" rx="3"/><rect x="210" y="26" width="24" height="50" rx="3"/>
+              </g>
+              <rect x="244" y="31" width="24" height="45" rx="3" fill="var(--clay)"/>
+              <text x="256" y="25" text-anchor="middle" style="fill:var(--ink);font-weight:600;font-size:11px">9</text>
+              <text x="18" y="90" text-anchor="middle">11 Aug</text>
+              <text x="256" y="90" text-anchor="middle">6 Oct</text>
+            </svg>
+          </section>
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span class="on" aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>1 · Stocked</strong>
+        <span>A sorted list replaces the card grid, so the type that runs out first is always at the top (shortest runway first). "~4 sessions" is stock divided by that type's average per session, rounded down to stay on the safe side. A meter is full right after a restock and empties as shuttles are used, so a half-empty bar means half of the last purchase is gone. Average per session counts paid shuttles only, over the last 8 sessions that used at least one paid shuttle. Tapping a row opens its detail dialog.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 2 Low + out -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Shuttles tab, one low and one out of stock">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2><span class="hbtn" role="button"><svg width="16" height="16"><use href="#i-plus"/></svg>Add shuttle</span></div>
+        <div class="content">
+          <div class="tiles">
+            <div class="card tile"><span class="k">Shuttles left</span><span class="v">11</span><span class="s warn">1 out · 1 low</span></div>
+            <div class="card tile"><span class="k"><svg width="14" height="14"><use href="#i-feather"/></svg>Avg per session</span><span class="v">9.3</span><span class="s">Last 8 sessions</span></div>
+          </div>
+          <section class="section" aria-label="Stock">
+            <p class="section-label">Stock</p>
+            <div class="card list">
+              <div class="stock out" role="button" aria-label="Yonex AS-50, out of stock. Buy again to restock."><div><div class="top"><span class="nm">Yonex AS-50</span><span class="amt">Out of stock</span></div><div class="meter"><i style="width:0"></i></div><div class="note">Buy again to restock</div></div><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+              <div class="stock low" role="button" aria-label="RSL Classic, low, 5 left, about 1 session. Warns at 10 shuttles."><div><div class="top"><span class="nm">RSL Classic</span><span class="amt">5 left · ~1 session</span></div><div class="meter"><i style="width:14%"></i></div><div class="note">Low · warns at 10 shuttles</div></div><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+              <div class="stock" role="button"><div><div class="top"><span class="nm">Victor Gold</span><span class="amt">6 left · ~4 sessions</span></div><div class="meter"><i style="width:60%"></i></div></div><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+            </div>
+          </section>
+          <section class="card chart" aria-label="Shuttles per session, last 8 sessions: 8, 9, 10, 9, 11, 8, 10, 9. Latest 9 on 6 October.">
+            <div class="head"><p class="section-label">Shuttles per session</p><span>Paid only</span></div>
+            <svg viewBox="0 0 280 96" width="100%" aria-hidden="true">
+              <line x1="0" y1="76" x2="280" y2="76" stroke="var(--border-subtle)" stroke-width="1"/>
+              <g fill="var(--clay-tint)">
+                <rect x="6" y="36" width="24" height="40" rx="3"/><rect x="40" y="31" width="24" height="45" rx="3"/><rect x="74" y="26" width="24" height="50" rx="3"/><rect x="108" y="31" width="24" height="45" rx="3"/><rect x="142" y="21" width="24" height="55" rx="3"/><rect x="176" y="36" width="24" height="40" rx="3"/><rect x="210" y="26" width="24" height="50" rx="3"/>
+              </g>
+              <rect x="244" y="31" width="24" height="45" rx="3" fill="var(--clay)"/>
+              <text x="256" y="25" text-anchor="middle" style="fill:var(--ink);font-weight:600;font-size:11px">9</text>
+              <text x="18" y="90" text-anchor="middle">11 Aug</text>
+              <text x="256" y="90" text-anchor="middle">6 Oct</text>
+            </svg>
+          </section>
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span class="on dot" aria-label="Shuttles, 2 types need restocking"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>2 · One low, one out of stock</strong>
+        <span>Out of stock comes first, then low, then the rest by runway. Each status is written out in words as well as colour. Out of stock uses the Gluestack error red already used for out-of-stock rows in Create match. Low uses clay, because RSL Classic is at or below the "Warn at 10 shuttles" set in its detail dialog. A type with no Warn at only warns when it reaches 0. The tile sub-line counts both. A small clay dot on the Shuttles tab icon shows from any tab while something is low or out; its screen-reader label says "2 types need restocking". Home's alert lists the same types, lowest runway first, at most 2.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 3 No history -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Shuttles tab, no usage history yet">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2><span class="hbtn" role="button"><svg width="16" height="16"><use href="#i-plus"/></svg>Add shuttle</span></div>
+        <div class="content">
+          <div class="tiles">
+            <div class="card tile"><span class="k">Shuttles left</span><span class="v">24</span><span class="s">1 type</span></div>
+            <div class="card tile"><span class="k"><svg width="14" height="14"><use href="#i-feather"/></svg>Avg per session</span><span class="v">–</span><span class="s">After your first session</span></div>
+          </div>
+          <section class="section" aria-label="Stock">
+            <p class="section-label">Stock</p>
+            <div class="card list">
+              <div class="stock" role="button"><div><div class="top"><span class="nm">Yonex AS-50</span><span class="amt">24 left</span></div><div class="meter"><i style="width:100%"></i></div></div><svg width="18" height="18"><use href="#i-chev"/></svg></div>
+            </div>
+          </section>
+          <section class="card chart" aria-label="Shuttles per session. No sessions with paid shuttles yet.">
+            <div class="head"><p class="section-label">Shuttles per session</p></div>
+            <div class="chart-empty"><b>No sessions yet</b><span>Bars appear after your first session that uses a paid shuttle.</span></div>
+          </section>
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span class="on" aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>3 · No usage history yet</strong>
+        <span>With no session that used a paid shuttle, there is no average, so the row shows "24 left" with no runway and the tile shows a dash. Sessions played only with free shuttles do not count here either. The meter is full because nothing has been used since the purchase. A new type added to a club that already has history shows the same way and sorts last, below every type with a runway. A Warn at set in sessions can't be checked yet, so it doesn't mark the type as low.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 4 Empty -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Shuttles tab, no shuttle types">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2></div>
+        <div class="content">
+          <div class="empty">
+            <svg width="28" height="28"><use href="#i-feather"/></svg>
+            <b>No shuttles yet</b>
+            <span>Add the shuttles you buy to track how many are left and split their cost fairly.</span>
+          </div>
+          <span class="btn primary full" role="button"><svg width="16" height="16"><use href="#i-plus"/></svg>Add your first shuttle</span>
+        </div>
+        <nav class="tabbar" aria-label="Tabs"><span aria-label="Home"><svg width="24" height="24"><use href="#i-home"/></svg></span><span aria-label="Sessions"><svg width="24" height="24"><use href="#i-cal"/></svg></span><span aria-label="Players"><svg width="24" height="24"><use href="#i-people"/></svg></span><span class="on" aria-label="Shuttles"><svg width="24" height="24"><use href="#i-feather"/></svg></span><span aria-label="Settings"><svg width="24" height="24"><use href="#i-gear"/></svg></span><span class="home-ind" aria-hidden="true"></span></nav>
+      </div></div>
+      <figcaption>
+        <strong>4 · Empty tab</strong>
+        <span>The existing EmptyState (clay feather, one title, one sentence) with a full-width "Add your first shuttle" button below it. The header button is hidden so there is only one primary action. Tiles and the chart are hidden because they would only show zeros.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 5a Add shuttle -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Add shuttle dialog, filled in">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2></div>
+        <div class="scrim"></div>
+        <div class="dialog" role="dialog" aria-label="Add shuttle">
+          <div class="dialog-head"><h3 class="modal-title">Add shuttle</h3><span class="x" role="button" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></span></div>
+          <div class="field"><span class="lbl">Name</span><div class="input">Aeroplane Gold</div></div>
+          <div class="two">
+            <div class="field"><span class="lbl">Shuttles per tube</span><div class="input">12</div></div>
+            <div class="field"><span class="lbl">Tube price</span><div class="input focus"><span class="pre">RM</span>54</div></div>
+          </div>
+          <div class="field"><span class="lbl">Tubes bought</span>
+            <div class="qty"><span>Tubes</span><span class="ctl"><i aria-label="One fewer tube"><svg width="18" height="18"><use href="#i-minus"/></svg></i><b>2</b><i class="plus" aria-label="One more tube"><svg width="18" height="18"><use href="#i-plus"/></svg></i></span></div>
+          </div>
+          <div class="live" aria-live="polite"><b>RM 4.50</b> per shuttle · <b>24</b> shuttles</div>
+          <div class="actions"><span class="btn secondary" role="button">Cancel</span><span class="btn primary" role="button">Add shuttle</span></div>
+        </div>
+      </div></div>
+      <figcaption>
+        <strong>5 · Add shuttle, filled</strong>
+        <span>Shuttles are bought in tubes, so the form asks for what's printed on the receipt: shuttles per tube (12 by default), tube price and how many tubes. Each field has a visible label. Number fields open the number pad, and tube price opens the decimal pad. The live line shows the per-shuttle price that players will be charged before anything is saved. It is stored in the existing columns (total RM 108, 24 shuttles). The tubes stepper has 44pt buttons.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 5b Duplicate -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Add shuttle dialog, duplicate name">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2></div>
+        <div class="scrim"></div>
+        <div class="dialog" role="dialog" aria-label="Add shuttle">
+          <div class="dialog-head"><h3 class="modal-title">Add shuttle</h3><span class="x" role="button" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></span></div>
+          <div class="field"><span class="lbl">Name</span><div class="input err">yonex as-50</div><span class="ferr" role="alert"><svg width="14" height="14"><use href="#i-alert"/></svg>A shuttle with this name already exists</span></div>
+          <div class="two">
+            <div class="field"><span class="lbl">Shuttles per tube</span><div class="input">12</div></div>
+            <div class="field"><span class="lbl">Tube price</span><div class="input"><span class="pre">RM</span>54</div></div>
+          </div>
+          <div class="field"><span class="lbl">Tubes bought</span>
+            <div class="qty"><span>Tubes</span><span class="ctl"><i aria-label="One fewer tube"><svg width="18" height="18"><use href="#i-minus"/></svg></i><b>1</b><i class="plus" aria-label="One more tube"><svg width="18" height="18"><use href="#i-plus"/></svg></i></span></div>
+          </div>
+          <div class="live"><b>RM 4.50</b> per shuttle · <b>12</b> shuttles</div>
+          <div class="actions"><span class="btn secondary" role="button">Cancel</span><span class="btn is-disabled" role="button" aria-disabled="true">Add shuttle</span></div>
+          <p class="hint">To add stock to Yonex AS-50, open it from the list and use Buy again.</p>
+        </div>
+      </div></div>
+      <figcaption>
+        <strong>5 · Add shuttle, name taken</strong>
+        <span>Names are checked ignoring case and spaces at either end, the same rule as players. The error appears under the field (red border, icon and words) and Add shuttle stays disabled until the name changes. Usually the manager is trying to restock a type they already have, so the hint points to Buy again.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 6a Detail, shuttles -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Shuttle detail, Warn at in shuttles">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2></div>
+        <div class="scrim"></div>
+        <div class="dialog" role="dialog" aria-label="RSL Classic">
+          <div class="dialog-head"><h3 class="modal-title">RSL Classic</h3><span class="x" role="button" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></span></div>
+          <div class="field"><span class="lbl">Name</span><div class="input">RSL Classic</div></div>
+          <div class="field"><span class="lbl">Price per shuttle</span><div class="input"><span class="pre">RM</span>4.50</div></div>
+          <div class="field"><span class="lbl">Warn at <span class="optional">(optional)</span></span>
+            <div class="warn-row"><div class="input focus">10</div><div class="seg" role="radiogroup" aria-label="Warn at unit"><span class="on" role="radio" aria-checked="true">Shuttles</span><span role="radio" aria-checked="false">Sessions</span></div></div>
+            <p class="hint clay">Shows as low at 10 or fewer left. Now 5 left, so it's low.</p>
+          </div>
+          <div class="divider"></div>
+          <p class="sub-h">Recent purchases</p>
+          <div class="purchases"><span>2 Oct 2026 · +24 shuttles</span><span>14 Sep 2026 · +12 shuttles</span></div>
+          <div class="divider"></div>
+          <div class="field"><span class="lbl">Buy again (shuttles)</span><div class="buy"><div class="input">24</div><span class="btn outline" role="button">Add to stock</span></div></div>
+          <div class="actions"><span class="btn secondary" role="button">Cancel</span><span class="btn primary" role="button">Save</span></div>
+        </div>
+      </div></div>
+      <figcaption>
+        <strong>6 · Detail, Warn at in shuttles</strong>
+        <span>The dialog stays as it is today, titled with the type's name. The only addition is the optional Warn at field: a number plus a Shuttles / Sessions toggle, saved with Save. The hint gives the rule in plain words and checks it against today's stock. It turns clay when the type is already low, so the manager can see the effect before saving. Leaving the field empty means the type only warns when it's out. Price is in RM, and "Add to Inventory" becomes "Add to stock".</span>
+      </figcaption>
+    </figure>
+
+    <!-- 6b Detail, sessions -->
+    <figure>
+      <div class="phone"><div class="screen" aria-label="Shuttle detail, Warn at in sessions">
+        <div class="status-bar"><span>10:12</span><span class="dots"><i></i><i></i></span></div>
+        <div class="page-head"><h2 class="screen-title">Shuttles</h2></div>
+        <div class="scrim"></div>
+        <div class="dialog" role="dialog" aria-label="RSL Classic">
+          <div class="dialog-head"><h3 class="modal-title">RSL Classic</h3><span class="x" role="button" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></span></div>
+          <div class="field"><span class="lbl">Name</span><div class="input">RSL Classic</div></div>
+          <div class="field"><span class="lbl">Price per shuttle</span><div class="input"><span class="pre">RM</span>4.50</div></div>
+          <div class="field"><span class="lbl">Warn at <span class="optional">(optional)</span></span>
+            <div class="warn-row"><div class="input focus">2</div><div class="seg" role="radiogroup" aria-label="Warn at unit"><span role="radio" aria-checked="false">Shuttles</span><span class="on" role="radio" aria-checked="true">Sessions</span></div></div>
+            <p class="hint clay">Shows as low when about 2 sessions or fewer are left. Now about 1 session (uses ~5 a session), so it's low.</p>
+          </div>
+          <div class="divider"></div>
+          <p class="sub-h">Recent purchases</p>
+          <div class="purchases"><span>2 Oct 2026 · +24 shuttles</span><span>14 Sep 2026 · +12 shuttles</span></div>
+          <div class="divider"></div>
+          <div class="field"><span class="lbl">Buy again (shuttles)</span><div class="buy"><div class="input">24</div><span class="btn outline" role="button">Add to stock</span></div></div>
+          <div class="actions"><span class="btn secondary" role="button">Cancel</span><span class="btn primary" role="button">Save</span></div>
+        </div>
+      </div></div>
+      <figcaption>
+        <strong>6 · Detail, Warn at in sessions</strong>
+        <span>In sessions, the warning follows how fast the club uses this type, so a busy month warns sooner. "Uses ~5 a session" is this type's paid shuttles averaged over the last 8 sessions that used at least one paid shuttle. With no history yet, the hint reads "No sessions with paid shuttles yet, so this can't warn by sessions until there are." and the type is not marked low.</span>
+      </figcaption>
+    </figure>
+
+  </div>
+
+  <div class="queries">
+    <h3>Data for backend PRD [8]</h3>
+    <ul>
+      <li><b>Exists:</b> <code>createShuttle</code> (the dialog does the tube maths), <code>addShuttlePurchase</code>, <code>fetchShuttlePurchaseHistory</code>, <code>updateShuttle</code> for name and price.</li>
+      <li><b>New query: <code>fetchShuttleStock()</code></b> <span>One place that works out stock for both this tab and Home's alert and tab dot. Per type it returns remaining, used since the latest purchase (for the meter), average per session, runway, Warn at and a status of out, low or ok. It also returns totals. Averages count paid shuttles over the last 8 sessions that used at least one paid shuttle.</span></li>
+      <li><b>New query: <code>fetchShuttlesPerSession(8)</code></b> <span>Session date and paid shuttles used, for the last 8 sessions that used at least one paid shuttle, oldest first.</span></li>
+      <li><b>Schema change:</b> <span><code>shuttles.warn_at</code> and <code>shuttles.warn_unit</code> ('shuttles' or 'sessions'), both optional; <code>updateShuttle</code> saves them. Needs a database reset. Duplicate-name check on create (ignoring case and spaces at either end).</span></li>
+      <li><b>Removed:</b> <code>InsightsSection</code>, the day/week/month usage queries and the hidden <code>app/(tabs)/insights/</code> route.</li>
+    </ul>
+  </div>
+</main>
