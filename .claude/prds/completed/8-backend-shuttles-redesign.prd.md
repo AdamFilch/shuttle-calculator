@@ -429,4 +429,4 @@ fetchShuttleStock() with only an open session today
 | The stopgap edit dialog clears a Warn at on Save before the frontend lands | Medium | Low | The frontend follows straight after; the seed sets Warn at directly |
 
 ---
-*Status: COMPLETED — PR #TBD*
+*Status: COMPLETED — PR #29*
