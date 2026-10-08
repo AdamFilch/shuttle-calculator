@@ -225,4 +225,4 @@ Detail → Warn at 2, Sessions, avg_per_session null
 - Check the number pad (Shuttles per tube, Warn at, Buy again) and decimal pad (Tube price, Price per shuttle) open on a simulator with the software keyboard on (I/O → Keyboard → uncheck Connect Hardware Keyboard), then tick AC6 and move this PRD to `completed/`.
 - Optional: the shared `AppToast` always shows a check icon, so the error toast "Couldn't save. Try again." carries a check mark.
 
-*Status: PARTIAL — PR #TBD*
+*Status: PARTIAL — PR #30*
