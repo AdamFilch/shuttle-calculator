@@ -1,13 +1,13 @@
 # [8]: Frontend — Shuttles Redesign
 
-The Shuttles tab becomes a stock screen that answers *do I need to buy shuttles, and which type?* It matches the approved [Shuttles mockup](https://claude.ai/artifact/SpNQs6c9XTShD7LpsTSPGt) and [spec](../design/specs/shuttles.md). From top to bottom:
+The Shuttles tab becomes a stock screen that answers *do I need to buy shuttles, and which type?* It matches the approved [Shuttles mockup](https://claude.ai/artifact/SpNQs6c9XTShD7LpsTSPGt) and [spec](../../design/specs/shuttles.md). From top to bottom:
 - Two tiles: shuttles left, and average per session.
 - A stock list sorted by urgency, each row with its status in words, a runway in sessions and a restock meter.
 - A per-session bar chart.
 
 The Add shuttle dialog asks for what's on the receipt (shuttles per tube, tube price, tubes) and previews the per-shuttle price. The detail dialog gains an optional Warn at (N shuttles or N sessions). While any type is low or out, a clay dot shows on the Shuttles tab icon, and Home's low-stock alert lists up to two of them.
 
-This half is visual only and reads real data through the backend's [Contract for frontend](8-backend-shuttles-redesign.prd.md#contract-for-frontend). It adds no table, column or service function. The spec is the source for copy, layout, colours and accessibility; this PRD points to its sections rather than repeating them.
+This half is visual only and reads real data through the backend's [Contract for frontend](../completed/8-backend-shuttles-redesign.prd.md#contract-for-frontend). It adds no table, column or service function. The spec is the source for copy, layout, colours and accessibility; this PRD points to its sections rather than repeating them.
 
 **Depends on:** [8]: Backend — Shuttles Redesign merged
 
@@ -94,12 +94,12 @@ Non-obvious design decisions:
 3. **The Home alert is a filter, not a new rule (D6).** Home takes `types.filter(t => t.alert).slice(0, 2)` (only types with a Warn at, D19) and maps it into the existing `LowStockAlert` props (`name`, `remaining`, `runwaySessions`). It doesn't add a collapse line.
 4. **A type with no Warn at shows on its row only (D18).** Its row reads low at 1 left and "Out of stock" at 0, in the same colours as any low/out row, but its note has no "warns at" text and it never lights the dot or Home.
 5. **Create match can't over-pick (D20).** In `selectShuttleModal.tsx` the New-shuttle stepper's + is disabled at the type's `remaining` (the `Stepper` gets a `max` prop), so stock can't go negative from the app.
-6. **One error pattern (D22).** Writer errors map to fields by message (table in the [backend contract](8-backend-shuttles-redesign.prd.md#contract-for-frontend)); an unknown error shows an `AppToast` "Couldn't save. Try again." and the dialog stays open with input kept. A failed load on the tab or Home shows "Couldn't load. Pull to refresh." inline. A failed tab-dot query keeps the last value.
+6. **One error pattern (D22).** Writer errors map to fields by message (table in the [backend contract](../completed/8-backend-shuttles-redesign.prd.md#contract-for-frontend)); an unknown error shows an `AppToast` "Couldn't save. Try again." and the dialog stays open with input kept. A failed load on the tab or Home shows "Couldn't load. Pull to refresh." inline. A failed tab-dot query keeps the last value.
 7. **Tubes only on Add (D23).** Add shuttle's Tubes stepper has min 1. Buy again in the detail dialog stays a plain shuttle count (integer ≥ 1), no tubes.
 8. **Detail hint edge cases.** When the type's average rounds to 0, the "(uses ~X a session)" part is left out (D28). When the type has no average but the club has one, the sessions hint uses the club average: "Not used in recent sessions, so this uses the club average of ~{club} a session." (D29)
 
 ## Readers
-All from [the backend contract](8-backend-shuttles-redesign.prd.md#contract-for-frontend).
+All from [the backend contract](../completed/8-backend-shuttles-redesign.prd.md#contract-for-frontend).
 
 | Screen element | Reader field / writer | Spec |
 |---|---|---|
@@ -161,32 +161,32 @@ Detail → Warn at 2, Sessions, avg_per_session null
 ## File Reference
 | File | Role |
 |---|---|
-| [app/(tabs)/shuttles/index.tsx](../../app/(tabs)/shuttles/index.tsx) | Rebuilt: tiles, stock list, chart, empty/loading/error |
-| [app/(tabs)/_layout.tsx](../../app/(tabs)/_layout.tsx) | Shuttles icon dot + accessibility label; foreground + signal refresh |
-| [app/(tabs)/index.tsx](../../app/(tabs)/index.tsx) | `lowStock` from `fetchShuttleStock` |
-| [components/shuttle/modal.tsx](../../components/shuttle/modal.tsx) | Add shuttle by the tube (§4e) |
-| [components/shuttle/editShuttleModal.tsx](../../components/shuttle/editShuttleModal.tsx) | RM price, Warn at, hint, copy (§4f) |
+| [app/(tabs)/shuttles/index.tsx](../../../app/(tabs)/shuttles/index.tsx) | Rebuilt: tiles, stock list, chart, empty/loading/error |
+| [app/(tabs)/_layout.tsx](../../../app/(tabs)/_layout.tsx) | Shuttles icon dot + accessibility label; foreground + signal refresh |
+| [app/(tabs)/index.tsx](../../../app/(tabs)/index.tsx) | `lowStock` from `fetchShuttleStock` |
+| [components/shuttle/modal.tsx](../../../components/shuttle/modal.tsx) | Add shuttle by the tube (§4e) |
+| [components/shuttle/editShuttleModal.tsx](../../../components/shuttle/editShuttleModal.tsx) | RM price, Warn at, hint, copy (§4f) |
 | components/shuttle/ShuttleStockRow.tsx | **new** row + meter + note |
 | components/shuttle/ShuttlesPerSessionChart.tsx | **new** View-based bars / empty box |
 | components/shuttle/stockSignal.ts | **new** subscribe / notify for the tab dot |
 | components/shared/SegmentedControl.tsx | **new**, extracted from `selectShuttleModal.tsx` |
-| [components/session/match/selectShuttleModal.tsx](../../components/session/match/selectShuttleModal.tsx) | Uses `SegmentedControl` |
-| [components/session/match/Stepper.tsx](../../components/session/match/Stepper.tsx) | `label` variant, `min` and `max` props |
-| [components/shared/StatTile.tsx](../../components/shared/StatTile.tsx) | `subLineTone?: "muted" \| "warn"` |
-| [components/shuttle/ShuttleCard.tsx](../../components/shuttle/ShuttleCard.tsx) | Removed |
+| [components/session/match/selectShuttleModal.tsx](../../../components/session/match/selectShuttleModal.tsx) | Uses `SegmentedControl` |
+| [components/session/match/Stepper.tsx](../../../components/session/match/Stepper.tsx) | `label` variant, `min` and `max` props |
+| [components/shared/StatTile.tsx](../../../components/shared/StatTile.tsx) | `subLineTone?: "muted" \| "warn"` |
+| [components/shuttle/ShuttleCard.tsx](../../../components/shuttle/ShuttleCard.tsx) | Removed |
 
 ---
 
 ## Acceptance Criteria
-- [ ] AC1: The Shuttles tab shows the two tiles, the Stock list and the chart, with the copy, colours, sort order, runway text ("~k sessions", "<1 session", "{n} left", "Out of stock"), meter and notes from spec §4a–4c. The empty tab shows the EmptyState and "Add your first shuttle" with no header button, tiles or chart (§4d). Loading shows skeletons and errors show an inline message (§7). `ShuttleCard` is removed.
-- [ ] AC2: Add shuttle asks for name, shuttles per tube (default 12), tube price (RM) and tubes (stepper, default 1). It shows the live per-shuttle line (§4e) and saves via `createShuttle`. A duplicate name (trimmed, case-insensitive) shows the field error and the Buy again hint, and keeps Add disabled.
-- [ ] AC3: The detail dialog shows "RM" on the price, the Warn at number + Shuttles/Sessions `SegmentedControl` with each live hint variant in §4f, and "Add to stock". Save stores Warn at, and clearing the number clears it. Renaming to another type's name shows the duplicate error.
-- [ ] AC4: While any type is out or low, a clay dot shows on the Shuttles tab icon on every tab, with the label "Shuttles, {n} type(s) need restocking". It updates when the app returns to the foreground and whenever the Shuttles tab reloads.
-- [ ] AC5: Home's low-stock alert shows up to 2 out/low types from `fetchShuttleStock`, out first then lowest runway, with no collapse line. Tapping one opens the Shuttles tab. Types with no Warn at never appear in the alert or light the dot, but their rows still show low at 1 and out at 0.
+- [x] AC1: The Shuttles tab shows the two tiles, the Stock list and the chart, with the copy, colours, sort order, runway text ("~k sessions", "<1 session", "{n} left", "Out of stock"), meter and notes from spec §4a–4c. The empty tab shows the EmptyState and "Add your first shuttle" with no header button, tiles or chart (§4d). Loading shows skeletons and errors show an inline message (§7). `ShuttleCard` is removed.
+- [x] AC2: Add shuttle asks for name, shuttles per tube (default 12), tube price (RM) and tubes (stepper, default 1). It shows the live per-shuttle line (§4e) and saves via `createShuttle`. A duplicate name (trimmed, case-insensitive) shows the field error and the Buy again hint, and keeps Add disabled.
+- [x] AC3: The detail dialog shows "RM" on the price, the Warn at number + Shuttles/Sessions `SegmentedControl` with each live hint variant in §4f, and "Add to stock". Save stores Warn at, and clearing the number clears it. Renaming to another type's name shows the duplicate error.
+- [x] AC4: While any type is out or low, a clay dot shows on the Shuttles tab icon on every tab, with the label "Shuttles, {n} type(s) need restocking". It updates when the app returns to the foreground and whenever the Shuttles tab reloads.
+- [x] AC5: Home's low-stock alert shows up to 2 out/low types from `fetchShuttleStock`, out first then lowest runway, with no collapse line. Tapping one opens the Shuttles tab. Types with no Warn at never appear in the alert or light the dot, but their rows still show low at 1 and out at 0.
 - [ ] AC6: Touch targets are at least 44pt. Rows and the chart have the screen-reader labels in §8, and number fields open the number or decimal pad. Create match's New / Reuse toggle uses the shared `SegmentedControl` and looks the same. `Stepper` and `StatTile` changes don't alter existing screens.
-- [ ] AC6b: In Create match the New-shuttle stepper stops at the type's remaining count. Add shuttle's Tubes stepper stops at 1; Buy again takes a shuttle count.
-- [ ] AC6c: Writer errors appear under the matching field; any other save failure shows the "Couldn't save. Try again." toast and keeps the dialog open with input kept; a failed load shows "Couldn't load. Pull to refresh." inline.
-- [ ] AC7: `npm run lint` and `npx tsc --noEmit` pass. Every state is checked on the iOS Simulator via Expo MCP after `npm run db:fresh` (default) and `npm run db:fresh -- shuttles`. Never checked on web.
+- [x] AC6b: In Create match the New-shuttle stepper stops at the type's remaining count. Add shuttle's Tubes stepper stops at 1; Buy again takes a shuttle count.
+- [x] AC6c: Writer errors appear under the matching field; any other save failure shows the "Couldn't save. Try again." toast and keeps the dialog open with input kept; a failed load shows "Couldn't load. Pull to refresh." inline.
+- [x] AC7: `npm run lint` and `npx tsc --noEmit` pass. Every state is checked on the iOS Simulator via Expo MCP after `npm run db:fresh` (default) and `npm run db:fresh -- shuttles`. Never checked on web.
 
 ## Required Changes
 - **Shuttles tab**: rebuild per spec §4a–4d and §7, using the [Readers](#readers) mapping. Call `notifyShuttleStockChanged()` after each load.
@@ -208,4 +208,21 @@ Detail → Warn at 2, Sessions, avg_per_session null
 | The name check races with typing | Low | Low | The service throws anyway (D5); show its message |
 
 ---
-*Status: READY — ticket [8]*
+## Implementation Status
+| AC | Status | Evidence / notes |
+|---|---|---|
+| AC1 | ✅ done | Simulator screenshots for `default`, `shuttles` and `empty` scenarios: tiles, sorted stock list, notes, meters, 8-bar chart with first/last dates, empty tab with "Add your first shuttle" and no header button; "<1 session" checked with a temporary runway override; skeletons and "Couldn't load. Pull to refresh." checked with temporary delayed/rejected reads (reverted). `ShuttleCard.tsx` deleted |
+| AC2 | ✅ done | Add shuttle shows defaults 12 / empty / 1 tube; "RM 4.50 per shuttle · 24 shuttles" for 54 ÷ 12 × 2; "yonex as-30" shows the field error and "To add stock to Yonex AS-30, …" with Add disabled; saving "Aeroplane Gold" added a 24-shuttle row |
+| AC3 | ✅ done | RM prefix, Shuttles/Sessions control, every hint variant seen (empty, shuttles low/not low, sessions with history, club-average fallback, no history); clearing Warn at and Save turned Victor Master ok and cleared the dot; renaming RSL Classic to "yonex as-30" shows the duplicate error; Add to stock recorded +24 |
+| AC4 | ✅ done | Tab label "Shuttles, 2 types need restocking"; after a Create match used 3 Yonex (crossing Warn at 40) the label stayed 2, then read "3 types" after background → foreground; dot cleared after a Save on the Shuttles tab |
+| AC5 | ✅ done | Home shows RSL Classic then Aeroplane Gold (2 rows, no collapse line); tapping opened the Shuttles tab; RSL Classic out with no Warn at in `default` shows "Out of stock" but no dot or alert |
+| AC6 | ⚠️ unverified | Rows 56pt, inputs, buttons, close and segments 44pt; Stepper compact buttons reach 44pt via hitSlop; §8 labels read back with `find_view` for rows, chart and tab. Not verified: the number/decimal pads (the simulator has a hardware keyboard attached and keystroke automation is blocked, so no soft keyboard appeared; `keyboardType` is set in code). The existing tab bar buttons measure 40.7pt high (pre-existing). Create match's toggle now uses `SegmentedControl` (surface track with border and a raised selected segment, per spec §5), slightly different from the old neutral-tint track |
+| AC6b | ✅ done | RSL Classic (4 left) stepper stopped at 4 with + disabled; Tubes − disabled at 1; Buy again takes a plain shuttle count |
+| AC6c | ✅ done | Temporary injected errors (reverted): "Price must be more than 0" showed under the price field; an unknown error showed the "Couldn't save. Try again." toast over the dialog, which stayed open with input kept; failed loads show the inline message on the tab and Home |
+| AC7 | ✅ done | `npx tsc --noEmit` clean; `npm run lint` 0 errors (22 warnings, none in touched files); all checks on the iPhone 17 Pro simulator via Expo MCP after `db:fresh` (default), `db:fresh -- shuttles` and `db:fresh -- empty` |
+
+### Needs attention
+- Check the number pad (Shuttles per tube, Warn at, Buy again) and decimal pad (Tube price, Price per shuttle) open on a simulator with the software keyboard on (I/O → Keyboard → uncheck Connect Hardware Keyboard), then tick AC6 and move this PRD to `completed/`.
+- Optional: the shared `AppToast` always shows a check icon, so the error toast "Couldn't save. Try again." carries a check mark.
+
+*Status: PARTIAL — PR #30*

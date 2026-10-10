@@ -1,3 +1,4 @@
+import { SegmentedControl } from "@/components/shared/SegmentedControl"
 import { designTokens } from "@/components/ui/gluestack-ui-provider/config"
 import { AddIcon, CheckIcon, CloseIcon, Icon } from "@/components/ui/icon"
 import { Modal, ModalBackdrop, ModalBody, ModalContent, ModalHeader } from "@/components/ui/modal"
@@ -170,24 +171,17 @@ export function ShuttlesModal({
                         {pluralShuttles(sessionTypes.length)} logged for this session
                     </Text>
                 </View>
-                <View className="mb-3 flex-row rounded-lg bg-neutral-tint p-0.5">
-                    {(["new", "reuse"] as Tab[]).map((value) => {
-                        const active = tab === value
-                        return (
-                            <Pressable
-                                key={value}
-                                onPress={() => setTab(value)}
-                                accessibilityRole="tab"
-                                accessibilityState={{ selected: active }}
-                                testID={`shuttles-tab-${value}`}
-                                className={`flex-1 items-center rounded-md py-2 ${active ? "bg-surface-raised" : ""}`}
-                            >
-                                <Text className={`text-body font-medium ${active ? "text-ink" : "text-muted"}`}>
-                                    {value === "new" ? "New shuttle" : "Reuse shuttle"}
-                                </Text>
-                            </Pressable>
-                        )
-                    })}
+                <View className="mb-3">
+                    <SegmentedControl<Tab>
+                        options={[
+                            { value: "new", label: "New shuttle" },
+                            { value: "reuse", label: "Reuse shuttle" },
+                        ]}
+                        value={tab}
+                        onChange={setTab}
+                        accessibilityLabel="Shuttle source"
+                        testID="shuttles-tab"
+                    />
                 </View>
                 <ModalBody className="mb-0 mt-0">
                     {tab === "new" ? (
@@ -199,6 +193,7 @@ export function ShuttlesModal({
                                     value={draft.counts[row.shuttle_id] ?? 0}
                                     onChange={(value) => setCount(row.shuttle_id, value)}
                                     disabled={row.remaining <= 0}
+                                    max={row.remaining}
                                 />
                             ))}
                             <Select

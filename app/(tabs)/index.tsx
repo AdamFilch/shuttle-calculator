@@ -21,7 +21,7 @@ import {
   previewSessionCharges,
   SessionSummary,
 } from "@/services/session";
-import { fetchAllShuttles } from "@/services/shuttle";
+import { fetchAllShuttles, fetchShuttleStock, ShuttleStockType } from "@/services/shuttle";
 import { parseSQLTimestamp } from "@/services/time-display";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { endOfDay, format, startOfDay, subDays } from "date-fns";
@@ -44,6 +44,7 @@ type HomeData = {
   owers: Loaded<TopOwers>;
   activity: Loaded<ActivitySummary>;
   estimates: Record<number, number>;
+  lowStock: Loaded<ShuttleStockType[]>;
   tonight: number[];
   playerCount: number;
   shuttleTypeCount: number;
@@ -63,7 +64,7 @@ const estimateOf = async (sessionId: number) => {
 
 async function loadHome(): Promise<HomeData> {
   const now = new Date();
-  const [sessions, owers, activity, players, shuttles] = await Promise.all([
+  const [sessions, owers, activity, players, shuttles, lowStock] = await Promise.all([
     settle(fetchAllSessions().then((rows) => [...rows].sort(byNewestFirst))),
     settle(fetchTopOwers(3)),
     settle(
@@ -74,6 +75,11 @@ async function loadHome(): Promise<HomeData> {
     ),
     settle(fetchAllPlayers()),
     settle(fetchAllShuttles()),
+    settle(
+      fetchShuttleStock().then((stock) =>
+        stock.types.filter((t) => t.alert).slice(0, 2),
+      ),
+    ),
   ]);
 
   const open =
@@ -104,6 +110,7 @@ async function loadHome(): Promise<HomeData> {
     owers,
     activity,
     estimates,
+    lowStock,
     tonight,
     playerCount: players === "error" ? 0 : players.length,
     shuttleTypeCount: shuttles === "error" ? 0 : shuttles.length,
@@ -282,12 +289,7 @@ export default function HomeScreen() {
   const owers = data.owers;
   const showOwers = owers === "error" || owers.owers.length > 0;
 
-  const lowStock: {
-    shuttle_id: number;
-    name: string;
-    remaining: number;
-    runway_sessions: number | null;
-  }[] = [];
+  const lowStock = data.lowStock;
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
@@ -314,9 +316,11 @@ export default function HomeScreen() {
           />
         )}
 
-        {lowStock.length > 0 ? (
-          <View className="mt-3 gap-2">
-            {lowStock.slice(0, 2).map((item) => (
+        {lowStock === "error" ? (
+          <LoadError />
+        ) : lowStock.length > 0 ? (
+          <View className="mt-3 gap-2" testID="home-low-stock">
+            {lowStock.map((item) => (
               <LowStockAlert
                 key={item.shuttle_id}
                 name={item.name}

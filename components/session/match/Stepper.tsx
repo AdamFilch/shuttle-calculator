@@ -16,31 +16,40 @@ export function glyphColour(colourIndex: number): string {
 
 export function Stepper({
     shuttle,
+    label,
     value,
     onChange,
     disabled = false,
+    min = 0,
+    max,
 }: {
-    shuttle: { name: string, colourIndex: number },
+    shuttle?: { name: string, colourIndex: number },
+    label?: string,
     value: number,
     onChange: (value: number) => void,
-    disabled?: boolean
+    disabled?: boolean,
+    min?: number,
+    max?: number
 }) {
-    const minusDisabled = disabled || value <= 0
+    const name = shuttle?.name ?? label ?? ""
+    const minusDisabled = disabled || value <= min
+    const plusDisabled = disabled || (max !== undefined && value >= max)
     const outline = disabled
         ? "border-[1.5px] border-error-500"
-        : value > 0
+        : shuttle && value > 0
             ? "border-[1.5px] border-sage"
             : "border border-border-subtle"
+    const button = shuttle ? "h-8 w-9" : "h-[44px] w-[44px]"
 
     return (
         <View
-            testID={`stepper-${shuttle.name}`}
+            testID={`stepper-${name}`}
             className={`flex-row items-center gap-3 rounded-xl bg-surface-raised py-2.5 pl-3.5 pr-2.5 ${outline}`}
         >
-            <ShuttleGlyph colour={glyphColour(shuttle.colourIndex)} />
+            {shuttle && <ShuttleGlyph colour={glyphColour(shuttle.colourIndex)} />}
             <View className="flex-1">
-                <Text className="text-card-title font-medium text-ink" numberOfLines={1}>
-                    {shuttle.name}
+                <Text className={`text-ink ${shuttle ? "text-card-title font-medium" : "text-body"}`} numberOfLines={1}>
+                    {name}
                 </Text>
                 {disabled && (
                     <Text className="text-caption text-error-600">Out of stock</Text>
@@ -51,20 +60,25 @@ export function Stepper({
                     disabled={minusDisabled}
                     onPress={() => onChange(value - 1)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove one ${shuttle.name}`}
-                    className={`h-8 w-9 items-center justify-center rounded-md bg-surface-raised ${minusDisabled ? "opacity-40" : "active:opacity-85"}`}
+                    accessibilityLabel={`Remove one ${name}`}
+                    hitSlop={8}
+                    className={`${button} items-center justify-center rounded-md bg-surface-raised ${minusDisabled ? "opacity-40" : "active:opacity-85"}`}
                 >
                     <Icon as={RemoveIcon} size="md" className="text-ink" />
                 </Pressable>
-                <Text className="min-w-[28px] text-center text-card-title font-medium text-ink">
+                <Text
+                    className="min-w-[28px] text-center text-card-title font-medium text-ink"
+                    style={{ fontVariant: ["tabular-nums"] }}
+                >
                     {value}
                 </Text>
                 <Pressable
-                    disabled={disabled}
+                    disabled={plusDisabled}
                     onPress={() => onChange(value + 1)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Add one ${shuttle.name}`}
-                    className={`h-8 w-9 items-center justify-center rounded-md bg-primary ${disabled ? "opacity-40" : "active:opacity-85"}`}
+                    accessibilityLabel={`Add one ${name}`}
+                    hitSlop={8}
+                    className={`${button} items-center justify-center rounded-md bg-primary ${plusDisabled ? "opacity-40" : "active:opacity-85"}`}
                 >
                     <Icon as={AddIcon} size="md" className="text-surface" />
                 </Pressable>
